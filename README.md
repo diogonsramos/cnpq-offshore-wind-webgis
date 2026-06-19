@@ -193,6 +193,8 @@ queryDashboardLocation(lat, lon) → agrega estatísticas por estação do allSe
 - Para adicionar um novo experimento, edite `cogCatalog.ts` (tipo `Dataset`, array `DATASETS`, label) e adicione os dados em `public/data/cogs/wrf/` e `public/data/geoparquet/wrf/`
 - Os dados brutos estão armazenados em formato NetCDF no diretório `data/raw/` (~1,7 TB)
 
+> **⚠️ Aviso importante:** Os dados contidos em `public/data/` (COGs e GeoParquet) são **preliminares** e destinam-se exclusivamente ao desenvolvimento e validação do frontend. Os datasets finais, otimizados para performance de consulta e produção, serão publicados em versão futura do repositório.
+
 ---
 
 ## Licença
