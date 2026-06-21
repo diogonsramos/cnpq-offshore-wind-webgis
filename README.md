@@ -48,6 +48,11 @@ cnpq-webgis-viewer/
 │   │       ├── SSP2-4.5/
 │   │       └── SSP5-8.5/
 │   │           └── all_seasons.parquet  (~17-19 MB cada)
+│   ├── images/
+│   │   └── logos/                # Logomarcas institucionais (servidas estaticamente)
+│   │       ├── logo-cnpq.png
+│   │       ├── logo-peob-cnpq.png
+│   │       └── logo-senai-cimatec.png
 │   └── parquet_wasm_bg.wasm     # Runtime WebAssembly para ler Parquet (~6,4 MB)
 ├── src/
 │   ├── components/               # Componentes React
@@ -55,13 +60,15 @@ cnpq-webgis-viewer/
 │   │   ├── DashboardView.tsx     # Painel analítico completo (tab B)
 │   │   ├── ErrorBoundary.tsx     # Captura de erros React
 │   │   ├── FAQPanel.tsx          # Painel FAQ (accordion)
+│   │   ├── LandingPage.tsx       # Página inicial institucional (Fase 1)
+│   │   ├── LandingPage.css       # Estilos isolados da landing page
 │   │   ├── MapView.tsx           # Mapa principal (MapLibre GL + COG + pins)
 │   │   ├── MiniMap.tsx           # Mini-mapa embutido no dashboard
 │   │   ├── PixelInfoPanel.tsx    # Painel de informações do pixel clicado
 │   │   ├── ProfileChart.tsx      # Gráfico de perfil vertical (Chart.js)
 │   │   ├── ProjectInfoPanel.tsx  # Painel de informações do projeto
 │   │   ├── SidePanel.tsx         # Painel lateral de filtros
-│   │   ├── TabBar.tsx            # Barra de abas (Map / Dashboard)
+│   │   ├── TabBar.tsx            # Barra de abas com botão ← Home
 │   │   └── WeibullChart.tsx      # Gráfico de distribuição Weibull (Chart.js)
 │   ├── lib/
 │   │   ├── cogCatalog.ts         # Catálogo de experimentos, variáveis, alturas, COGs
@@ -72,14 +79,24 @@ cnpq-webgis-viewer/
 │   ├── App.tsx                   # Componente raiz com estado global
 │   ├── main.tsx                  # Ponto de entrada React
 │   └── vite-env.d.ts            # Tipos Vite
+├── tests/
+│   └── e2e/                      # Testes de regressão E2E (Playwright)
+│       ├── 01-landing-page.spec.ts   # 9 testes — seções e conteúdo da landing page
+│       ├── 02-navigation.spec.ts     # 8 testes — navegação entre landing e sistema
+│       └── 03-responsiveness.spec.ts # 4 testes — layout responsivo (3 breakpoints)
+├── docs/
+│   ├── INFO_PROJECT.md           # Fonte oficial de metadados do projeto
+│   ├── TODO.md                   # Roadmap de desenvolvimento por fases
+│   └── plan_LandingPage.md       # Plano de implementação da Fase 1
+├── CLAUDE.md                     # Instruções para o assistente de IA (desenvolvimento)
 ├── index.html                    # HTML de entrada
 ├── package.json                  # Dependências e scripts
+├── playwright.config.ts          # Configuração dos testes E2E
 ├── tsconfig.json                 # Configuração TypeScript
 ├── tsconfig.app.json
 ├── tsconfig.node.json
 ├── vite.config.ts                # Configuração Vite
-├── pnpm-lock.yaml                # Lockfile pnpm
-└── METADADOS.md                  # Documentação dos metadados (opcional)
+└── pnpm-lock.yaml                # Lockfile pnpm
 ```
 
 ---
@@ -119,6 +136,7 @@ Grade regular de 534 × 263 pontos (~140 mil células), resolução do modelo WR
 - **Chart.js** + **react-chartjs-2** — Gráficos analíticos
 - **parquet-wasm** + **Apache Arrow** — Leitura de GeoParquet no navegador via WebAssembly
 - **GeoTIFF.js** — Decodificação de COGs client-side
+- **Playwright** — Testes de regressão E2E (dev dependency)
 
 ---
 
@@ -147,6 +165,107 @@ pnpm dev
 | `pnpm dev` | Inicia servidor de desenvolvimento |
 | `pnpm build` | Compila TypeScript e faz build de produção |
 | `pnpm preview` | Serve o build de produção localmente |
+| `pnpm test` | Roda verificação de tipos + suite completa de testes E2E |
+| `pnpm test:types` | Apenas verificação de tipos TypeScript (`tsc --noEmit`) |
+| `pnpm test:e2e` | Apenas testes E2E com Playwright (inicia dev server automaticamente) |
+| `pnpm test:e2e:ui` | Abre a interface visual do Playwright para depurar testes |
+
+---
+
+## Testes de Regressão E2E
+
+O projeto usa **Playwright** para testes de regressão end-to-end. A suite verifica automaticamente que as funcionalidades existentes continuam funcionando após cada mudança no código.
+
+### Pré-requisito único
+
+Na primeira vez, instale os browsers do Playwright:
+
+```bash
+pnpm exec playwright install chromium
+```
+
+### Como rodar
+
+```bash
+# Recomendado antes de qualquer commit: type check + todos os testes
+pnpm test
+
+# Apenas os testes E2E (inicia o dev server automaticamente se necessário)
+pnpm test:e2e
+
+# Interface visual — útil para depurar um teste específico
+pnpm test:e2e:ui
+```
+
+### O que cada arquivo de teste verifica
+
+#### `tests/e2e/01-landing-page.spec.ts` — Conteúdo da Landing Page
+
+| Teste | O que valida | Resultado esperado |
+|---|---|---|
+| T02 — carregamento inicial | A landing page abre por padrão (não o mapa) | `.landing` visível; `.tab-bar` ausente |
+| T03 — título H1 | H1 contém o título oficial do projeto | Texto: "Cenário atual e futuro do recurso eólico offshore no Brasil" |
+| NavbarTop | Navbar com botão "Entrar no Sistema" | `.lp-navbar` e `.lp-navbar-enter` visíveis |
+| HeroSection | Dois CTAs presentes com textos corretos | `.lp-cta-primary` = "Abrir WebGIS Map"; `.lp-cta-secondary` = "Abrir Analytical Dashboard" |
+| StatsStrip | 5 cards de indicadores técnicos | Exatamente 5 elementos `.lp-stat-card` |
+| ScenariosSection | 4 cards dos experimentos climáticos | 4 elementos `.lp-scenario-card` com nomes ERA5_atlas, HIST, SSP2-4.5, SSP5-8.5 |
+| TeamSection | 17 pesquisadores listados | Exatamente 17 elementos `.lp-team-card` |
+| PublicationsSection | 9 publicações científicas | Exatamente 9 elementos `li` em `.lp-pub-list` |
+| FooterSection | Disclaimer de dados preliminares | `.lp-footer-disclaimer` contém "preliminares" |
+| T09 — logos | 3 logos carregam sem erro HTTP | Todas as respostas `/images/logos/*` com status < 400 |
+
+#### `tests/e2e/02-navigation.spec.ts` — Navegação entre Landing e Sistema
+
+| Teste | O que valida | Resultado esperado |
+|---|---|---|
+| T04 — CTA primário | "Abrir WebGIS Map" abre o mapa | `.tab-bar` aparece; `.landing` desaparece |
+| T05 — CTA secundário | "Abrir Analytical Dashboard" abre o dashboard | `.tab-bar` e `.dashboard-view` visíveis |
+| T06 — navbar | "Entrar no Sistema" abre o mapa | `.tab-bar` aparece; `.landing` desaparece |
+| T10 — botão Home | `← Home` está no TabBar após navegar | `.tab-home-btn` visível com texto "Home" |
+| T11 — volta Home | Clique em `← Home` retorna à landing | `.landing` visível; `.tab-bar` desaparece |
+| T11b — Home do dashboard | `← Home` funciona vindo do dashboard | `.landing` visível; `.tab-bar` desaparece |
+| T07 — aba ativa | TabBar mantém aba ativa correta | `.tab-btn.active` muda ao clicar entre abas |
+
+#### `tests/e2e/03-responsiveness.spec.ts` — Responsividade
+
+| Teste | O que valida | Resultado esperado |
+|---|---|---|
+| T08 desktop (1280 px) | Sem scroll horizontal | `scrollWidth` ≤ `clientWidth` |
+| T08 tablet (768 px) | Sem scroll horizontal | `scrollWidth` ≤ `clientWidth` |
+| T08 mobile (375 px) | Sem scroll horizontal | `scrollWidth` ≤ `clientWidth` |
+| T08b — CTAs em coluna | Em mobile, CTAs empilhados verticalmente | Y do CTA secundário > Y do CTA primário |
+
+### Saída esperada ao rodar `pnpm test:e2e`
+
+```
+Running 21 tests using 3 workers
+
+  ✓  T02 — landing page é a tela inicial (não o mapa)
+  ✓  T03 — H1 contém o título oficial do projeto
+  ✓  NavbarTop — logos e botão "Entrar no Sistema" visíveis
+  ✓  HeroSection — dois CTAs visíveis
+  ✓  StatsStrip — 5 cards de indicadores visíveis
+  ✓  ScenariosSection — 4 cards de experimentos visíveis
+  ✓  TeamSection — 17 pesquisadores listados
+  ✓  PublicationsSection — 9 publicações listadas
+  ✓  FooterSection — disclaimer de dados preliminares visível
+  ✓  T09 — logos institucionais carregam sem erro (2xx ou 304)
+  ✓  T04 — CTA primário "Abrir WebGIS Map" abre o mapa
+  ✓  T05 — CTA secundário "Abrir Analytical Dashboard" abre o dashboard
+  ✓  T06 — Botão "Entrar no Sistema" na navbar abre o mapa
+  ✓  T10 — botão "← Home" está visível no TabBar após navegar para o mapa
+  ✓  T11 — clique em "← Home" retorna para a landing page
+  ✓  T11b — "← Home" também funciona vindo do dashboard
+  ✓  T07 — TabBar mantém aba ativa correta ao alternar entre mapa e dashboard
+  ✓  T08 — sem scroll horizontal em desktop (1280px)
+  ✓  T08 — sem scroll horizontal em tablet (768px)
+  ✓  T08 — sem scroll horizontal em mobile (375px)
+  ✓  T08b — em mobile (375 px) os CTAs são exibidos em coluna
+
+  21 passed (~13 s)
+```
+
+Se qualquer teste falhar após uma mudança no código, isso indica uma **regressão** — algo que funcionava parou de funcionar. Consulte `CLAUDE.md` para as regras de atualização de testes.
 
 ---
 

@@ -1,0 +1,572 @@
+/* ── Landing Page ─────────────────────────────── */
+.landing {
+  width: 100%;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1a1a2e;
+  background: #fff;
+}
+
+/* ── Navbar ──────────────────────────────────── */
+.lp-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 32px;
+  background: #1a1a2e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lp-navbar-logos {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lp-navbar-logo {
+  height: 32px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.lp-navbar-enter {
+  padding: 7px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.lp-navbar-enter:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Hero ─────────────────────────────────────── */
+.lp-hero {
+  background: linear-gradient(135deg, #1a1a2e 60%, #2a3a6e);
+  color: #fff;
+  padding: 80px 48px 72px;
+  text-align: center;
+}
+
+.lp-hero-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #4a90d9;
+  margin-bottom: 20px;
+}
+
+.lp-hero h1 {
+  font-size: clamp(24px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.2;
+  max-width: 800px;
+  margin: 0 auto 16px;
+  letter-spacing: -0.5px;
+}
+
+.lp-hero-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.lp-hero-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 680px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+
+.lp-hero-ctas {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.lp-cta-primary {
+  padding: 14px 32px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.2px;
+}
+
+.lp-cta-primary:hover {
+  background: #357abd;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(74, 144, 217, 0.4);
+}
+
+.lp-cta-secondary {
+  padding: 14px 32px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.2px;
+}
+
+.lp-cta-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
+}
+
+/* ── Stats Strip ──────────────────────────────── */
+.lp-stats {
+  background: #f0f2f5;
+  padding: 40px 32px;
+}
+
+.lp-stats-title {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #888;
+  margin-bottom: 24px;
+}
+
+.lp-stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-stat-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px 28px;
+  border-top: 3px solid #4a90d9;
+  text-align: center;
+  min-width: 160px;
+  flex: 1;
+  max-width: 220px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.lp-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.lp-stat-label {
+  font-size: 11px;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Tech Summary ─────────────────────────────── */
+.lp-tech {
+  padding: 64px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #4a90d9;
+  margin-bottom: 8px;
+}
+
+.lp-section-title {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 40px;
+  letter-spacing: -0.3px;
+}
+
+.lp-tech-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.lp-tech-text p {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.lp-tech-text strong {
+  color: #1a1a2e;
+}
+
+.lp-tech-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lp-tech-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lp-tech-table th:first-child {
+  border-radius: 6px 0 0 0;
+}
+
+.lp-tech-table th:last-child {
+  border-radius: 0 6px 0 0;
+}
+
+.lp-tech-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f2f5;
+  color: #444;
+  vertical-align: top;
+}
+
+.lp-tech-table tr:nth-child(even) td {
+  background: #f8f9fa;
+}
+
+.lp-tech-table td:first-child {
+  font-weight: 600;
+  color: #1a1a2e;
+  white-space: nowrap;
+}
+
+/* ── Scenarios ────────────────────────────────── */
+.lp-scenarios {
+  background: #f0f2f5;
+  padding: 64px 48px;
+}
+
+.lp-scenarios-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.lp-scenario-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.lp-scenario-card:hover {
+  border-color: #4a90d9;
+  box-shadow: 0 4px 16px rgba(74, 144, 217, 0.15);
+  transform: translateY(-2px);
+}
+
+.lp-scenario-icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.lp-scenario-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+  font-family: 'Courier New', monospace;
+}
+
+.lp-scenario-forcing {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #4a90d9;
+  margin-bottom: 8px;
+}
+
+.lp-scenario-period {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.lp-scenario-desc {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* ── Gallery ──────────────────────────────────── */
+.lp-gallery {
+  padding: 64px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.lp-gallery-placeholder {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a3a6e 100%);
+  border-radius: 10px;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 16px;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lp-gallery-placeholder-icon {
+  font-size: 28px;
+  opacity: 0.6;
+}
+
+/* ── Team ─────────────────────────────────────── */
+.lp-team {
+  background: #f0f2f5;
+  padding: 64px 48px;
+}
+
+.lp-team-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.lp-team-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+}
+
+.lp-team-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.lp-team-role {
+  font-size: 11px;
+  color: #888;
+}
+
+.lp-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.lp-badge--coord {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.lp-badge--lead {
+  background: #4a90d9;
+  color: #fff;
+}
+
+/* ── Publications ─────────────────────────────── */
+.lp-publications {
+  padding: 64px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-pub-list {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lp-pub-list li {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.7;
+}
+
+.lp-pub-list li strong {
+  color: #1a1a2e;
+}
+
+/* ── Footer ──────────────────────────────────── */
+.lp-footer {
+  background: #1a1a2e;
+  padding: 48px 48px 32px;
+  color: #aaa;
+}
+
+.lp-footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-footer-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.lp-footer-logo {
+  height: 48px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+}
+
+.lp-footer-citation {
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+  line-height: 1.7;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lp-footer-disclaimer {
+  background: rgba(255, 200, 80, 0.1);
+  border: 1px solid rgba(255, 200, 80, 0.25);
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 12px;
+  color: #e8c95d;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.lp-footer-copyright {
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 768px) {
+  .lp-hero {
+    padding: 48px 24px 56px;
+  }
+
+  .lp-tech,
+  .lp-scenarios,
+  .lp-gallery,
+  .lp-team,
+  .lp-publications,
+  .lp-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .lp-tech-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .lp-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-navbar {
+    padding: 0 16px;
+  }
+
+  .lp-navbar-logo {
+    height: 24px;
+  }
+
+  .lp-stat-card {
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-hero-ctas {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .lp-cta-primary,
+  .lp-cta-secondary {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .lp-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}
