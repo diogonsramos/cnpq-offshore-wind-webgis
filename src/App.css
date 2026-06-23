@@ -21,10 +21,18 @@ html, body, #root {
   height: 100%;
 }
 
-.app--landing {
-  overflow-y: auto;
+/* landing-mode: desabilita overflow:hidden global para que a página role normalmente */
+html.landing-mode,
+html.landing-mode body,
+html.landing-mode #root {
+  overflow: auto;
   height: auto;
-  min-height: 100%;
+  min-height: 100vh;
+}
+
+.app--landing {
+  height: auto;
+  min-height: 100vh;
 }
 
 /* ── Tab Container ─────────────────────────── */

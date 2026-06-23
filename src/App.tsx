@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import SidePanel from './components/SidePanel'
 import MapView from './components/MapView'
 import PixelInfoPanel from './components/PixelInfoPanel'
@@ -64,6 +64,15 @@ export default function App() {
   }, [handleAddLocation])
 
   const switchToDashboard = useCallback(() => setTab('dashboard'), [])
+
+  useEffect(() => {
+    if (tab === 'home') {
+      document.documentElement.classList.add('landing-mode')
+    } else {
+      document.documentElement.classList.remove('landing-mode')
+    }
+    return () => document.documentElement.classList.remove('landing-mode')
+  }, [tab])
 
   return (
     <div className={`app${tab === 'home' ? ' app--landing' : ''}`}>

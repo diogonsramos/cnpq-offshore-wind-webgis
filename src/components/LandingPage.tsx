@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import type { TabId } from './TabBar'
 import './LandingPage.css'
 
@@ -13,41 +14,54 @@ const STATS = [
   { value: '17', label: 'Estados costeiros cobertos' },
 ]
 
-const SCENARIOS = [
+type ScenarioKind = 'historical' | 'future'
+
+const SCENARIOS: {
+  icon: string
+  name: string
+  forcing: string
+  period: string
+  desc: string
+  kind: ScenarioKind
+}[] = [
   {
     icon: '🔵',
     name: 'ERA5_atlas',
     forcing: 'ERA5',
     period: '2004–2024',
-    desc: 'Reanálise com downscaling WRF — cenário atual de referência',
+    desc: 'Reanálise com downscaling WRF — cenário atual de referência para atlas eólico',
+    kind: 'historical',
   },
   {
     icon: '📊',
     name: 'HIST',
     forcing: 'ERA5',
     period: '2004–2014',
-    desc: 'WRF Histórico — período de treinamento para correção de viés',
+    desc: 'WRF Histórico — período de treinamento para correção de viés (QDM)',
+    kind: 'historical',
   },
   {
     icon: '🟡',
     name: 'SSP2-4.5',
     forcing: 'CMIP6 (18 modelos)',
     period: '2015–2023 + 2030–2050',
-    desc: 'Cenário de mitigação moderada (~4,5 W/m²)',
+    desc: 'Cenário de mitigação moderada — forçante radiativa ~4,5 W/m²',
+    kind: 'future',
   },
   {
     icon: '🔴',
     name: 'SSP5-8.5',
     forcing: 'CMIP6 (18 modelos)',
     period: '2015–2023 + 2030–2050',
-    desc: 'Cenário de emissões elevadas (~8,5 W/m²)',
+    desc: 'Cenário de emissões elevadas — forçante radiativa ~8,5 W/m²',
+    kind: 'future',
   },
 ]
 
-const TEAM = [
-  { name: 'Davidson Martins Moreira', role: 'Coordenador', badge: 'coord' as const },
-  { name: 'Diogo Nunes da Silva Ramos', role: 'Pesquisador Líder', badge: 'lead' as const },
-  { name: 'Allan Rodrigues Silva', role: 'Pesquisador Líder', badge: 'lead' as const },
+const TEAM: { name: string; role: string; badge: 'coord' | 'lead' | null }[] = [
+  { name: 'Davidson Martins Moreira', role: 'Coordenador', badge: 'coord' },
+  { name: 'Diogo Nunes da Silva Ramos', role: 'Pesquisador Líder', badge: 'lead' },
+  { name: 'Allan Rodrigues Silva', role: 'Pesquisador Líder', badge: 'lead' },
   { name: 'Thalyta Soares dos Santos', role: 'Pesquisadora', badge: null },
   { name: 'Francisco José de Lopes Lima', role: 'Pesquisador', badge: null },
   { name: 'Wendy Mary da Silveira Pires', role: 'Pesquisadora', badge: null },
@@ -87,16 +101,61 @@ const TECH_TABLE_ROWS = [
   ['Produtos processados', '~5.688 COGs; 24 GeoParquet'],
 ]
 
+const NAV_SECTIONS = [
+  { id: 'metodologia', label: 'Metodologia' },
+  { id: 'cenarios', label: 'Cenários' },
+  { id: 'interface', label: 'Interface' },
+  { id: 'equipe', label: 'Equipe' },
+  { id: 'publicacoes', label: 'Publicações' },
+]
+
 const logoBase = import.meta.env.BASE_URL + 'images/logos/'
 
 export default function LandingPage({ onNavigate }: Props) {
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  const [activeSection, setActiveSection] = useState('')
+  const [showAllTeam, setShowAllTeam] = useState(false)
+
+  useEffect(() => {
+    const OFFSETS = NAV_SECTIONS.map(s => s.id)
+
+    const onScroll = () => {
+      const y = window.scrollY + 80
+
+      setShowBackToTop(y > 400)
+
+      for (let i = OFFSETS.length - 1; i >= 0; i--) {
+        const el = document.getElementById(OFFSETS[i])
+        if (el && el.offsetTop <= y) {
+          setActiveSection(OFFSETS[i])
+          return
+        }
+      }
+      setActiveSection('')
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
     <div className="landing">
       {/* Navbar */}
-      <nav className="lp-navbar">
+      <nav className="lp-navbar" aria-label="Navegação principal">
         <div className="lp-navbar-logos">
           <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-navbar-logo" />
           <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-navbar-logo" />
+        </div>
+        <div className="lp-navbar-anchors" role="navigation" aria-label="Seções da página">
+          {NAV_SECTIONS.map(s => (
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              className={`lp-nav-anchor${activeSection === s.id ? ' active' : ''}`}
+            >
+              {s.label}
+            </a>
+          ))}
         </div>
         <button className="lp-navbar-enter" onClick={() => onNavigate('map')}>
           Entrar no Sistema →
@@ -104,7 +163,7 @@ export default function LandingPage({ onNavigate }: Props) {
       </nav>
 
       {/* Hero */}
-      <section className="lp-hero">
+      <section id="inicio" className="lp-hero">
         <p className="lp-hero-eyebrow">CNPq — Processo 407949/2022-4</p>
         <h1>Cenário atual e futuro do recurso eólico offshore no Brasil</h1>
         <p className="lp-hero-subtitle">Ferramentas e aplicações — Projeto CNPq 407949/2022-4</p>
@@ -123,7 +182,7 @@ export default function LandingPage({ onNavigate }: Props) {
       </section>
 
       {/* Stats Strip */}
-      <section className="lp-stats">
+      <section className="lp-stats" aria-label="Indicadores técnicos">
         <p className="lp-stats-title">Principais indicadores técnicos</p>
         <div className="lp-stats-grid">
           {STATS.map(s => (
@@ -136,7 +195,7 @@ export default function LandingPage({ onNavigate }: Props) {
       </section>
 
       {/* Tech Summary */}
-      <section className="lp-tech">
+      <section id="metodologia" className="lp-tech">
         <p className="lp-section-label">Metodologia</p>
         <h2 className="lp-section-title">Resumo Técnico</h2>
         <div className="lp-tech-grid">
@@ -147,27 +206,36 @@ export default function LandingPage({ onNavigate }: Props) {
               futuros de mudanças climáticas.
             </p>
             <p>
-              As simulações foram conduzidas com o modelo <strong>WRF-ARW v4</strong> em dois domínios aninhados:
-              D01 (27 km) cobrindo a América do Sul e D02 (9 km) focado na costa brasileira, abrangendo
-              os 17 estados costeiros.
+              As simulações foram conduzidas com o modelo{' '}
+              <strong>
+                <abbr title="Weather Research and Forecasting — Advanced Research WRF, versão 4">WRF-ARW v4</abbr>
+              </strong>{' '}
+              em dois domínios aninhados: D01 (27 km) cobrindo a América do Sul e D02 (9 km) focado
+              na costa brasileira, abrangendo os 17 estados costeiros.
             </p>
             <p>
-              O conjunto de dados cobre <strong>quatro experimentos climáticos</strong>: ERA5_atlas (2004–2024),
-              HIST (2004–2014), SSP2-4.5 e SSP5-8.5 (2015–2050), forçados respectivamente por ERA5 e
-              por um ensemble de 18 modelos CMIP6 com correção de viés pelo método QDM.
+              O conjunto de dados cobre <strong>quatro experimentos climáticos</strong>:{' '}
+              ERA5_atlas (2004–2024), HIST (2004–2014), SSP2-4.5 e SSP5-8.5 (2015–2050), forçados
+              respectivamente por{' '}
+              <abbr title="ERA5 — quinta geração de reanálise atmosférica global do ECMWF">ERA5</abbr>{' '}
+              e por um ensemble de 18 modelos{' '}
+              <abbr title="Coupled Model Intercomparison Project Phase 6 — conjunto de modelos climáticos globais que orientam o IPCC AR6">CMIP6</abbr>{' '}
+              com correção de viés pelo método{' '}
+              <abbr title="Quantile Delta Mapping — técnica de correção de viés que preserva as tendências climáticas de longo prazo dos modelos">QDM</abbr>.
             </p>
             <p>
               As variáveis disponíveis no frontend — velocidade do vento (<strong>ws</strong>, m/s) e densidade
-              de potência eólica (<strong>wpd</strong>, W/m²) — são servidas em formato COG e GeoParquet para
-              consultas espaciais eficientes.
+              de potência eólica (<strong>wpd</strong>, W/m²) — são servidas em formato{' '}
+              <abbr title="Cloud Optimized GeoTIFF — formato raster otimizado para acesso parcial via HTTP range requests">COG</abbr>{' '}
+              e GeoParquet para consultas espaciais eficientes.
             </p>
           </div>
-          <div>
+          <div className="lp-tech-table-wrap">
             <table className="lp-tech-table">
               <thead>
                 <tr>
-                  <th>Indicador</th>
-                  <th>Valor</th>
+                  <th scope="col">Indicador</th>
+                  <th scope="col">Valor</th>
                 </tr>
               </thead>
               <tbody>
@@ -184,14 +252,18 @@ export default function LandingPage({ onNavigate }: Props) {
       </section>
 
       {/* Scenarios */}
-      <section className="lp-scenarios">
+      <section id="cenarios" className="lp-scenarios">
         <div className="lp-scenarios-inner">
           <p className="lp-section-label">Experimentos climáticos</p>
           <h2 className="lp-section-title">Cenários Simulados</h2>
+          <div className="lp-scenarios-legend">
+            <span className="lp-legend-item lp-legend-item--historical">● Histórico / Referência</span>
+            <span className="lp-legend-item lp-legend-item--future">● Projeção Futura (CMIP6)</span>
+          </div>
           <div className="lp-scenarios-grid">
             {SCENARIOS.map(s => (
-              <div className="lp-scenario-card" key={s.name}>
-                <span className="lp-scenario-icon">{s.icon}</span>
+              <div className={`lp-scenario-card lp-scenario-card--${s.kind}`} key={s.name}>
+                <span className="lp-scenario-icon" aria-hidden="true">{s.icon}</span>
                 <div className="lp-scenario-name">{s.name}</div>
                 <div className="lp-scenario-forcing">{s.forcing}</div>
                 <div className="lp-scenario-period">{s.period}</div>
@@ -203,34 +275,56 @@ export default function LandingPage({ onNavigate }: Props) {
       </section>
 
       {/* Gallery */}
-      <section className="lp-gallery">
+      <section id="interface" className="lp-gallery">
         <p className="lp-section-label">Interface</p>
         <h2 className="lp-section-title">Visualizações do Sistema</h2>
         <div className="lp-gallery-grid">
-          {/* Substituir por <img> quando screenshots estiverem disponíveis em public/images/screenshots/ */}
-          <div className="lp-gallery-placeholder">
-            <span className="lp-gallery-placeholder-icon">🗺️</span>
-            WebGIS Map — Velocidade do Vento (ERA5_atlas)
-          </div>
-          <div className="lp-gallery-placeholder">
-            <span className="lp-gallery-placeholder-icon">📈</span>
-            Dashboard — Perfil Vertical
-          </div>
-          <div className="lp-gallery-placeholder">
-            <span className="lp-gallery-placeholder-icon">📊</span>
-            Dashboard — Weibull
-          </div>
+          <button
+            className="lp-gallery-card"
+            onClick={() => onNavigate('map')}
+            aria-label="Abrir WebGIS Map"
+          >
+            <span className="lp-gallery-card-icon" aria-hidden="true">🗺️</span>
+            <span className="lp-gallery-card-title">WebGIS Map</span>
+            <span className="lp-gallery-card-desc">Mapa interativo de vento e densidade de potência por altitude, experimento e estado</span>
+          </button>
+          <button
+            className="lp-gallery-card"
+            onClick={() => onNavigate('dashboard')}
+            aria-label="Abrir Analytical Dashboard — Perfil Vertical"
+          >
+            <span className="lp-gallery-card-icon" aria-hidden="true">📈</span>
+            <span className="lp-gallery-card-title">Dashboard — Perfil Vertical</span>
+            <span className="lp-gallery-card-desc">Gráfico de perfil vertical de velocidade do vento por altitude para um ponto selecionado</span>
+          </button>
+          <button
+            className="lp-gallery-card"
+            onClick={() => onNavigate('dashboard')}
+            aria-label="Abrir Analytical Dashboard — Weibull"
+          >
+            <span className="lp-gallery-card-icon" aria-hidden="true">📊</span>
+            <span className="lp-gallery-card-title">Dashboard — Weibull</span>
+            <span className="lp-gallery-card-desc">Distribuição de Weibull e parâmetros k e c da frequência de vento no ponto consultado</span>
+          </button>
         </div>
       </section>
 
       {/* Team */}
-      <section className="lp-team">
+      <section id="equipe" className="lp-team">
         <div className="lp-team-inner">
           <p className="lp-section-label">Pesquisadores</p>
           <h2 className="lp-section-title">Equipe do Projeto</h2>
-          <div className="lp-team-grid">
+          <p className="lp-section-intro">
+            17 pesquisadores do{' '}
+            <abbr title="Centro de Supercomputação para Inovação Industrial — SENAI CIMATEC, Salvador, BA">CS2I — SENAI CIMATEC</abbr>{' '}
+            cobrindo meteorologia regional, modelagem climática, machine learning e engenharia de software.
+          </p>
+          <div className={`lp-team-grid${showAllTeam ? '' : ' lp-team-grid--collapsed'}`}>
             {TEAM.map(m => (
-              <div className="lp-team-card" key={m.name}>
+              <div
+                className={`lp-team-card${m.badge === 'coord' ? ' lp-team-card--coord' : m.badge === 'lead' ? ' lp-team-card--lead' : ''}`}
+                key={m.name}
+              >
                 <div className="lp-team-name">{m.name}</div>
                 <div className="lp-team-role">{m.role}</div>
                 {m.badge === 'coord' && <span className="lp-badge lp-badge--coord">Coordenador</span>}
@@ -238,18 +332,34 @@ export default function LandingPage({ onNavigate }: Props) {
               </div>
             ))}
           </div>
+          <button
+            className="lp-team-toggle"
+            onClick={() => setShowAllTeam(v => !v)}
+            aria-expanded={showAllTeam}
+          >
+            {showAllTeam
+              ? '↑ Ver menos'
+              : `↓ Ver todos os ${TEAM.length} pesquisadores`}
+          </button>
         </div>
       </section>
 
       {/* Publications */}
-      <section className="lp-publications">
+      <section id="publicacoes" className="lp-publications">
         <p className="lp-section-label">Produção científica</p>
         <h2 className="lp-section-title">Publicações Científicas</h2>
-        <ol className="lp-pub-list">
+        <p className="lp-section-intro">
+          9 trabalhos publicados em simpósios e congressos nacionais e internacionais (2024–2026),
+          cobrindo downscaling regional, correção de viés, machine learning e análise do potencial eólico offshore.
+        </p>
+        <div className="lp-pub-grid">
           {PUBLICATIONS.map((pub, i) => (
-            <li key={i}>{pub}</li>
+            <div className="lp-pub-card" key={i}>
+              <span className="lp-pub-num" aria-hidden="true">{i + 1}</span>
+              <div className="lp-pub-content">{pub}</div>
+            </div>
           ))}
-        </ol>
+        </div>
       </section>
 
       {/* Footer */}
@@ -271,9 +381,22 @@ export default function LandingPage({ onNavigate }: Props) {
           </div>
           <div className="lp-footer-copyright">
             © 2024–2026 CS2I — SENAI CIMATEC. Financiado pelo CNPq — Processo 407949/2022-4.
+            <br />
+            <span className="lp-footer-updated">Última atualização: junho de 2026</span>
           </div>
         </div>
       </footer>
+
+      {/* Back to top */}
+      {showBackToTop && (
+        <button
+          className="lp-back-to-top"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Voltar ao topo da página"
+        >
+          ↑
+        </button>
+      )}
     </div>
   )
 }

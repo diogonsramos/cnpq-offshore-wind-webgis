@@ -39,12 +39,13 @@ Não confundir com:
 ```
 tests/
 └── e2e/
-    ├── 01-landing-page.spec.ts    # Conteúdo e seções da landing page
-    ├── 02-navigation.spec.ts      # Navegação entre landing e sistema (CTAs, ← Home)
-    └── 03-responsiveness.spec.ts  # Layout responsivo em 3 breakpoints
+    ├── 01-landing-page.spec.ts           # Conteúdo, seções e interações da landing page
+    ├── 02-navigation.spec.ts             # Navegação entre landing e sistema (CTAs, gallery cards, ← Home)
+    ├── 03-responsiveness.spec.ts         # Layout responsivo em 3 breakpoints
+    └── 04-scroll-and-inpage-nav.spec.ts  # Scroll vertical, âncoras in-page, botão "Voltar ao topo"
 ```
 
-Cada arquivo cobre um contexto funcional. Novos contextos (ex: mapa, dashboard, FAQ) ganham **novos arquivos** numerados em sequência: `04-map.spec.ts`, `05-dashboard.spec.ts`, etc.
+Cada arquivo cobre um contexto funcional. Novos contextos (ex: mapa, dashboard, FAQ) ganham **novos arquivos** numerados em sequência: `05-map.spec.ts`, `06-dashboard.spec.ts`, etc.
 
 ### Convenções de nomenclatura
 
@@ -55,7 +56,7 @@ Cada arquivo cobre um contexto funcional. Novos contextos (ex: mapa, dashboard, 
 
 ### Configuração (`playwright.config.ts`)
 
-- **Base URL:** `http://localhost:5173`
+- **Base URL:** `http://localhost:3000`
 - **Dev server:** iniciado automaticamente por `webServer` com `reuseExistingServer: true` (se já estiver rodando, reutiliza)
 - **Browser:** Chromium (único projeto configurado; adicionar Firefox/Safari conforme necessidade)
 - **Artefatos:** screenshots de falha e traces em `tests/results/` (ignorado pelo git)
@@ -88,13 +89,13 @@ pnpm test:e2e tests/e2e/02-navigation.spec.ts
 pnpm test:e2e --grep "T04"
 ```
 
-### Saída esperada (suite completa — 21 testes)
+### Saída esperada (suite completa — 31 testes)
 
 ```
-21 passed (~13 s)
+31 passed (~14 s)
 ```
 
-Qualquer número diferente de `21 passed` indica falha ou teste faltando. Investigate antes de continuar.
+Qualquer número diferente de `31 passed` indica falha ou teste faltando. Investigate antes de continuar.
 
 ---
 

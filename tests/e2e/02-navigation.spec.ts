@@ -27,6 +27,20 @@ test.describe('Navegação: Landing → Sistema', () => {
     await expect(page.locator('.tab-bar')).toBeVisible()
     await expect(page.locator('.landing')).not.toBeVisible()
   })
+
+  test('T12 — gallery card "WebGIS Map" abre o mapa', async ({ page }) => {
+    await page.goto('/')
+    await page.click('.lp-gallery-card[aria-label="Abrir WebGIS Map"]')
+    await expect(page.locator('.tab-bar')).toBeVisible()
+    await expect(page.locator('.landing')).not.toBeVisible()
+  })
+
+  test('T13 — gallery card "Dashboard" abre o dashboard', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.lp-gallery-card[aria-label*="Dashboard"]').first().click()
+    await expect(page.locator('.tab-bar')).toBeVisible()
+    await expect(page.locator('.dashboard-view')).toBeVisible()
+  })
 })
 
 test.describe('Navegação: Sistema → Landing (botão ← Home)', () => {

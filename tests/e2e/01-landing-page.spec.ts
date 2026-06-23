@@ -62,7 +62,7 @@ test.describe('Landing Page — seções de conteúdo', () => {
   })
 
   test('PublicationsSection — 9 publicações listadas', async ({ page }) => {
-    const items = page.locator('.lp-pub-list li')
+    const items = page.locator('.lp-pub-card')
     await expect(items).toHaveCount(9)
   })
 
@@ -81,5 +81,23 @@ test.describe('Landing Page — seções de conteúdo', () => {
     expect(logoStatuses.length).toBeGreaterThan(0)
     // 200 (fresh) e 304 (cached) são ambos válidos; qualquer 4xx/5xx indica falha
     expect(logoStatuses.every(s => s < 400)).toBe(true)
+  })
+})
+
+test.describe('TeamSection — colapso e expansão', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('T26 — botão de toggle visível e colapsado por padrão', async ({ page }) => {
+    await expect(page.locator('.lp-team-toggle')).toBeVisible()
+    await expect(page.locator('.lp-team-toggle')).toContainText('Ver todos os 17 pesquisadores')
+    await expect(page.locator('.lp-team-toggle')).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  test('T27 — clique no toggle expande todos os membros da equipe', async ({ page }) => {
+    await page.click('.lp-team-toggle')
+    await expect(page.locator('.lp-team-toggle')).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.locator('.lp-team-toggle')).toContainText('Ver menos')
   })
 })

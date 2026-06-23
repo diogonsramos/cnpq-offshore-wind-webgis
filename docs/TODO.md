@@ -4,6 +4,104 @@ Este documento centraliza as atividades necessárias para corrigir as regressõe
 
 ---
 
+## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
+
+> **Status:** Implementado e validado.
+
+### Problemas críticos resolvidos
+
+| Item | Resolução |
+|---|---|
+| Scroll bloqueado na landing page | `useEffect` em `App.tsx` adiciona/remove `landing-mode` em `document.documentElement`; `App.css` sobrescreve `overflow:hidden` via `html.landing-mode` |
+| `overflow-y: auto` sem efeito no `.landing` | Removida dependência de scroll no componente; scroll agora ocorre no nível de documento |
+
+### UX e navegação
+
+| Item | Resolução |
+|---|---|
+| Ausência de menu de navegação entre seções | Adicionados links de âncora `.lp-nav-anchor` no navbar (Metodologia, Cenários, Interface, Equipe, Publicações) — ocultos em ≤ 900 px |
+| Indicador de seção ativa | `useEffect` com `window.scroll` listener detecta posição atual e aplica classe `.active` no link correspondente |
+| Botão "Voltar ao topo" ausente | Botão `.lp-back-to-top` fixo no canto inferior direito; aparece após 400 px de scroll; `window.scrollTo({ top: 0 })` |
+
+### Design e tipografia
+
+| Item | Resolução |
+|---|---|
+| Publicações difíceis de escanear | `<ol>` substituída por grid de cards `.lp-pub-card` com número circular, tipografia e hover |
+| Sem diferenciação visual entre cenários históricos e futuros | Adicionados `lp-scenario-card--historical` (verde) e `lp-scenario-card--future` (vermelho) + legenda |
+| Cards da galeria não pareciam clicáveis | Convertidos de `<div>` para `<button>`, com hover animado, descrição da visualização e `onClick` funcional |
+| Equipe sem destaque para papéis principais | `.lp-team-card--coord` (borda escura) e `.lp-team-card--lead` (borda azul) |
+| Espaçamento e line-height insuficientes | `line-height: 1.9` nos parágrafos; padding das seções aumentado para `72px`; `max-width: 56ch` nos parágrafos |
+
+### Acessibilidade
+
+| Item | Resolução |
+|---|---|
+| Ausência de `alt` em ícones/imagens | Todos os `<img>` têm `alt` descritivo; ícones decorativos têm `aria-hidden="true"` |
+| `<th>` sem `scope` | `scope="col"` adicionado na tabela técnica |
+| Foco de teclado | `:focus-visible` adicionado em todos os botões interativos |
+| Roles ausentes | `aria-label` nos `<nav>`, botões de galeria e botão "Voltar ao topo" |
+
+### Correção de configuração
+
+| Item | Resolução |
+|---|---|
+| `playwright.config.ts` apontava para porta 5173; dev server roda na 3000 | `baseURL` e `webServer.url` atualizados para `http://localhost:3000` |
+
+### Arquivos modificados
+
+| Arquivo | Mudança |
+|---|---|
+| `src/App.tsx` | `useEffect` para toggling de `landing-mode` em `document.documentElement` |
+| `src/App.css` | Regras `html.landing-mode` para desabilitar `overflow:hidden` global |
+| `src/components/LandingPage.tsx` | In-page nav, back-to-top, gallery como buttons, pub cards, scenario differentiation, acessibilidade |
+| `src/components/LandingPage.css` | Estilos para todos os novos elementos; typography improvements |
+| `playwright.config.ts` | Porta corrigida: 5173 → 3000 |
+| `CLAUDE.md` | Porta e contagem de testes atualizadas |
+
+### Resultados da suite de testes — 2026-06-22 (atualizado)
+
+**31/31 testes passando** em Chromium headless — tempo total: ~14 s.
+
+| Arquivo | Testes | Status |
+|---|---|---|
+| `01-landing-page.spec.ts` | 12 | ✅ 12 passando |
+| `02-navigation.spec.ts` | 9 | ✅ 9 passando |
+| `03-responsiveness.spec.ts` | 4 | ✅ 4 passando |
+| `04-scroll-and-inpage-nav.spec.ts` | 6 | ✅ 6 passando |
+
+---
+
+## ✅ 1.E. Novos testes para gallery cards e team toggle — 2026-06-22
+
+> **Status:** Implementado e validado.
+
+### Contexto
+
+Após implementação das correções do TOFIX.md (seção 1.D), identificou-se que dois comportamentos novos não estavam cobertos por testes:
+
+1. **Gallery cards como botões de navegação** — convertidos de `<div>` para `<button>` com `onClick` funcional; ausência de testes para esse novo ponto de entrada da navegação.
+2. **Botão de colapso/expansão da equipe** — novo `<button class="lp-team-toggle">` com estado `aria-expanded`; comportamento toggle sem cobertura.
+
+### Testes adicionados
+
+| ID | Arquivo | O que valida |
+|---|---|---|
+| T12 | `02-navigation.spec.ts` | Gallery card "Abrir WebGIS Map" navega para o mapa |
+| T13 | `02-navigation.spec.ts` | Gallery card "Dashboard" (primeiro) navega para o dashboard |
+| T26 | `01-landing-page.spec.ts` | `.lp-team-toggle` visível, texto "Ver todos os 17 pesquisadores", `aria-expanded=false` no carregamento |
+| T27 | `01-landing-page.spec.ts` | Clique no toggle define `aria-expanded=true` e exibe texto "Ver menos" |
+
+### Arquivos modificados
+
+| Arquivo | Mudança |
+|---|---|
+| `tests/e2e/02-navigation.spec.ts` | T12 e T13 adicionados ao describe `'Navegação: Landing → Sistema'` |
+| `tests/e2e/01-landing-page.spec.ts` | Novo describe `'TeamSection — colapso e expansão'` com T26 e T27 |
+| `CLAUDE.md` | Estrutura de testes e contagem atualizadas para 31 |
+
+---
+
 ## 🚀 1. Landing Page (Página Inicial)
 > **Objetivo:** Criar uma porta de entrada institucional e moderna para o sistema, eliminando o carregamento direto do mapa pesado e contextualizando o fomento do CNPq.
 > **Status:** ✅ Implementada e validada — 2026-06-21
