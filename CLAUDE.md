@@ -42,10 +42,11 @@ tests/
     ├── 01-landing-page.spec.ts           # Conteúdo, seções e interações da landing page
     ├── 02-navigation.spec.ts             # Navegação entre landing e sistema (CTAs, gallery cards, ← Home)
     ├── 03-responsiveness.spec.ts         # Layout responsivo em 3 breakpoints
-    └── 04-scroll-and-inpage-nav.spec.ts  # Scroll vertical, âncoras in-page, botão "Voltar ao topo"
+    ├── 04-scroll-and-inpage-nav.spec.ts  # Scroll vertical, âncoras in-page, botão "Voltar ao topo"
+    └── 05-team-and-faq.spec.ts           # Cards de equipe (avatar, Lattes) e FAQ accordion
 ```
 
-Cada arquivo cobre um contexto funcional. Novos contextos (ex: mapa, dashboard, FAQ) ganham **novos arquivos** numerados em sequência: `05-map.spec.ts`, `06-dashboard.spec.ts`, etc.
+Cada arquivo cobre um contexto funcional. Novos contextos ganham **novos arquivos** numerados em sequência: `06-map.spec.ts`, `07-dashboard.spec.ts`, etc.
 
 ### Convenções de nomenclatura
 
@@ -89,13 +90,13 @@ pnpm test:e2e tests/e2e/02-navigation.spec.ts
 pnpm test:e2e --grep "T04"
 ```
 
-### Saída esperada (suite completa — 31 testes)
+### Saída esperada (suite completa — 41 testes)
 
 ```
-31 passed (~14 s)
+41 passed (~17 s)
 ```
 
-Qualquer número diferente de `31 passed` indica falha ou teste faltando. Investigate antes de continuar.
+Qualquer número diferente de `41 passed` indica falha ou teste faltando. Investigate antes de continuar.
 
 ---
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { TabId } from './TabBar'
+import { FAQS } from '../lib/metadata'
 import './LandingPage.css'
 
 interface Props {
@@ -58,24 +59,30 @@ const SCENARIOS: {
   },
 ]
 
-const TEAM: { name: string; role: string; badge: 'coord' | 'lead' | null }[] = [
-  { name: 'Davidson Martins Moreira', role: 'Coordenador', badge: 'coord' },
-  { name: 'Diogo Nunes da Silva Ramos', role: 'Pesquisador Líder', badge: 'lead' },
-  { name: 'Allan Rodrigues Silva', role: 'Pesquisador Líder', badge: 'lead' },
-  { name: 'Thalyta Soares dos Santos', role: 'Pesquisadora', badge: null },
-  { name: 'Francisco José de Lopes Lima', role: 'Pesquisador', badge: null },
-  { name: 'Wendy Mary da Silveira Pires', role: 'Pesquisadora', badge: null },
-  { name: 'Georgynio Yossimar Rosales Aylas', role: 'Pesquisador', badge: null },
-  { name: 'Arthur Lúcide Cotta Weyll', role: 'Pesquisador', badge: null },
-  { name: 'Luan Santos de Oliveira Silva', role: 'Pesquisador', badge: null },
-  { name: 'Marcelo Pizzuti Pes', role: 'Pesquisador', badge: null },
-  { name: 'Ana Paula Paes dos Santos', role: 'Pesquisadora', badge: null },
-  { name: 'William Duarte Jacondino', role: 'Pesquisador', badge: null },
-  { name: 'Hallan Souza de Jesus', role: 'Pesquisador', badge: null },
-  { name: 'Yasmin Kaore Lago Kitagawa', role: 'Pesquisadora', badge: null },
-  { name: 'Rosiberto Salustiano da Silva Júnior', role: 'Pesquisador', badge: null },
-  { name: 'Allan Cavalcante Araujo', role: 'Pesquisador', badge: null },
-  { name: 'Sofia Alexandrino Lage', role: 'Pesquisadora', badge: null },
+const TEAM: {
+  name: string
+  role: string
+  badge: 'coord' | 'lead' | null
+  photo: string
+  lattes: string
+}[] = [
+  { name: 'Davidson Martins Moreira', role: 'Coordenador', badge: 'coord', photo: 'davidson_martins_moreira.png', lattes: 'http://lattes.cnpq.br/2331953711858907' },
+  { name: 'Diogo Nunes da Silva Ramos', role: 'Pesquisador Líder', badge: 'lead', photo: 'diogo_nunes_da_silva_ramos.png', lattes: 'http://lattes.cnpq.br/1800868291881642' },
+  { name: 'Allan Rodrigues Silva', role: 'Pesquisador Líder', badge: 'lead', photo: 'allan_rodrigues_silva.png', lattes: 'http://lattes.cnpq.br/3039238491404721' },
+  { name: 'Thalyta Soares dos Santos', role: 'Pesquisadora', badge: null, photo: 'thalyta_soares_dos_santos.png', lattes: 'http://lattes.cnpq.br/1562606151582291' },
+  { name: 'Francisco José de Lopes Lima', role: 'Pesquisador', badge: null, photo: 'francisco_jose_lopes_de_lima.png', lattes: 'http://lattes.cnpq.br/8300602270954491' },
+  { name: 'Wendy Mary da Silveira Pires', role: 'Pesquisadora', badge: null, photo: 'wendy_mary_da_silveira_pires.png', lattes: 'http://lattes.cnpq.br/4862701131287048' },
+  { name: 'Georgynio Yossimar Rosales Aylas', role: 'Pesquisador', badge: null, photo: 'georgynio_yossimar_rosales_aylas.png', lattes: 'http://lattes.cnpq.br/2713639453901216' },
+  { name: 'Arthur Lúcide Cotta Weyll', role: 'Pesquisador', badge: null, photo: 'arthur_lucide_cotta_weyll.png', lattes: 'http://lattes.cnpq.br/0409673252774301' },
+  { name: 'Luan Santos de Oliveira Silva', role: 'Pesquisador', badge: null, photo: 'luan_santos_de_oliveira_silva.png', lattes: 'http://lattes.cnpq.br/5923452659289478' },
+  { name: 'Marcelo Pizzuti Pes', role: 'Pesquisador', badge: null, photo: 'marcelo_pizzuti_pes.png', lattes: 'http://lattes.cnpq.br/5614389162739082' },
+  { name: 'Ana Paula Paes dos Santos', role: 'Pesquisadora', badge: null, photo: 'ana_paula_paes_dos_santos.png', lattes: 'http://lattes.cnpq.br/0287853035799329' },
+  { name: 'William Duarte Jacondino', role: 'Pesquisador', badge: null, photo: 'william_duarte_jacondino.png', lattes: 'http://lattes.cnpq.br/1111671373753798' },
+  { name: 'Hallan Souza de Jesus', role: 'Pesquisador', badge: null, photo: 'hallan_souza_de_jesus.png', lattes: 'http://lattes.cnpq.br/1996145337862107' },
+  { name: 'Yasmin Kaore Lago Kitagawa', role: 'Pesquisadora', badge: null, photo: 'default_image.png', lattes: 'http://lattes.cnpq.br/5503607216137253' },
+  { name: 'Rosiberto Salustiano da Silva Júnior', role: 'Pesquisador', badge: null, photo: 'rosiberto_salustiano_da_silva_junior.png', lattes: 'http://lattes.cnpq.br/1798232201205174' },
+  { name: 'Allan Cavalcante Araujo', role: 'Pesquisador', badge: null, photo: 'allan_cavalcante_araujo.png', lattes: 'http://lattes.cnpq.br/5127547423362922' },
+  { name: 'Sofia Alexandrino Lage', role: 'Pesquisadora', badge: null, photo: 'sofia_alexandrino_lage.png', lattes: 'http://lattes.cnpq.br/8666873652216091' },
 ]
 
 const PUBLICATIONS = [
@@ -107,14 +114,18 @@ const NAV_SECTIONS = [
   { id: 'interface', label: 'Interface' },
   { id: 'equipe', label: 'Equipe' },
   { id: 'publicacoes', label: 'Publicações' },
+  { id: 'faq', label: 'FAQ' },
 ]
 
 const logoBase = import.meta.env.BASE_URL + 'images/logos/'
+const teamBase = import.meta.env.BASE_URL + 'images/team/'
+const defaultPhoto = teamBase + 'default_image.png'
 
 export default function LandingPage({ onNavigate }: Props) {
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [activeSection, setActiveSection] = useState('')
   const [showAllTeam, setShowAllTeam] = useState(false)
+  const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null)
 
   useEffect(() => {
     const OFFSETS = NAV_SECTIONS.map(s => s.id)
@@ -321,15 +332,31 @@ export default function LandingPage({ onNavigate }: Props) {
           </p>
           <div className={`lp-team-grid${showAllTeam ? '' : ' lp-team-grid--collapsed'}`}>
             {TEAM.map(m => (
-              <div
+              <a
                 className={`lp-team-card${m.badge === 'coord' ? ' lp-team-card--coord' : m.badge === 'lead' ? ' lp-team-card--lead' : ''}`}
                 key={m.name}
+                href={m.lattes}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Ver currículo Lattes de ${m.name}`}
               >
-                <div className="lp-team-name">{m.name}</div>
-                <div className="lp-team-role">{m.role}</div>
-                {m.badge === 'coord' && <span className="lp-badge lp-badge--coord">Coordenador</span>}
-                {m.badge === 'lead' && <span className="lp-badge lp-badge--lead">Pesquisador Líder</span>}
-              </div>
+                <div className="lp-team-avatar-wrap">
+                  <img
+                    className="lp-team-avatar"
+                    src={teamBase + m.photo}
+                    alt={`Foto de ${m.name}`}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = defaultPhoto }}
+                    loading="lazy"
+                  />
+                </div>
+                <div className="lp-team-info">
+                  <div className="lp-team-name">{m.name}</div>
+                  <div className="lp-team-role">{m.role}</div>
+                  {m.badge === 'coord' && <span className="lp-badge lp-badge--coord">Coordenador</span>}
+                  {m.badge === 'lead' && <span className="lp-badge lp-badge--lead">Pesquisador Líder</span>}
+                  <span className="lp-team-lattes-hint" aria-hidden="true">Ver Lattes ↗</span>
+                </div>
+              </a>
             ))}
           </div>
           <button
@@ -359,6 +386,38 @@ export default function LandingPage({ onNavigate }: Props) {
               <div className="lp-pub-content">{pub}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="lp-faq">
+        <div className="lp-faq-inner">
+          <p className="lp-section-label">Dúvidas frequentes</p>
+          <h2 className="lp-section-title">FAQ</h2>
+          <p className="lp-section-intro">
+            Respostas sobre dados, metodologia e uso do sistema.{' '}
+            <button className="lp-faq-enter-link" onClick={() => onNavigate('map')}>
+              Acesse o WebGIS
+            </button>{' '}
+            para explorar os resultados interativamente.
+          </p>
+          <div className="lp-faq-list">
+            {FAQS.map((faq, i) => (
+              <div className={`lp-faq-item${openFaqIdx === i ? ' lp-faq-item--open' : ''}`} key={i}>
+                <button
+                  className="lp-faq-question"
+                  onClick={() => setOpenFaqIdx(openFaqIdx === i ? null : i)}
+                  aria-expanded={openFaqIdx === i}
+                >
+                  <span>{faq.q}</span>
+                  <span className="lp-faq-icon" aria-hidden="true">{openFaqIdx === i ? '−' : '+'}</span>
+                </button>
+                {openFaqIdx === i && (
+                  <div className="lp-faq-answer">{faq.a}</div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

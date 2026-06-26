@@ -13,14 +13,15 @@ Visualizador geográfico interativo para dados de vento e densidade de potência
 
 ### Landing Page institucional
 
-- **NavbarTop** — logo PEOB/CNPq, links de âncora para seções (Metodologia, Cenários, Interface, Equipe, Publicações) e botão "Entrar no Sistema"
+- **NavbarTop** — logo PEOB/CNPq, links de âncora para seções (Metodologia, Cenários, Interface, Equipe, Publicações, FAQ) e botão "Entrar no Sistema"
 - **HeroSection** — título oficial, CTAs primário (WebGIS Map) e secundário (Analytical Dashboard)
 - **StatsStrip** — 5 indicadores técnicos em destaque
 - **Resumo Técnico** — texto descritivo + tabela de parâmetros do modelo
 - **Cenários Simulados** — 4 cards com diferenciação visual entre cenários históricos (verde) e futuros (vermelho)
 - **Visualizações** — galeria de cards clicáveis com descrição de cada ferramenta
-- **Equipe** — 17 pesquisadores com destaque visual para coordenador e líderes
+- **Equipe** — 17 pesquisadores com avatar circular, link para currículo Lattes e destaque visual para coordenador e líderes
 - **Publicações** — 9 publicações científicas em cards escaneáveis
+- **FAQ** — accordion com 20 perguntas frequentes (mesmo conteúdo do WebGIS), com link de entrada para o sistema
 - **Footer** — logos institucionais, citação oficial e disclaimer de dados
 
 ### Sistema de análise
@@ -90,17 +91,18 @@ pnpm test:e2e:ui   # modo visual para depuração
 ### Saída esperada
 
 ```
-27 passed (~14 s)
+41 passed (~17 s)
 ```
 
 ### Cobertura de testes
 
 | Arquivo | Testes | Contexto |
 |---|---|---|
-| `01-landing-page.spec.ts` | 9 | Seções, contagens de elementos, logos |
-| `02-navigation.spec.ts` | 7 | CTAs, navbar, botão `← Home`, persistência de aba |
+| `01-landing-page.spec.ts` | 12 | Seções, contagens de elementos, logos |
+| `02-navigation.spec.ts` | 9 | CTAs, navbar, botão `← Home`, persistência de aba |
 | `03-responsiveness.spec.ts` | 4 | Scroll horizontal nos 3 breakpoints (1280/768/375 px) |
 | `04-scroll-and-inpage-nav.spec.ts` | 6 | Scroll vertical, âncoras, botão "Voltar ao topo" |
+| `05-team-and-faq.spec.ts` | 10 | Avatares, links Lattes, FAQ accordion |
 
 #### Detalhamento por arquivo
 
@@ -146,10 +148,25 @@ pnpm test:e2e:ui   # modo visual para depuração
 |---|---|
 | T20 | `window.scrollY` aumenta após `scrollBy` |
 | T21 | `scrollHeight` > `clientHeight` |
-| T22 | Navbar contém 5 links `.lp-nav-anchor` |
-| T23 | Seções têm IDs `metodologia`, `cenarios`, `interface`, `equipe`, `publicacoes` |
+| T22 | Navbar contém 6 links `.lp-nav-anchor` |
+| T23 | Seções têm IDs `metodologia`, `cenarios`, `interface`, `equipe`, `publicacoes`, `faq` |
 | T24 | Botão `.lp-back-to-top` oculto no carregamento |
 | T25 | Botão `.lp-back-to-top` visível após scroll |
+
+**`05-team-and-faq.spec.ts`**
+
+| Teste | O que valida |
+|---|---|
+| T28 | Exatamente 17 `.lp-team-avatar` visíveis |
+| T29 | Todos os cards têm `href` com `lattes.cnpq.br` |
+| T30 | `.lp-team-card--coord` com exatamente 1 card (Davidson) |
+| T31 | `.lp-team-card--lead` com exatamente 2 cards |
+| T32 | Seção `#faq` e `.lp-faq-list` presentes |
+| T33 | Exatamente 20 `.lp-faq-item` |
+| T34 | Todas as perguntas fechadas por padrão (`aria-expanded=false`) |
+| T35 | Clique em pergunta abre a resposta |
+| T36 | Clique em pergunta aberta a fecha |
+| T37 | Abrir nova pergunta fecha a anterior |
 
 ---
 
@@ -168,6 +185,7 @@ cnpq-offshore-wind-webgis/
 │   │   └── geoparquet/wrf/       # GeoParquet de consultas analíticas (~228 MB)
 │   │       └── {experimento}/all_seasons.parquet
 │   ├── images/logos/             # Logomarcas (CNPq, PEOB, SENAI CIMATEC)
+│   └── images/team/              # Fotos dos pesquisadores (avatares)
 │   └── parquet_wasm_bg.wasm      # Runtime WebAssembly para leitura de Parquet
 ├── src/
 │   ├── components/
@@ -197,7 +215,8 @@ cnpq-offshore-wind-webgis/
 │   ├── 01-landing-page.spec.ts   # 9 testes — conteúdo da landing page
 │   ├── 02-navigation.spec.ts     # 7 testes — navegação landing ↔ sistema
 │   ├── 03-responsiveness.spec.ts # 4 testes — layout responsivo (3 breakpoints)
-│   └── 04-scroll-and-inpage-nav.spec.ts  # 6 testes — scroll e âncoras
+│   ├── 04-scroll-and-inpage-nav.spec.ts  # 6 testes — scroll e âncoras
+│   └── 05-team-and-faq.spec.ts          # 10 testes — avatares, Lattes, FAQ accordion
 ├── docs/
 │   ├── INFO_PROJECT.md           # Fonte oficial de metadados (equipe, parâmetros, citação)
 │   ├── TODO.md                   # Roadmap por fases
