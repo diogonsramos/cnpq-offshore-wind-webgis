@@ -2,19 +2,17 @@ import { useEffect, useRef, useState, memo, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { renderCog } from '../lib/cogTileRenderer'
-import { buildCogUrl, type Dataset, type Variable, type Height, type Season, type Region, type BathyBand } from '../lib/cogCatalog'
+import { buildCogUrl, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
 import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '../lib/pixelQuery'
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
 import BasemapSwitcher from './BasemapSwitcher'
 
 interface MapViewProps {
+  model: Model
   dataset: Dataset
   variable: Variable
   height: Height
   season: Season
-  region: Region
-  state: string
-  bathyBand: BathyBand
   showBathymetry: boolean
   bathyLayer: string
   basemap: string
@@ -32,10 +30,12 @@ const BF = 'bathy-fill'
 const BL = 'bathy-line'
 
 const BATHY_FILES: Record<string, string> = {
-  batimetria_subfaixas_estadual: '/data/bathymetry/batimetria_subfaixas_estadual_cured.geojson',
-  batimetria_0_20_50_75_100m: '/data/bathymetry/batimetria_0_20_50_75_100m_cured.geojson',
-  batimetria_0_100m: '/data/bathymetry/batimetria_0_100m_cured.geojson',
-  batimetria_0_100m_estadual: '/data/bathymetry/batimetria_0_100m_estadual_cured.geojson',
+  mn_zee_nacional: '/data/shp/mn_zee_nacional.geojson',
+  mn_zee_estadual: '/data/shp/mn_zee_estadual.geojson',
+  bathy_0_100_nacional: '/data/shp/bathy_0_100_nacional.geojson',
+  bathy_0_100_estadual: '/data/shp/bathy_0_100_estadual.geojson',
+  bathy_0_20_50_75_100_nacional: '/data/shp/bathy_0_20_50_75_100_nacional.geojson',
+  bathy_0_20_50_75_100_estadual: '/data/shp/bathy_0_20_50_75_100_estadual.geojson',
 }
 
 const BASEMAP_TILES: Record<string, { tiles: string[]; attribution: string }> = {
@@ -60,20 +60,17 @@ const PIN_OUTLINE_LYR = 'pin-outline-lyr'
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MapViewInner(props: MapViewProps) {
-  const { dataset, variable, height, season, region, state, bathyBand, showBathymetry, bathyLayer, basemap, onBasemapChange, onPixelClick, pinnedLocations, onAddPin, onRemovePin } = props
+  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, basemap, onBasemapChange, onPixelClick, pinnedLocations, onAddPin, onRemovePin } = props
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const datasetRef = useRef(dataset)
   datasetRef.current = dataset
+  const modelRef = useRef(model)
+  modelRef.current = model
   const [ready, setReady] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const cache = useRef<Map<string, any>>(new Map())
-
-  const initParquet = useCallback(async (exp: Dataset) => {
-    onPixelClick(null, true, false, 0)
-    await loadParquet(exp)
-    onPixelClick(null, false, true, getRecordCount())
-  }, [onPixelClick])
+  const cogAbort = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (!container.current || map.current) return
@@ -83,7 +80,7 @@ function MapViewInner(props: MapViewProps) {
         version: 8,
         sources: {
           'basemap-street': { type: 'raster', tiles: BASEMAP_TILES.street.tiles, tileSize: 256, attribution: BASEMAP_TILES.street.attribution },
-          'basemap-satellite': { type: 'raster', tiles: BASEMAP_TILES.satellite.tiles, tileSize: 256, attribution: BASEMAP_TILES.satellite.attribution, visibility: 'none' },
+          'basemap-satellite': { type: 'raster', tiles: BASEMAP_TILES.satellite.tiles, tileSize: 256, attribution: BASEMAP_TILES.satellite.attribution },
           'basemap-dark': { type: 'raster', tiles: BASEMAP_TILES.dark.tiles, tileSize: 256, attribution: BASEMAP_TILES.dark.attribution },
         },
         layers: [
@@ -98,13 +95,14 @@ function MapViewInner(props: MapViewProps) {
       maxZoom: 10,
     })
     m.addControl(new maplibregl.NavigationControl(), 'bottom-right')
-    m.on('load', () => { setReady(true); initParquet(dataset) })
+    m.on('load', () => { setReady(true) })
     m.on('click', (e: maplibregl.MapMouseEvent) => {
       const { lng, lat } = e.lngLat
       const exp = datasetRef.current
+      const mdl = modelRef.current
       if (!isLoaded()) {
         onPixelClick(null, true, false, 0)
-        loadParquet(exp).then(() => {
+        loadParquet(exp, mdl).then(() => {
           const p = queryNearest(lat, lng)
           onPixelClick(p, false, true, getRecordCount())
         })
@@ -132,7 +130,13 @@ function MapViewInner(props: MapViewProps) {
   const drawCog = useCallback(async () => {
     const m = map.current
     if (!m || !ready) return
-    const url = buildCogUrl(dataset, variable, height, season, region, state, bathyBand)
+
+    if (cogAbort.current) cogAbort.current.abort()
+    const ac = new AbortController()
+    cogAbort.current = ac
+    const signal = ac.signal
+
+    const url = buildCogUrl(dataset, variable, height, season, model)
 
     if (m.getLayer(LR)) m.removeLayer(LR)
     if (m.getSource(SR)) m.removeSource(SR)
@@ -147,12 +151,15 @@ function MapViewInner(props: MapViewProps) {
     }
     if (vb.north <= vb.south || vb.east <= vb.west) return
 
-    const result = await renderCog(url, vb, zoom, variable)
-    if (!result || !map.current) return
+    const result = await renderCog(url, vb, zoom, variable, signal)
+    if (signal.aborted || !result || !map.current) return
 
     const { dataUrl, coords } = result
     const [west, south, east, north] = coords
     if (!isFinite(west) || !isFinite(south) || !isFinite(east) || !isFinite(north)) return
+
+    if (m.getSource(SR)) m.removeSource(SR)
+    if (m.getLayer(LR)) m.removeLayer(LR)
 
     m.addSource(SR, {
       type: 'image',
@@ -165,7 +172,9 @@ function MapViewInner(props: MapViewProps) {
       ],
     })
     m.addLayer({ id: LR, type: 'raster', source: SR, paint: { 'raster-opacity': 0.7, 'raster-fade-duration': 0 } })
-  }, [dataset, variable, height, season, region, state, bathyBand, ready])
+    if (m.getLayer(PIN_OUTLINE_LYR)) m.moveLayer(PIN_OUTLINE_LYR)
+    if (m.getLayer(PIN_LYR)) m.moveLayer(PIN_LYR)
+  }, [dataset, variable, height, season, model, ready])
 
   useEffect(() => {
     const m = map.current
@@ -193,11 +202,6 @@ function MapViewInner(props: MapViewProps) {
       map.current.addLayer({ id: BL, type: 'line', source: BS, paint: { 'line-color': '#1a5a9e', 'line-width': 0.8, 'line-opacity': 0.5 } })
     })
   }, [showBathymetry, bathyLayer, ready])
-
-  useEffect(() => {
-    if (!ready) return
-    initParquet(dataset)
-  }, [dataset, ready, initParquet])
 
   // Pinned location markers
   useEffect(() => {
@@ -275,7 +279,17 @@ function MapViewInner(props: MapViewProps) {
 
   useEffect(() => {
     if (!ready) return
-    drawCogWithPins()
+    const m = map.current!
+    const idle = () => {
+      m.off('idle', idle)
+      drawCogWithPins()
+    }
+    m.on('idle', idle)
+    return () => { m.off('idle', idle) }
+  }, [drawCogWithPins, ready])
+
+  useEffect(() => {
+    if (!ready) return
     const m = map.current!
     const debounce = () => {
       if (timer.current) clearTimeout(timer.current)

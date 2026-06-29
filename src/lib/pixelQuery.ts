@@ -2,15 +2,77 @@ import initWasm, { readParquet } from 'parquet-wasm/esm/parquet_wasm.js'
 import { tableFromIPC, type Table } from 'apache-arrow'
 
 const WASM_URL = '/parquet_wasm_bg.wasm'
+const DB_NAME = 'webgis-cache'
+const DB_VERSION = 1
+const CACHE_PREFIX = 'parquet-'
+const CACHE_VERSION = 2
+const SEASONS = ['ANNUAL', 'DJF', 'MAM', 'JJA', 'SON']
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION)
+    req.onupgradeneeded = () => {
+      const db = req.result
+      if (!db.objectStoreNames.contains('parquet')) {
+        db.createObjectStore('parquet')
+      }
+    }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+}
+
+async function cacheGet(key: string): Promise<Uint8Array | null> {
+  try {
+    const db = await openDB()
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('parquet', 'readonly')
+      const req = tx.objectStore('parquet').get(key)
+      req.onsuccess = () => { resolve(req.result || null); db.close() }
+      req.onerror = () => { db.close(); reject(null) }
+    })
+  } catch { return null }
+}
+
+async function cacheSet(key: string, data: Uint8Array): Promise<void> {
+  try {
+    const db = await openDB()
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('parquet', 'readwrite')
+      tx.objectStore('parquet').put(data, key)
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject() }
+    })
+  } catch { /* ignore */ }
+}
+
+function cacheKey(experiment: string, model: string, season: string): string {
+  return `${CACHE_PREFIX}v${CACHE_VERSION}-${experiment}-${model}-${season.toLowerCase()}`
+}
+
+const HEIGHTS = [10, 50, 100, 150, 200]
 
 function safeArray(v: unknown): number[] {
-  if (Array.isArray(v)) return v as number[]
-  if (typeof v === 'string') {
-    try { const p = JSON.parse(v); return Array.isArray(p) ? p : [] } catch { return [] }
-  }
   if (v === null || v === undefined) return []
+  if (Array.isArray(v)) return v.map(x => x == null ? 0 : Number(x))
+  if (ArrayBuffer.isView(v)) return Array.from(v as ArrayLike<number>, x => Number(x))
+  if (typeof v === 'string') {
+    try { const p = JSON.parse(v); return Array.isArray(p) ? p.map(x => Number(x)) : [] } catch { return [] }
+  }
+  if (v && typeof v === 'object' && 'toArray' in v && typeof (v as any).toArray === 'function') {
+    return safeArray((v as any).toArray())
+  }
   if (typeof v === 'number' || typeof v === 'bigint') return [Number(v)]
   return []
+}
+
+function safeObject(v: unknown): Record<string, unknown> {
+  if (v && typeof v === 'object') return v as Record<string, unknown>
+  return {}
+}
+
+export interface HeightStats {
+  mean: number | null; min: number | null; max: number | null; std: number | null
 }
 
 export interface PixelDataSummary {
@@ -19,43 +81,48 @@ export interface PixelDataSummary {
   lon: number
   state: string
   bathy_zone: string
-  ws100: { mean: number | null; min: number | null; max: number | null; std: number | null }
-  ws10: { mean: number | null; min: number | null; max: number | null; std: number | null }
+  distance_nm: number
+  ws: Record<number, HeightStats>
+  wpd: Record<number, HeightStats>
   profile_heights: number[]
   profile_means: number[]
-  weibull: { k_10m: number | null; c_10m: number | null; k_100m: number | null; c_100m: number | null } | null
+  wpd_profile_means: number[]
+  weibull: Record<number, { k: number; c: number } | null>
 }
 
+interface RawWeibull { k: number; c: number }
+interface RawWindRose { freq: number; mean_ws: number }
+
 interface RawPixel {
+  [key: string]: unknown
   pixel_id: number
   lat: number
   lon: number
   state: string
   bathy_zone: string
-  ws100_ANNUAL_mean: number | null
-  ws100_ANNUAL_min: number | null
-  ws100_ANNUAL_max: number | null
-  ws100_ANNUAL_std: number | null
-  ws10_ANNUAL_mean: number | null
-  ws10_ANNUAL_min: number | null
-  ws10_ANNUAL_max: number | null
-  ws10_ANNUAL_std: number | null
+  distance_nm: number
   profile_heights: number[]
   profile_means: number[]
-  weibull_10m: { k: number; c: number } | null
-  weibull_100m: { k: number; c: number } | null
+  wpd_profile_means: number[]
+  weibull_10: RawWeibull | null
+  weibull_50: RawWeibull | null
+  weibull_100: RawWeibull | null
+  weibull_150: RawWeibull | null
+  weibull_200: RawWeibull | null
 }
 
 export interface SeasonalStats {
   season: string
-  ws10_mean: number | null
-  ws10_min: number | null
-  ws10_max: number | null
-  ws10_std: number | null
-  ws100_mean: number | null
-  ws100_min: number | null
-  ws100_max: number | null
-  ws100_std: number | null
+  ws10_mean: number | null; ws10_min: number | null; ws10_max: number | null; ws10_std: number | null
+  ws50_mean: number | null; ws50_min: number | null; ws50_max: number | null; ws50_std: number | null
+  ws100_mean: number | null; ws100_min: number | null; ws100_max: number | null; ws100_std: number | null
+  ws150_mean: number | null; ws150_min: number | null; ws150_max: number | null; ws150_std: number | null
+  ws200_mean: number | null; ws200_min: number | null; ws200_max: number | null; ws200_std: number | null
+  wpd10_mean: number | null; wpd10_min: number | null; wpd10_max: number | null; wpd10_std: number | null
+  wpd50_mean: number | null; wpd50_min: number | null; wpd50_max: number | null; wpd50_std: number | null
+  wpd100_mean: number | null; wpd100_min: number | null; wpd100_max: number | null; wpd100_std: number | null
+  wpd150_mean: number | null; wpd150_min: number | null; wpd150_max: number | null; wpd150_std: number | null
+  wpd200_mean: number | null; wpd200_min: number | null; wpd200_max: number | null; wpd200_std: number | null
 }
 
 export interface DashboardLocationData {
@@ -64,48 +131,81 @@ export interface DashboardLocationData {
   lon: number
   state: string
   bathy_zone: string
+  distance_nm: number
   seasons: SeasonalStats[]
   profile_heights: number[]
   profile_means: number[]
-  weibull_10m: { k: number; c: number } | null
-  weibull_100m: { k: number; c: number } | null
-  wind_rose: Record<string, { freq: number; mean_ws: number }> | null
+  wpd_profile_means: number[]
+  weibull: Record<number, { k: number; c: number } | null>
+  wind_rose: Record<number, Record<string, { freq: number; mean_ws: number }> | null>
+  heatmap: Record<string, number[] | null>
 }
-
-const SEASONS = ['ANNUAL', 'DJF', 'MAM', 'JJA', 'SON']
 
 let records: RawPixel[] = []
 let loaded = false
 let loading: Promise<void> | null = null
 let currentExperiment = ''
+let currentModel = 'wrf'
 let allSeasonMap: Map<number, Map<string, Record<string, unknown>>> | null = null
+let loadedSeasons = new Set<string>()
+let loadGen = 0
 
-function parquetUrl(experiment: string): string {
-  return `/data/geoparquet/wrf/${experiment.toLowerCase()}/all_seasons.parquet`
+function parquetUrl(experiment: string, season: string, model: string = 'wrf'): string {
+  return `/data/geoparquet/${model}/${experiment.toLowerCase()}/season=${season.toLowerCase()}/data.parquet`
 }
 
-export async function loadParquet(experiment: string = 'ERA5_atlas'): Promise<void> {
-  if (loaded && currentExperiment === experiment) return
-  loaded = false
-  loading = null
-  currentExperiment = ''
-  allSeasonMap = null
+async function fetchAndParseParquet(url: string, cacheKey: string): Promise<Table> {
+  let buf: Uint8Array | null = await cacheGet(cacheKey)
+  if (!buf) {
+    const resp = await fetch(url)
+    if (!resp.ok) throw new Error(`Failed to fetch parquet: ${resp.status} ${resp.statusText}`)
+    buf = new Uint8Array(await resp.arrayBuffer())
+    cacheSet(cacheKey, buf)
+  }
+  const wasmTable = readParquet(buf)
+  return tableFromIPC(wasmTable.intoIPCStream())
+}
+
+async function loadSeasonData(experiment: string, season: string, model: string): Promise<void> {
+  if (loadedSeasons.has(season)) return
+  const ck = cacheKey(experiment, model, season)
+  const url = parquetUrl(experiment, season, model)
+  const arrowTable = await fetchAndParseParquet(url, ck)
+
+  for (let i = 0; i < arrowTable.numRows; i++) {
+    const row = arrowTable.get(i)
+    if (!row) continue
+    const pixel_id = Number(row.pixel_id as number | bigint)
+    if (!allSeasonMap) continue
+    if (!allSeasonMap.has(pixel_id)) continue
+    const sm = allSeasonMap.get(pixel_id)!
+    const raw: Record<string, unknown> = {}
+    for (const key of Object.keys(row)) {
+      raw[key] = (row as Record<string, unknown>)[key]
+    }
+    sm.set(season, raw)
+  }
+  loadedSeasons.add(season)
+}
+
+export async function loadParquet(experiment: string = 'ERA5_atlas', model: string = 'wrf'): Promise<void> {
+  const myGen = ++loadGen
+  if (myGen !== loadGen) return
+
+  if (loaded && currentExperiment === experiment && currentModel === model && loadedSeasons.has('ANNUAL')) return
   if (loading) return loading
+
   loading = (async () => {
-    const url = parquetUrl(experiment)
     try {
       await initWasm(WASM_URL)
     } catch (e) {
       console.warn('initWasm failed:', e)
       throw e
     }
-    const resp = await fetch(url)
-    if (!resp.ok) {
-      throw new Error(`Failed to fetch parquet: ${resp.status} ${resp.statusText}`)
-    }
-    const buf = new Uint8Array(await resp.arrayBuffer())
-    const wasmTable = readParquet(buf)
-    const arrowTable = tableFromIPC(wasmTable.intoIPCStream())
+
+    const ck = cacheKey(experiment, model, 'annual')
+    const url = parquetUrl(experiment, 'annual', model)
+    const arrowTable = await fetchAndParseParquet(url, ck)
 
     const recordsMap = new Map<number, RawPixel>()
     const seasonMap = new Map<number, Map<string, Record<string, unknown>>>()
@@ -113,69 +213,97 @@ export async function loadParquet(experiment: string = 'ERA5_atlas'): Promise<vo
     for (let i = 0; i < arrowTable.numRows; i++) {
       const row = arrowTable.get(i)
       if (!row) continue
-      const pixel_id = (row.pixel_id as number | bigint)
-      const id = Number(pixel_id)
-      const season = String(row.season || '')
+      const pixel_id = Number(row.pixel_id as number | bigint)
+      const season = String(row.season || 'ANNUAL')
 
-      // Build per-season map
-      if (!seasonMap.has(id)) seasonMap.set(id, new Map())
+      if (!seasonMap.has(pixel_id)) seasonMap.set(pixel_id, new Map())
       const raw: Record<string, unknown> = {}
       for (const key of Object.keys(row)) {
         raw[key] = (row as Record<string, unknown>)[key]
       }
-      seasonMap.get(id)!.set(season, raw)
+      seasonMap.get(pixel_id)!.set(season, raw)
 
-      if (!recordsMap.has(id)) {
-        const lat = Number(row.lat)
-        const lon = Number(row.lon)
-        recordsMap.set(id, {
-          pixel_id: id, lat, lon,
+      if (!recordsMap.has(pixel_id)) {
+        recordsMap.set(pixel_id, {
+          pixel_id,
+          lat: Number(row.lat),
+          lon: Number(row.lon),
           state: String(row.state ?? ''),
           bathy_zone: String(row.bathy_zone ?? ''),
-          ws100_ANNUAL_mean: null,
-          ws100_ANNUAL_min: null,
-          ws100_ANNUAL_max: null,
-          ws100_ANNUAL_std: null,
-          ws10_ANNUAL_mean: null,
-          ws10_ANNUAL_min: null,
-          ws10_ANNUAL_max: null,
-          ws10_ANNUAL_std: null,
-          profile_heights: [],
-          profile_means: [],
-          weibull_10m: null,
-          weibull_100m: null,
+          distance_nm: Number(row.distance_nm ?? 0),
+          profile_heights: safeArray(row.profile_heights),
+          profile_means: safeArray(row.profile_means),
+          wpd_profile_means: safeArray(row.wpd_profile_means),
+          weibull_10: null, weibull_50: null, weibull_100: null, weibull_150: null, weibull_200: null,
         })
       }
 
-      const p = recordsMap.get(id)!
+      const p = recordsMap.get(pixel_id)!
       if (season === 'ANNUAL') {
-        p.ws100_ANNUAL_mean = Number(row.ws100_ANNUAL_mean ?? null)
-        p.ws100_ANNUAL_min = Number(row.ws100_ANNUAL_min ?? null)
-        p.ws100_ANNUAL_max = Number(row.ws100_ANNUAL_max ?? null)
-        p.ws100_ANNUAL_std = Number(row.ws100_ANNUAL_std ?? null)
-        p.ws10_ANNUAL_mean = Number(row.ws10_ANNUAL_mean ?? null)
-        p.ws10_ANNUAL_min = Number(row.ws10_ANNUAL_min ?? null)
-        p.ws10_ANNUAL_max = Number(row.ws10_ANNUAL_max ?? null)
-        p.ws10_ANNUAL_std = Number(row.ws10_ANNUAL_std ?? null)
-        p.weibull_10m = row.weibull_10m ? (row.weibull_10m as any as { k: number; c: number }) : null
-        p.weibull_100m = row.weibull_100m ? (row.weibull_100m as any as { k: number; c: number }) : null
+        p.weibull_10 = row.weibull_10 ? (row.weibull_10 as any as RawWeibull) : null
+        p.weibull_50 = row.weibull_50 ? (row.weibull_50 as any as RawWeibull) : null
+        p.weibull_100 = row.weibull_100 ? (row.weibull_100 as any as RawWeibull) : null
+        p.weibull_150 = row.weibull_150 ? (row.weibull_150 as any as RawWeibull) : null
+        p.weibull_200 = row.weibull_200 ? (row.weibull_200 as any as RawWeibull) : null
         p.profile_heights = safeArray(row.profile_heights)
         p.profile_means = safeArray(row.profile_means)
+        p.wpd_profile_means = safeArray(row.wpd_profile_means)
       }
     }
 
     records = Array.from(recordsMap.values())
     allSeasonMap = seasonMap
     loaded = true
+    loadedSeasons = new Set(['ANNUAL'])
     currentExperiment = experiment
-    console.log(`PixelQuery: loaded ${records.length} pixels, ${seasonMap.size} seasonal maps for ${experiment}`)
+    currentModel = model
+    console.log(`PixelQuery: loaded ${records.length} pixels (ANNUAL) for ${experiment} (${model})`)
   })().catch((e: unknown) => {
     console.error('PixelQuery load failed:', e)
     loaded = false
     currentExperiment = ''
     loading = null
+    loadedSeasons = new Set()
   })
   return loading
+}
+
+export async function ensureSeasonalLoaded(): Promise<void> {
+  if (!loaded || !currentExperiment || !currentModel) return
+  const needed = SEASONS.filter(s => s !== 'ANNUAL' && !loadedSeasons.has(s))
+  if (needed.length === 0) return
+  for (const s of needed) {
+    try {
+      await loadSeasonData(currentExperiment, s, currentModel)
+    } catch (e) {
+      console.warn(`PixelQuery: failed to load ${s} parquet:`, e)
+    }
+  }
+}
+
+function num(v: unknown): number | null {
+  if (v === null || v === undefined) return null
+  const n = Number(v)
+  return isFinite(n) ? n : null
+}
+
+function buildHeightStats(row: Record<string, unknown>, prefix: string, height: number, season: string): HeightStats {
+  return {
+    mean: num(row[`${prefix}${height}_${season}_mean`]),
+    min: num(row[`${prefix}${height}_${season}_min`]),
+    max: num(row[`${prefix}${height}_${season}_max`]),
+    std: num(row[`${prefix}${height}_${season}_std`]),
+  }
+}
+
+function buildWeibullRecord(p: RawPixel): Record<number, { k: number; c: number } | null> {
+  const w: Record<number, { k: number; c: number } | null> = {}
+  for (const h of HEIGHTS) {
+    const key = `weibull_${h}` as keyof RawPixel
+    const v = p[key]
+    w[h] = v ? (v as RawWeibull) : null
+  }
+  return w
 }
 
 export function queryNearest(lat: number, lon: number): PixelDataSummary | null {
@@ -193,9 +321,21 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
   }
   if (!best) return null
 
-  const weibull = best.weibull_10m || best.weibull_100m
-    ? { k_10m: best.weibull_10m?.k ?? null, c_10m: best.weibull_10m?.c ?? null, k_100m: best.weibull_100m?.k ?? null, c_100m: best.weibull_100m?.c ?? null }
-    : null
+  const annualRow = allSeasonMap?.get(best.pixel_id)?.get('ANNUAL')
+
+  const ws: Record<number, HeightStats> = {}
+  const wpd: Record<number, HeightStats> = {}
+  if (annualRow) {
+    for (const h of HEIGHTS) {
+      ws[h] = buildHeightStats(annualRow, 'ws', h, 'ANNUAL')
+      wpd[h] = buildHeightStats(annualRow, 'wpd', h, 'ANNUAL')
+    }
+  } else {
+    for (const h of HEIGHTS) {
+      ws[h] = { mean: null, min: null, max: null, std: null }
+      wpd[h] = { mean: null, min: null, max: null, std: null }
+    }
+  }
 
   return {
     pixel_id: best.pixel_id,
@@ -203,26 +343,25 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
     lon: best.lon,
     state: best.state,
     bathy_zone: best.bathy_zone,
-    ws100: {
-      mean: best.ws100_ANNUAL_mean,
-      min: best.ws100_ANNUAL_min,
-      max: best.ws100_ANNUAL_max,
-      std: best.ws100_ANNUAL_std,
-    },
-    ws10: {
-      mean: best.ws10_ANNUAL_mean,
-      min: best.ws10_ANNUAL_min,
-      max: best.ws10_ANNUAL_max,
-      std: best.ws10_ANNUAL_std,
-    },
+    distance_nm: best.distance_nm,
+    ws,
+    wpd,
     profile_heights: safeArray(best.profile_heights),
     profile_means: safeArray(best.profile_means),
-    weibull,
+    wpd_profile_means: safeArray(best.wpd_profile_means),
+    weibull: buildWeibullRecord(best),
   }
 }
 
-export function queryDashboardLocation(lat: number, lon: number): DashboardLocationData | null {
+export async function queryDashboardLocation(lat: number, lon: number): Promise<DashboardLocationData | null> {
   if (records.length === 0) return null
+
+  try {
+    await ensureSeasonalLoaded()
+  } catch (e) {
+    console.warn('PixelQuery: ensureSeasonalLoaded failed:', e)
+  }
+
   if (!allSeasonMap) return null
 
   let best: RawPixel | null = null
@@ -247,37 +386,62 @@ export function queryDashboardLocation(lat: number, lon: number): DashboardLocat
     if (!row) continue
     seasons.push({
       season: s,
-      ws10_mean: num(row.ws10_mean ?? row[`ws10_${s}_mean`]),
-      ws10_min: num(row.ws10_min ?? row[`ws10_${s}_min`]),
-      ws10_max: num(row.ws10_max ?? row[`ws10_${s}_max`]),
-      ws10_std: num(row.ws10_std ?? row[`ws10_${s}_std`]),
-      ws100_mean: num(row.ws100_mean ?? row[`ws100_${s}_mean`]),
-      ws100_min: num(row.ws100_min ?? row[`ws100_${s}_min`]),
-      ws100_max: num(row.ws100_max ?? row[`ws100_${s}_max`]),
-      ws100_std: num(row.ws100_std ?? row[`ws100_${s}_std`]),
+      ws10_mean: num(row[`ws10_${s}_mean`]), ws10_min: num(row[`ws10_${s}_min`]),
+      ws10_max: num(row[`ws10_${s}_max`]), ws10_std: num(row[`ws10_${s}_std`]),
+      ws50_mean: num(row[`ws50_${s}_mean`]), ws50_min: num(row[`ws50_${s}_min`]),
+      ws50_max: num(row[`ws50_${s}_max`]), ws50_std: num(row[`ws50_${s}_std`]),
+      ws100_mean: num(row[`ws100_${s}_mean`]), ws100_min: num(row[`ws100_${s}_min`]),
+      ws100_max: num(row[`ws100_${s}_max`]), ws100_std: num(row[`ws100_${s}_std`]),
+      ws150_mean: num(row[`ws150_${s}_mean`]), ws150_min: num(row[`ws150_${s}_min`]),
+      ws150_max: num(row[`ws150_${s}_max`]), ws150_std: num(row[`ws150_${s}_std`]),
+      ws200_mean: num(row[`ws200_${s}_mean`]), ws200_min: num(row[`ws200_${s}_min`]),
+      ws200_max: num(row[`ws200_${s}_max`]), ws200_std: num(row[`ws200_${s}_std`]),
+      wpd10_mean: num(row[`wpd10_${s}_mean`]), wpd10_min: num(row[`wpd10_${s}_min`]),
+      wpd10_max: num(row[`wpd10_${s}_max`]), wpd10_std: num(row[`wpd10_${s}_std`]),
+      wpd50_mean: num(row[`wpd50_${s}_mean`]), wpd50_min: num(row[`wpd50_${s}_min`]),
+      wpd50_max: num(row[`wpd50_${s}_max`]), wpd50_std: num(row[`wpd50_${s}_std`]),
+      wpd100_mean: num(row[`wpd100_${s}_mean`]), wpd100_min: num(row[`wpd100_${s}_min`]),
+      wpd100_max: num(row[`wpd100_${s}_max`]), wpd100_std: num(row[`wpd100_${s}_std`]),
+      wpd150_mean: num(row[`wpd150_${s}_mean`]), wpd150_min: num(row[`wpd150_${s}_min`]),
+      wpd150_max: num(row[`wpd150_${s}_max`]), wpd150_std: num(row[`wpd150_${s}_std`]),
+      wpd200_mean: num(row[`wpd200_${s}_mean`]), wpd200_min: num(row[`wpd200_${s}_min`]),
+      wpd200_max: num(row[`wpd200_${s}_max`]), wpd200_std: num(row[`wpd200_${s}_std`]),
     })
   }
 
   const annualRow = seasonRows.get('ANNUAL')
+  const windRose: Record<number, Record<string, { freq: number; mean_ws: number }> | null> = {}
+  const heatmap: Record<string, number[] | null> = {}
+  if (annualRow) {
+    for (const h of HEIGHTS) {
+      const wrKey = `wind_rose_${h}`
+      windRose[h] = annualRow[wrKey]
+        ? (annualRow[wrKey] as any as Record<string, { freq: number; mean_ws: number }>)
+        : null
+    }
+    for (const h of HEIGHTS) {
+      for (const prefix of ['ws', 'wpd']) {
+        const hmKey = `${prefix}${h}_heatmap`
+        heatmap[hmKey] = safeArray(annualRow[hmKey])
+      }
+    }
+  }
+
   return {
     pixel_id: best.pixel_id,
     lat: best.lat,
     lon: best.lon,
     state: best.state,
     bathy_zone: best.bathy_zone,
+    distance_nm: best.distance_nm,
     seasons,
     profile_heights: safeArray(annualRow?.profile_heights ?? best.profile_heights),
     profile_means: safeArray(annualRow?.profile_means ?? best.profile_means),
-    weibull_10m: annualRow?.weibull_10m ? (annualRow.weibull_10m as any as { k: number; c: number }) : null,
-    weibull_100m: annualRow?.weibull_100m ? (annualRow.weibull_100m as any as { k: number; c: number }) : null,
-    wind_rose: annualRow?.wind_rose_100m ? (annualRow.wind_rose_100m as any as Record<string, { freq: number; mean_ws: number }>) : null,
+    wpd_profile_means: safeArray(annualRow?.wpd_profile_means ?? best.wpd_profile_means),
+    weibull: buildWeibullRecord(best),
+    wind_rose: windRose,
+    heatmap,
   }
-}
-
-function num(v: unknown): number | null {
-  if (v === null || v === undefined) return null
-  const n = Number(v)
-  return isFinite(n) ? n : null
 }
 
 export function isLoading(): boolean {

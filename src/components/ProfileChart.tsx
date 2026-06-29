@@ -49,14 +49,9 @@ function ProfileChartInner({ heights, means }: ProfileChartProps) {
         grid: { color: 'rgba(0,0,0,0.06)' },
       },
       y: {
+        reverse: true,
         title: { display: true, text: 'Altura (m)', font: { size: 10 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
-        ticks: {
-          callback(value: any) {
-            const idx = Number(value)
-            return heights[idx] !== undefined ? `${heights[idx]}m` : ''
-          },
-        },
       },
     },
   }

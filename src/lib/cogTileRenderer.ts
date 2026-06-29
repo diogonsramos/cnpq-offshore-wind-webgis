@@ -55,8 +55,10 @@ export async function renderCog(
   bounds: RasterBounds,
   zoom: number,
   variable: 'ws' | 'wpd',
+  signal?: AbortSignal,
 ): Promise<{ dataUrl: string; coords: [number, number, number, number] } | null> {
   try {
+    if (signal?.aborted) return null
     const tiff = await fromUrl(url)
     const img = await tiff.getImage()
     const [w, s, e, n] = img.getBoundingBox()

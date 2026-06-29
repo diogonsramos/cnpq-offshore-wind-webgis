@@ -18,9 +18,11 @@
     "geotiff": "^2.1.3",
     "maplibre-gl": "^4.7.1",
     "parquet-wasm": "^0.7.1",
+    "plotly.js-dist-min": "^3.0.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-plotly.js": "^2.6.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
