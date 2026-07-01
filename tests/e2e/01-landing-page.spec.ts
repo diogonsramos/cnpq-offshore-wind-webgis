@@ -1,0 +1,103 @@
+/**
+ * Testes de regressão — Fase 1: Landing Page
+ *
+ * Verifica que a landing page abre como tela inicial, exibe o conteúdo
+ * correto em todas as seções e não mostra elementos internos do sistema
+ * (TabBar) antes da navegação.
+ */
+import { test, expect } from '@playwright/test'
+
+test.describe('Landing Page — carregamento inicial', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('T02 — landing page é a tela inicial (não o mapa)', async ({ page }) => {
+    await expect(page.locator('.landing')).toBeVisible()
+    await expect(page.locator('.tab-bar')).not.toBeVisible()
+  })
+
+  test('T03 — H1 contém o título oficial do projeto', async ({ page }) => {
+    await expect(page.locator('.lp-hero h1')).toContainText(
+      'Cenário atual e futuro do recurso eólico offshore no Brasil'
+    )
+  })
+})
+
+test.describe('Landing Page — seções de conteúdo', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('NavbarTop — logos e botão "Entrar no Sistema" visíveis', async ({ page }) => {
+    await expect(page.locator('.lp-navbar')).toBeVisible()
+    await expect(page.locator('.lp-navbar-enter')).toBeVisible()
+    await expect(page.locator('.lp-navbar-enter')).toContainText('Entrar no Sistema')
+  })
+
+  test('HeroSection — dois CTAs visíveis', async ({ page }) => {
+    await expect(page.locator('.lp-cta-primary')).toBeVisible()
+    await expect(page.locator('.lp-cta-secondary')).toBeVisible()
+    await expect(page.locator('.lp-cta-primary')).toContainText('Abrir WebGIS Map')
+    await expect(page.locator('.lp-cta-secondary')).toContainText('Abrir Analytical Dashboard')
+  })
+
+  test('StatsStrip — 5 cards de indicadores visíveis', async ({ page }) => {
+    const cards = page.locator('.lp-stat-card')
+    await expect(cards).toHaveCount(5)
+  })
+
+  test('ScenariosSection — 4 cards de experimentos visíveis', async ({ page }) => {
+    const cards = page.locator('.lp-scenario-card')
+    await expect(cards).toHaveCount(4)
+    await expect(cards.nth(0)).toContainText('ERA5_atlas')
+    await expect(cards.nth(1)).toContainText('HIST')
+    await expect(cards.nth(2)).toContainText('SSP2-4.5')
+    await expect(cards.nth(3)).toContainText('SSP5-8.5')
+  })
+
+  test('TeamSection — 17 pesquisadores listados', async ({ page }) => {
+    const cards = page.locator('.lp-team-card')
+    await expect(cards).toHaveCount(17)
+  })
+
+  test('PublicationsSection — 9 publicações listadas', async ({ page }) => {
+    const items = page.locator('.lp-pub-card')
+    await expect(items).toHaveCount(9)
+  })
+
+  test('FooterSection — disclaimer de dados preliminares visível', async ({ page }) => {
+    await expect(page.locator('.lp-footer-disclaimer')).toBeVisible()
+    await expect(page.locator('.lp-footer-disclaimer')).toContainText('preliminares')
+  })
+
+  test('T09 — logos institucionais carregam sem erro (2xx ou 304)', async ({ page }) => {
+    const logoStatuses: number[] = []
+    page.on('response', res => {
+      if (res.url().includes('/images/logos/')) logoStatuses.push(res.status())
+    })
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    expect(logoStatuses.length).toBeGreaterThan(0)
+    // 200 (fresh) e 304 (cached) são ambos válidos; qualquer 4xx/5xx indica falha
+    expect(logoStatuses.every(s => s < 400)).toBe(true)
+  })
+})
+
+test.describe('TeamSection — colapso e expansão', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('T26 — botão de toggle visível e colapsado por padrão', async ({ page }) => {
+    await expect(page.locator('.lp-team-toggle')).toBeVisible()
+    await expect(page.locator('.lp-team-toggle')).toContainText('Ver todos os 17 pesquisadores')
+    await expect(page.locator('.lp-team-toggle')).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  test('T27 — clique no toggle expande todos os membros da equipe', async ({ page }) => {
+    await page.click('.lp-team-toggle')
+    await expect(page.locator('.lp-team-toggle')).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.locator('.lp-team-toggle')).toContainText('Ver menos')
+  })
+})

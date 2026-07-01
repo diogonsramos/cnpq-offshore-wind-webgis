@@ -21,6 +21,20 @@ html, body, #root {
   height: 100%;
 }
 
+/* landing-mode: desabilita overflow:hidden global para que a página role normalmente */
+html.landing-mode,
+html.landing-mode body,
+html.landing-mode #root {
+  overflow: auto;
+  height: auto;
+  min-height: 100vh;
+}
+
+.app--landing {
+  height: auto;
+  min-height: 100vh;
+}
+
 /* ── Tab Container ─────────────────────────── */
 .tab-panel {
   flex: 1;
@@ -36,6 +50,30 @@ html, body, #root {
   flex-shrink: 0;
   z-index: 30;
   border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.tab-home-btn {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tab-home-btn:hover {
+  color: #4a90d9;
+  background: rgba(255,255,255,0.04);
+}
+.tab-bar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.1);
+  align-self: center;
+  flex-shrink: 0;
 }
 .tab-btn {
   position: relative;

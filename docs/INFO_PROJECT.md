@@ -22,23 +22,23 @@
 
 | Nome | Função |
 |---|---|
-| Davidson Martins Moreira | Coordenador |
-| Diogo Nunes da Silva Ramos | Pesquisador Líder |
-| Allan Rodrigues Silva | Pesquisador Líder |
-| Thalyta Soares dos Santos | Pesquisadora |
-| Francisco José de Lopes Lima | Pesquisador |
-| Wendy Mary da Silveira Pires | Pesquisadora |
-| Georgynio Yossimar Rosales Aylas | Pesquisador |
-| Arthur Lúcide Cotta Weyll | Pesquisador |
-| Luan Santos de Oliveira Silva | Pesquisador |
-| Marcelo Pizzuti Pes | Pesquisador |
-| Ana Paula Paes dos Santos | Pesquisadora |
-| William Duarte Jacondino | Pesquisador |
-| Hallan Souza de Jesus | Pesquisador |
-| Yasmin Kaore Lago Kitagawa | Pesquisadora |
-| Rosiberto Salustiano da Silva Júnior | Pesquisador |
-| Allan Cavalcante Araujo | Pesquisador |
-| Sofia Alexandrino Lage | Pesquisadora |
+| Davidson Martins Moreira | Coordenador | http://lattes.cnpq.br/2331953711858907
+| Diogo Nunes da Silva Ramos | Pesquisador Líder | http://lattes.cnpq.br/1800868291881642
+| Allan Rodrigues Silva | Pesquisador Líder | http://lattes.cnpq.br/3039238491404721
+| Thalyta Soares dos Santos | Pesquisadora | http://lattes.cnpq.br/1562606151582291
+| Francisco José de Lopes Lima | Pesquisador | http://lattes.cnpq.br/8300602270954491
+| Wendy Mary da Silveira Pires | Pesquisadora | http://lattes.cnpq.br/4862701131287048
+| Georgynio Yossimar Rosales Aylas | Pesquisador | http://lattes.cnpq.br/2713639453901216
+| Arthur Lúcide Cotta Weyll | Pesquisador | http://lattes.cnpq.br/0409673252774301
+| Luan Santos de Oliveira Silva | Pesquisador | http://lattes.cnpq.br/5923452659289478
+| Marcelo Pizzuti Pes | Pesquisador | http://lattes.cnpq.br/5614389162739082
+| Ana Paula Paes dos Santos | Pesquisadora | http://lattes.cnpq.br/0287853035799329
+| William Duarte Jacondino | Pesquisador | http://lattes.cnpq.br/1111671373753798
+| Hallan Souza de Jesus | Pesquisador | http://lattes.cnpq.br/1996145337862107
+| Yasmin Kaore Lago Kitagawa | Pesquisadora | http://lattes.cnpq.br/5503607216137253
+| Rosiberto Salustiano da Silva Júnior | Pesquisador | http://lattes.cnpq.br/1798232201205174
+| Allan Cavalcante Araujo | Pesquisador | http://lattes.cnpq.br/5127547423362922
+| Sofia Alexandrino Lage | Pesquisadora | http://lattes.cnpq.br/8666873652216091
 
 ---
 

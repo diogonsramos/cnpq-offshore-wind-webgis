@@ -4,19 +4,237 @@ Este documento centraliza as atividades necessárias para corrigir as regressõe
 
 ---
 
+## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
+
+> **Status:** Implementado e validado.
+
+### Problemas críticos resolvidos
+
+| Item | Resolução |
+|---|---|
+| Scroll bloqueado na landing page | `useEffect` em `App.tsx` adiciona/remove `landing-mode` em `document.documentElement`; `App.css` sobrescreve `overflow:hidden` via `html.landing-mode` |
+| `overflow-y: auto` sem efeito no `.landing` | Removida dependência de scroll no componente; scroll agora ocorre no nível de documento |
+
+### UX e navegação
+
+| Item | Resolução |
+|---|---|
+| Ausência de menu de navegação entre seções | Adicionados links de âncora `.lp-nav-anchor` no navbar (Metodologia, Cenários, Interface, Equipe, Publicações) — ocultos em ≤ 900 px |
+| Indicador de seção ativa | `useEffect` com `window.scroll` listener detecta posição atual e aplica classe `.active` no link correspondente |
+| Botão "Voltar ao topo" ausente | Botão `.lp-back-to-top` fixo no canto inferior direito; aparece após 400 px de scroll; `window.scrollTo({ top: 0 })` |
+
+### Design e tipografia
+
+| Item | Resolução |
+|---|---|
+| Publicações difíceis de escanear | `<ol>` substituída por grid de cards `.lp-pub-card` com número circular, tipografia e hover |
+| Sem diferenciação visual entre cenários históricos e futuros | Adicionados `lp-scenario-card--historical` (verde) e `lp-scenario-card--future` (vermelho) + legenda |
+| Cards da galeria não pareciam clicáveis | Convertidos de `<div>` para `<button>`, com hover animado, descrição da visualização e `onClick` funcional |
+| Equipe sem destaque para papéis principais | `.lp-team-card--coord` (borda escura) e `.lp-team-card--lead` (borda azul) |
+| Espaçamento e line-height insuficientes | `line-height: 1.9` nos parágrafos; padding das seções aumentado para `72px`; `max-width: 56ch` nos parágrafos |
+
+### Acessibilidade
+
+| Item | Resolução |
+|---|---|
+| Ausência de `alt` em ícones/imagens | Todos os `<img>` têm `alt` descritivo; ícones decorativos têm `aria-hidden="true"` |
+| `<th>` sem `scope` | `scope="col"` adicionado na tabela técnica |
+| Foco de teclado | `:focus-visible` adicionado em todos os botões interativos |
+| Roles ausentes | `aria-label` nos `<nav>`, botões de galeria e botão "Voltar ao topo" |
+
+### Correção de configuração
+
+| Item | Resolução |
+|---|---|
+| `playwright.config.ts` apontava para porta 5173; dev server roda na 3000 | `baseURL` e `webServer.url` atualizados para `http://localhost:3000` |
+
+### Arquivos modificados
+
+| Arquivo | Mudança |
+|---|---|
+| `src/App.tsx` | `useEffect` para toggling de `landing-mode` em `document.documentElement` |
+| `src/App.css` | Regras `html.landing-mode` para desabilitar `overflow:hidden` global |
+| `src/components/LandingPage.tsx` | In-page nav, back-to-top, gallery como buttons, pub cards, scenario differentiation, acessibilidade |
+| `src/components/LandingPage.css` | Estilos para todos os novos elementos; typography improvements |
+| `playwright.config.ts` | Porta corrigida: 5173 → 3000 |
+| `CLAUDE.md` | Porta e contagem de testes atualizadas |
+
+### Resultados da suite de testes — 2026-06-22 (atualizado)
+
+**31/31 testes passando** em Chromium headless — tempo total: ~14 s.
+
+| Arquivo | Testes | Status |
+|---|---|---|
+| `01-landing-page.spec.ts` | 12 | ✅ 12 passando |
+| `02-navigation.spec.ts` | 9 | ✅ 9 passando |
+| `03-responsiveness.spec.ts` | 4 | ✅ 4 passando |
+| `04-scroll-and-inpage-nav.spec.ts` | 6 | ✅ 6 passando |
+
+---
+
+## ✅ 1.E. Novos testes para gallery cards e team toggle — 2026-06-22
+
+> **Status:** Implementado e validado.
+
+### Contexto
+
+Após implementação das correções do TOFIX.md (seção 1.D), identificou-se que dois comportamentos novos não estavam cobertos por testes:
+
+1. **Gallery cards como botões de navegação** — convertidos de `<div>` para `<button>` com `onClick` funcional; ausência de testes para esse novo ponto de entrada da navegação.
+2. **Botão de colapso/expansão da equipe** — novo `<button class="lp-team-toggle">` com estado `aria-expanded`; comportamento toggle sem cobertura.
+
+### Testes adicionados
+
+| ID | Arquivo | O que valida |
+|---|---|---|
+| T12 | `02-navigation.spec.ts` | Gallery card "Abrir WebGIS Map" navega para o mapa |
+| T13 | `02-navigation.spec.ts` | Gallery card "Dashboard" (primeiro) navega para o dashboard |
+| T26 | `01-landing-page.spec.ts` | `.lp-team-toggle` visível, texto "Ver todos os 17 pesquisadores", `aria-expanded=false` no carregamento |
+| T27 | `01-landing-page.spec.ts` | Clique no toggle define `aria-expanded=true` e exibe texto "Ver menos" |
+
+### Arquivos modificados
+
+| Arquivo | Mudança |
+|---|---|
+| `tests/e2e/02-navigation.spec.ts` | T12 e T13 adicionados ao describe `'Navegação: Landing → Sistema'` |
+| `tests/e2e/01-landing-page.spec.ts` | Novo describe `'TeamSection — colapso e expansão'` com T26 e T27 |
+| `CLAUDE.md` | Estrutura de testes e contagem atualizadas para 31 |
+
+---
+
 ## 🚀 1. Landing Page (Página Inicial)
 > **Objetivo:** Criar uma porta de entrada institucional e moderna para o sistema, eliminando o carregamento direto do mapa pesado e contextualizando o fomento do CNPq.
+> **Status:** ✅ Implementada e validada — 2026-06-21
 
-- [ ] **1.1. Layout & Estrutura Base:**
-  - [ ] Criar uma rota raiz (`/` ou `Home`) separada do ambiente de mapas.
-  - [ ] Adicionar seção de *Hero* com o título oficial do projeto: *"Cenário atual e futuro do recurso eólico offshore no Brasil"*.
-  - [ ] Inserir os dois botões principais de chamada para ação (CTA) com destaque visual:
+- [x] **1.1. Layout & Estrutura Base:**
+  - [x] Criar uma rota raiz (`/` ou `Home`) separada do ambiente de mapas.
+  - [x] Adicionar seção de *Hero* com o título oficial do projeto: *"Cenário atual e futuro do recurso eólico offshore no Brasil"*.
+  - [x] Inserir os dois botões principais de chamada para ação (CTA) com destaque visual:
     * `Abrir WebGIS Map` (Redireciona para o visualizador espacial).
     * `Abrir Analytical Dashboard` (Redireciona diretamente para a análise estatística).
-- [ ] **1.2. Seções de Conteúdo Técnico:**
-  - [ ] **Resumo Técnico:** Resumo do projeto detalhando o uso do modelo WRF, resoluções ($9\text{ km} \times 9\text{ km}$), dados de contorno (ERA5, CMIP6 SSP2-4.5 e SSP5-8.5).
-  - [ ] **Galeria/Card de Imagens:** Adicionar espaço para capturas de tela (*prints*) das camadas do WebGIS e dos gráficos em funcionamento.
-  - [ ] **Créditos e Fomento:** Logomarca em destaque do CNPq, Chamada CNPq Nº 407949/2022-4, dados da equipe de pesquisadores e publicações relacionadas.
+- [x] **1.2. Seções de Conteúdo Técnico:**
+  - [x] **Resumo Técnico:** Resumo do projeto detalhando o uso do modelo WRF, resoluções (~9 km), dados de contorno (ERA5, CMIP6 SSP2-4.5 e SSP5-8.5).
+  - [x] **Galeria/Card de Imagens:** Seção criada com placeholders visuais (aguardando screenshots reais).
+  - [x] **Créditos e Fomento:** Logomarcas CNPq/PEOB/SENAI CIMATEC, Chamada CNPq Nº 407949/2022-4, equipe completa (17 pesquisadores) e 9 publicações científicas.
+
+---
+
+### 1.A. O que está funcionando
+
+| Item | Descrição |
+|---|---|
+| NavbarTop | Logo PEOB + CNPq, botão "Entrar no Sistema" (sticky, navega para `map`) |
+| HeroSection | Título H1, subtítulo, parágrafo de contexto, CTAs primário e secundário |
+| StatsStrip | 5 cards com indicadores-chave (WRF-ARW v4, 9 km, alturas, 4 experimentos, 17 estados) |
+| TechSummarySection | 2 colunas: texto descritivo + tabela com 8 parâmetros técnicos |
+| ScenariosSection | 4 cards (ERA5_atlas, HIST, SSP2-4.5, SSP5-8.5) com ícone, forçante, período e descrição |
+| GallerySection | Grid 3 colunas com placeholders estilizados |
+| TeamSection | Grid auto-fill com 17 pesquisadores; badges "Coordenador" e "Pesquisador Líder" |
+| PublicationsSection | Lista ordenada com 9 publicações científicas |
+| FooterSection | 3 logos, citação oficial, disclaimer de dados preliminares, copyright |
+| Navegação `map` | CTA primário + navbar → `tab = 'map'`, TabBar aparece, landing desaparece |
+| Navegação `dashboard` | CTA secundário → `tab = 'dashboard'`, dashboard carrega corretamente |
+| Botão `← Home` no TabBar | Lado esquerdo do TabBar; volta para landing a qualquer momento sem recarregar a página |
+| Preservação de estado | Filtros do mapa e dashboard não são resetados ao navegar pela landing |
+| Responsividade | Layout adapta em ≤ 768 px (coluna única) e ≤ 480 px (CTAs empilhados) |
+| Scroll próprio | Landing faz scroll interno (`.landing { overflow-y: auto }`) sem interferir no mapa |
+
+---
+
+### 1.B. O que não foi implementado nesta fase (e onde será desenvolvido)
+
+| Item pendente | Motivo | Fase prevista |
+|---|---|---|
+| Screenshots reais na GallerySection | Imagens do sistema não disponíveis no momento da implementação | **Fase 2** — após estabilização da UI do mapa e dashboard |
+| Links de repositório e DOI no FooterSection | DOI ainda não registrado no Zenodo | **Fase 5** (item 5.2) — Documentação Integrada |
+| Logomarcas no painel `ProjectInfoPanel` | Fora do escopo da Fase 1 (painel interno do mapa) | **Fase 5** (item 5.2) — Incorporação de Logomarcas |
+| Disclaimer de dados no `README.md` | Item de documentação, não de interface | **Fase 5** (item 5.2) — Disclaimer de Dados no README |
+| Revisão cruzada FAQ × INFO_PROJECT.md | Discrepâncias de processo e grade documentadas | **Fase 5** (item 5.1) — Revisão Cruzada FAQ |
+| SEO / meta tags / Open Graph | Não necessário para MVP interno | Não planejado — avaliar se necessário |
+
+---
+
+### 1.C. Especificações técnicas de desenvolvimento
+
+#### Arquitetura de navegação
+
+Optou-se por **não instalar `react-router-dom`**. A navegação entre landing e o sistema é gerenciada pelo `useState<TabId>` já existente em `App.tsx`, com o tipo `TabId` expandido de `'map' | 'dashboard'` para `'home' | 'map' | 'dashboard'`. O estado inicial foi alterado de `'map'` para `'home'`.
+
+#### Arquivos criados
+
+| Arquivo | Tamanho | Descrição |
+|---|---|---|
+| `src/components/LandingPage.tsx` | ~220 linhas | Componente principal com 9 sub-seções, dados estáticos embutidos (team, publications, scenarios, stats) |
+| `src/components/LandingPage.css` | ~350 linhas | Estilos isolados da landing page; usa variáveis de cor do sistema; responsivo com 2 breakpoints |
+
+#### Arquivos modificados
+
+| Arquivo | Mudança |
+|---|---|
+| `src/components/TabBar.tsx` | Tipo `TabId` adicionado `'home'`; botão `← Home` adicionado à esquerda da barra com divisor visual |
+| `src/App.tsx` | `useState<TabId>('map')` → `'home'`; import de `LandingPage`; renderização condicional `tab === 'home'` com `<LandingPage>`; classe dinâmica `app--landing` |
+| `src/App.css` | Regra `.app--landing`; estilos `.tab-home-btn` e `.tab-bar-divider` |
+
+#### Assets copiados
+
+| Origem | Destino |
+|---|---|
+| `docs/logo-cnpq.png` | `public/images/logos/logo-cnpq.png` |
+| `docs/logo-peob-cnpq.png` | `public/images/logos/logo-peob-cnpq.png` |
+| `docs/logo-senai-cimatec.png` | `public/images/logos/logo-senai-cimatec.png` |
+
+Referenciados em runtime via `import.meta.env.BASE_URL + 'images/logos/<arquivo>'`.
+
+#### Pacotes instalados
+
+Um pacote de desenvolvimento foi adicionado para a infraestrutura de testes de regressão:
+
+| Pacote | Versão | Tipo | Motivo |
+|---|---|---|---|
+| `@playwright/test` | `^1.52.0` | `devDependency` | Framework de testes E2E com runner, assertions e relatórios integrados |
+
+A implementação da landing page em si não requer nenhum pacote novo. Stack de produção permanece:
+
+| Tecnologia | Versão (package.json) | Uso na Landing Page |
+|---|---|---|
+| React | 18.x | Componente funcional, `useState` implícito via App.tsx |
+| TypeScript | 5.x | Tipagem de `TabId`, `Props` |
+| Vite | 6.x | Serve assets estáticos de `public/`; resolve `import.meta.env.BASE_URL` |
+| CSS3 nativo | — | Grid, Flexbox, `clamp()`, `position: sticky`, transições |
+
+#### Infraestrutura de testes de regressão E2E
+
+Os testes foram migrados de scripts ad-hoc para uma suite permanente com `@playwright/test`. Para executar:
+
+```bash
+pnpm test          # type check + todos os testes E2E
+pnpm test:types    # apenas tsc --noEmit
+pnpm test:e2e      # apenas Playwright (requer dev server rodando ou inicia automaticamente)
+pnpm test:e2e:ui   # abre a UI interativa do Playwright
+```
+
+Arquivos da suite:
+
+| Arquivo | Testes | Contexto |
+|---|---|---|
+| `tests/e2e/01-landing-page.spec.ts` | 9 testes | Conteúdo de cada seção, logos, carregamento inicial |
+| `tests/e2e/02-navigation.spec.ts` | 7 testes | CTAs, navbar, botão `← Home`, persistência de aba ativa |
+| `tests/e2e/03-responsiveness.spec.ts` | 4 testes | Scroll horizontal nos 3 breakpoints (1280 / 768 / 375 px) |
+| `playwright.config.ts` | — | Base URL, webServer (auto-start com `reuseExistingServer`), relatório HTML |
+
+Artefatos gerados em `tests/results/` (ignorados pelo git via `.gitignore`).
+
+#### Resultados da suite de testes — 2026-06-21
+
+**21/21 testes passando** em Chromium headless — tempo total: ~13 s.
+
+| Arquivo | Testes | Status |
+|---|---|---|
+| `01-landing-page.spec.ts` | 9 | ✅ 9 passando |
+| `02-navigation.spec.ts` | 8 | ✅ 8 passando |
+| `03-responsiveness.spec.ts` | 4 | ✅ 4 passando |
+
+Ferramenta: **Playwright 1.52.0** (`@playwright/test`) + Chromium 149 (playwright chromium-headless-shell v1228).
 
 ---
 

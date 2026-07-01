@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import SidePanel from './components/SidePanel'
 import MapView from './components/MapView'
 import PixelInfoPanel from './components/PixelInfoPanel'
@@ -7,13 +7,14 @@ import ErrorBoundary from './components/ErrorBoundary'
 import TabBar, { type TabId } from './components/TabBar'
 import FAQPanel from './components/FAQPanel'
 import ProjectInfoPanel from './components/ProjectInfoPanel'
+import LandingPage from './components/LandingPage'
 import { queryDashboardLocation, isLoaded, type DashboardLocationData } from './lib/pixelQuery'
 import type { Dataset, Variable, Height, Season, Region, BathyBand } from './lib/cogCatalog'
 import type { PixelDataSummary } from './lib/pixelQuery'
 import './App.css'
 
 export default function App() {
-  const [tab, setTab] = useState<TabId>('map')
+  const [tab, setTab] = useState<TabId>('home')
   const [dataset, setDataset] = useState<Dataset>('ERA5_atlas')
   const [variable, setVariable] = useState<Variable>('ws')
   const [height, setHeight] = useState<Height>(100)
@@ -64,58 +65,73 @@ export default function App() {
 
   const switchToDashboard = useCallback(() => setTab('dashboard'), [])
 
+  useEffect(() => {
+    if (tab === 'home') {
+      document.documentElement.classList.add('landing-mode')
+    } else {
+      document.documentElement.classList.remove('landing-mode')
+    }
+    return () => document.documentElement.classList.remove('landing-mode')
+  }, [tab])
+
   return (
-    <div className="app">
-      <TabBar tab={tab} onChange={setTab} />
-      <div className="tab-panel" style={{ display: tab === 'map' ? 'flex' : 'none' }}>
-        <SidePanel
-          dataset={dataset} setDataset={setDataset}
-          variable={variable} setVariable={setVariable}
-          height={height} setHeight={setHeight}
-          season={season} setSeason={setSeason}
-          region={region} setRegion={setRegion}
-          state={state} setState={setState}
-          bathyBand={bathyBand} setBathyBand={setBathyBand}
-          showBathymetry={showBathymetry} setShowBathymetry={setShowBathymetry}
-          bathyLayer={bathyLayer} setBathyLayer={setBathyLayer}
-          onOpenDashboard={switchToDashboard}
-          showFAQ={showFAQ} setShowFAQ={setShowFAQ}
-          showProject={showProject} setShowProject={setShowProject}
-        />
-        <div className="map-area">
-          <MapView
-            dataset={dataset} variable={variable} height={height}
-            season={season} region={region}
-            state={state} bathyBand={bathyBand}
-            showBathymetry={showBathymetry} bathyLayer={bathyLayer}
-            basemap={basemap} onBasemapChange={setBasemap}
-            onPixelClick={handlePixelClick}
-            pinnedLocations={pinnedLocations}
-            onAddPin={handleAddLocation}
-            onRemovePin={handleRemoveLocation}
-          />
-          <ErrorBoundary>
-            <PixelInfoPanel
-              data={pixelData}
-              loading={parquetLoading}
-              loaded={parquetLoaded}
-              recordCount={parquetCount}
-              pinnedCount={pinnedLocations.length}
-              onClose={handleClosePanel}
+    <div className={`app${tab === 'home' ? ' app--landing' : ''}`}>
+      {tab === 'home' ? (
+        <LandingPage onNavigate={setTab} />
+      ) : (
+        <>
+          <TabBar tab={tab} onChange={setTab} />
+          <div className="tab-panel" style={{ display: tab === 'map' ? 'flex' : 'none' }}>
+            <SidePanel
+              dataset={dataset} setDataset={setDataset}
+              variable={variable} setVariable={setVariable}
+              height={height} setHeight={setHeight}
+              season={season} setSeason={setSeason}
+              region={region} setRegion={setRegion}
+              state={state} setState={setState}
+              bathyBand={bathyBand} setBathyBand={setBathyBand}
+              showBathymetry={showBathymetry} setShowBathymetry={setShowBathymetry}
+              bathyLayer={bathyLayer} setBathyLayer={setBathyLayer}
               onOpenDashboard={switchToDashboard}
-              onAddPin={handlePinFromPanel}
+              showFAQ={showFAQ} setShowFAQ={setShowFAQ}
+              showProject={showProject} setShowProject={setShowProject}
             />
-          </ErrorBoundary>
-        </div>
-      </div>
-      <div className="tab-panel" style={{ display: tab === 'dashboard' ? 'flex' : 'none' }}>
-        <DashboardView
-          dataset={dataset}
-          pinnedLocations={pinnedLocations}
-          onAddLocation={handleAddLocation}
-          onRemoveLocation={handleRemoveLocation}
-        />
-      </div>
+            <div className="map-area">
+              <MapView
+                dataset={dataset} variable={variable} height={height}
+                season={season} region={region}
+                state={state} bathyBand={bathyBand}
+                showBathymetry={showBathymetry} bathyLayer={bathyLayer}
+                basemap={basemap} onBasemapChange={setBasemap}
+                onPixelClick={handlePixelClick}
+                pinnedLocations={pinnedLocations}
+                onAddPin={handleAddLocation}
+                onRemovePin={handleRemoveLocation}
+              />
+              <ErrorBoundary>
+                <PixelInfoPanel
+                  data={pixelData}
+                  loading={parquetLoading}
+                  loaded={parquetLoaded}
+                  recordCount={parquetCount}
+                  pinnedCount={pinnedLocations.length}
+                  onClose={handleClosePanel}
+                  onOpenDashboard={switchToDashboard}
+                  onAddPin={handlePinFromPanel}
+                />
+              </ErrorBoundary>
+            </div>
+          </div>
+          <div className="tab-panel" style={{ display: tab === 'dashboard' ? 'flex' : 'none' }}>
+            <DashboardView
+              dataset={dataset}
+              pinnedLocations={pinnedLocations}
+              onAddLocation={handleAddLocation}
+              onRemoveLocation={handleRemoveLocation}
+            />
+          </div>
+        </>
+      )}
       {showFAQ && <FAQPanel onClose={() => setShowFAQ(false)} />}
       {showProject && <ProjectInfoPanel onClose={() => setShowProject(false)} />}
     </div>

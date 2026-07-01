@@ -1,85 +1,230 @@
-# CNPq WebGIS Viewer
+# CNPq WebGIS — Recurso Eólico Offshore
 
-Visualizador geográfico interativo para dados de recurso eólico offshore brasileiro, baseado em simulações climáticas regionais WRF com downscaling para ~9 km de resolução (~0,07° de grade).
+> **Cenário atual e futuro do recurso eólico offshore no Brasil: ferramentas e aplicações**
+> Projeto CNPq 407949/2022-4 · CS2I — SENAI CIMATEC · 2024–2026
+
+Visualizador geográfico interativo para dados de vento e densidade de potência eólica offshore, baseado em simulações climáticas regionais WRF-ARW v4 com downscaling para ~9 km de resolução (~0,07° de grade) e projeções CMIP6 (SSP2-4.5 e SSP5-8.5).
+
+> **⚠️ Dados preliminares:** Os arquivos em `public/data/` (COGs e GeoParquet) são destinados exclusivamente ao desenvolvimento e validação do frontend. Os datasets finais, otimizados para produção, serão publicados em versão futura.
 
 ---
 
 ## Funcionalidades
 
-- **Mapa Interativo (WebGIS)**: Visualização de COGs (Cloud Optimized GeoTIFFs) de velocidade do vento e densidade de potência eólica sobre mapa base (Street, Satellite, Dark)
-- **Perfil Vertical**: Gráfico de barras horizontal mostrando a velocidade do vento em múltiplas altitudes (10 m, 50 m, 100 m, 150 m, 200 m) para um ponto clicado
-- **Distribuição de Weibull**: Curva PDF com parâmetros k (forma) e c (escala) calculados a partir das estatísticas anuais
-- **Painel Analítico (Dashboard)**: Comparação lado a lado de até 3 localizações com gráficos de:
-  - Média sazonal (barras)
-  - Comparação Weibull (linha com área)
-  - Rosa dos Ventos (polar)
-  - Perfil vertical (linha)
-- **Marcadores de Pin**: Fixe até 3 pontos no mapa para comparação; pins persistem entre as abas e podem ser removidos clicando no marcador ou pelo botão no dashboard
-- **Basemap Switcher**: Alterna entre OpenStreetMap, Satélite (Esri) e Dark (CARTO)
-- **FAQ e Informações do Projeto**: Painéis deslizantes laterais com explicações
+### Landing Page institucional
+
+- **NavbarTop** — logo PEOB/CNPq, links de âncora para seções (Metodologia, Cenários, Interface, Equipe, Publicações, FAQ) e botão "Entrar no Sistema"
+- **HeroSection** — título oficial, CTAs primário (WebGIS Map) e secundário (Analytical Dashboard)
+- **StatsStrip** — 5 indicadores técnicos em destaque
+- **Resumo Técnico** — texto descritivo + tabela de parâmetros do modelo
+- **Cenários Simulados** — 4 cards com diferenciação visual entre cenários históricos (verde) e futuros (vermelho)
+- **Visualizações** — galeria de cards clicáveis com descrição de cada ferramenta
+- **Equipe** — 17 pesquisadores com avatar circular, link para currículo Lattes e destaque visual para coordenador e líderes
+- **Publicações** — 9 publicações científicas em cards escaneáveis
+- **FAQ** — accordion com 20 perguntas frequentes (mesmo conteúdo do WebGIS), com link de entrada para o sistema
+- **Footer** — logos institucionais, citação oficial e disclaimer de dados
+
+### Sistema de análise
+
+- **Mapa Interativo (WebGIS)** — COGs de velocidade do vento e densidade de potência sobre 3 basemaps (Street, Satellite, Dark)
+- **Filtros** — Experimento × Variável × Altura × Estação × Estado × Faixa batimétrica
+- **Perfil Vertical** — velocidade do vento em 10, 50, 100, 150 e 200 m para um ponto clicado
+- **Distribuição de Weibull** — curva PDF com parâmetros k (forma) e c (escala)
+- **Painel Analítico (Dashboard)** — comparação de até 3 localizações com 4 gráficos sobrepostos (média sazonal, Weibull, rosa dos ventos, perfil vertical)
+- **Marcadores de Pin** — até 3 pontos fixados; persistem entre abas
+- **Navegação sem react-router** — estado gerenciado por `useState<TabId>` em `App.tsx`; botão `← Home` no TabBar retorna à landing sem recarregar
+
+---
+
+## Início rápido
+
+### Pré-requisitos
+
+- [Node.js](https://nodejs.org/) ≥ 18
+- [pnpm](https://pnpm.io/) ≥ 8
+
+### Instalação
+
+```bash
+pnpm install
+```
+
+### Execução
+
+```bash
+pnpm dev
+# Abre em http://localhost:3000
+```
+
+### Scripts
+
+| Comando | Descrição |
+|---|---|
+| `pnpm dev` | Servidor de desenvolvimento (porta 3000) |
+| `pnpm build` | Build de produção |
+| `pnpm preview` | Serve o build localmente |
+| `pnpm test` | Type check TypeScript + suite completa E2E |
+| `pnpm test:types` | Apenas `tsc --noEmit` |
+| `pnpm test:e2e` | Apenas Playwright (inicia dev server automaticamente) |
+| `pnpm test:e2e:ui` | Interface visual do Playwright |
+
+---
+
+## Testes de Regressão E2E
+
+O projeto usa **Playwright** para testes end-to-end que verificam que as funcionalidades existentes continuam funcionando após cada mudança.
+
+### Pré-requisito (primeira vez)
+
+```bash
+pnpm exec playwright install chromium
+```
+
+### Executar
+
+```bash
+pnpm test          # recomendado antes de qualquer commit
+pnpm test:e2e      # apenas os testes
+pnpm test:e2e:ui   # modo visual para depuração
+```
+
+### Saída esperada
+
+```
+41 passed (~17 s)
+```
+
+### Cobertura de testes
+
+| Arquivo | Testes | Contexto |
+|---|---|---|
+| `01-landing-page.spec.ts` | 12 | Seções, contagens de elementos, logos |
+| `02-navigation.spec.ts` | 9 | CTAs, navbar, botão `← Home`, persistência de aba |
+| `03-responsiveness.spec.ts` | 4 | Scroll horizontal nos 3 breakpoints (1280/768/375 px) |
+| `04-scroll-and-inpage-nav.spec.ts` | 6 | Scroll vertical, âncoras, botão "Voltar ao topo" |
+| `05-team-and-faq.spec.ts` | 10 | Avatares, links Lattes, FAQ accordion |
+
+#### Detalhamento por arquivo
+
+**`01-landing-page.spec.ts`**
+
+| Teste | O que valida |
+|---|---|
+| T02 | Landing page abre por padrão (`.tab-bar` ausente) |
+| T03 | H1 contém o título oficial do projeto |
+| NavbarTop | `.lp-navbar` e botão "Entrar no Sistema" visíveis |
+| HeroSection | Dois CTAs com textos corretos |
+| StatsStrip | Exatamente 5 `.lp-stat-card` |
+| ScenariosSection | 4 `.lp-scenario-card` com nomes corretos |
+| TeamSection | Exatamente 17 `.lp-team-card` |
+| PublicationsSection | Exatamente 9 `.lp-pub-card` |
+| FooterSection | `.lp-footer-disclaimer` contém "preliminares" |
+| T09 | 3 logos carregam com status HTTP < 400 |
+
+**`02-navigation.spec.ts`**
+
+| Teste | O que valida |
+|---|---|
+| T04 | CTA primário abre o mapa |
+| T05 | CTA secundário abre o dashboard |
+| T06 | "Entrar no Sistema" abre o mapa |
+| T10 | Botão `← Home` visível no TabBar |
+| T11 | `← Home` retorna à landing |
+| T11b | `← Home` funciona vindo do dashboard |
+| T07 | Aba ativa persiste ao alternar mapa/dashboard |
+
+**`03-responsiveness.spec.ts`**
+
+| Teste | O que valida |
+|---|---|
+| T08 desktop (1280 px) | `scrollWidth` ≤ `clientWidth` |
+| T08 tablet (768 px) | `scrollWidth` ≤ `clientWidth` |
+| T08 mobile (375 px) | `scrollWidth` ≤ `clientWidth` |
+| T08b | CTAs empilhados verticalmente em mobile |
+
+**`04-scroll-and-inpage-nav.spec.ts`**
+
+| Teste | O que valida |
+|---|---|
+| T20 | `window.scrollY` aumenta após `scrollBy` |
+| T21 | `scrollHeight` > `clientHeight` |
+| T22 | Navbar contém 6 links `.lp-nav-anchor` |
+| T23 | Seções têm IDs `metodologia`, `cenarios`, `interface`, `equipe`, `publicacoes`, `faq` |
+| T24 | Botão `.lp-back-to-top` oculto no carregamento |
+| T25 | Botão `.lp-back-to-top` visível após scroll |
+
+**`05-team-and-faq.spec.ts`**
+
+| Teste | O que valida |
+|---|---|
+| T28 | Exatamente 17 `.lp-team-avatar` visíveis |
+| T29 | Todos os cards têm `href` com `lattes.cnpq.br` |
+| T30 | `.lp-team-card--coord` com exatamente 1 card (Davidson) |
+| T31 | `.lp-team-card--lead` com exatamente 2 cards |
+| T32 | Seção `#faq` e `.lp-faq-list` presentes |
+| T33 | Exatamente 20 `.lp-faq-item` |
+| T34 | Todas as perguntas fechadas por padrão (`aria-expanded=false`) |
+| T35 | Clique em pergunta abre a resposta |
+| T36 | Clique em pergunta aberta a fecha |
+| T37 | Abrir nova pergunta fecha a anterior |
 
 ---
 
 ## Estrutura do Projeto
 
 ```
-cnpq-webgis-viewer/
+cnpq-offshore-wind-webgis/
 ├── public/
 │   ├── data/
 │   │   ├── bathymetry/           # Shapefiles de batimetria (GeoJSON)
-│   │   │   ├── batimetria_0_20_50_75_100m_cured.geojson
-│   │   │   ├── batimetria_0_100m_cured.geojson
-│   │   │   ├── batimetria_0_100m_estadual_cured.geojson
-│   │   │   └── batimetria_subfaixas_estadual_cured.geojson
 │   │   ├── cogs/wrf/             # Cloud Optimized GeoTIFFs (~42 MB)
 │   │   │   ├── ERA5_atlas/
 │   │   │   ├── HIST/
 │   │   │   ├── SSP2-4.5/
 │   │   │   └── SSP5-8.5/
-│   │   │       └── {var}{altura}/
-│   │   │           └── {altura}m/
-│   │   │               └── {estacao}/
-│   │   │                   ├── ..._nacional_completo.tif
-│   │   │                   ├── ..._nacional_0_100.tif
-│   │   │                   └── ..._{uf}_{faixa}.tif  (17 UFs × 4 faixas)
 │   │   └── geoparquet/wrf/       # GeoParquet de consultas analíticas (~228 MB)
-│   │       ├── ERA5_atlas/
-│   │       ├── HIST/
-│   │       ├── SSP2-4.5/
-│   │       └── SSP5-8.5/
-│   │           └── all_seasons.parquet  (~17-19 MB cada)
-│   └── parquet_wasm_bg.wasm     # Runtime WebAssembly para ler Parquet (~6,4 MB)
+│   │       └── {experimento}/all_seasons.parquet
+│   ├── images/logos/             # Logomarcas (CNPq, PEOB, SENAI CIMATEC)
+│   └── images/team/              # Fotos dos pesquisadores (avatares)
+│   └── parquet_wasm_bg.wasm      # Runtime WebAssembly para leitura de Parquet
 ├── src/
-│   ├── components/               # Componentes React
-│   │   ├── BasemapSwitcher.tsx   # Seletor de mapa base (Street/Satellite/Dark)
-│   │   ├── DashboardView.tsx     # Painel analítico completo (tab B)
-│   │   ├── ErrorBoundary.tsx     # Captura de erros React
-│   │   ├── FAQPanel.tsx          # Painel FAQ (accordion)
+│   ├── components/
+│   │   ├── LandingPage.tsx       # Página inicial institucional
+│   │   ├── LandingPage.css       # Estilos isolados da landing page
 │   │   ├── MapView.tsx           # Mapa principal (MapLibre GL + COG + pins)
-│   │   ├── MiniMap.tsx           # Mini-mapa embutido no dashboard
-│   │   ├── PixelInfoPanel.tsx    # Painel de informações do pixel clicado
-│   │   ├── ProfileChart.tsx      # Gráfico de perfil vertical (Chart.js)
+│   │   ├── DashboardView.tsx     # Painel analítico
+│   │   ├── SidePanel.tsx         # Filtros laterais
+│   │   ├── TabBar.tsx            # Barra de abas + botão ← Home
+│   │   ├── PixelInfoPanel.tsx    # Painel de informações do pixel
+│   │   ├── ProfileChart.tsx      # Perfil vertical (Chart.js)
+│   │   ├── WeibullChart.tsx      # Distribuição de Weibull (Chart.js)
+│   │   ├── MiniMap.tsx           # Mini-mapa no dashboard
+│   │   ├── BasemapSwitcher.tsx   # Seletor de mapa base
+│   │   ├── FAQPanel.tsx          # Painel FAQ (accordion)
 │   │   ├── ProjectInfoPanel.tsx  # Painel de informações do projeto
-│   │   ├── SidePanel.tsx         # Painel lateral de filtros
-│   │   ├── TabBar.tsx            # Barra de abas (Map / Dashboard)
-│   │   └── WeibullChart.tsx      # Gráfico de distribuição Weibull (Chart.js)
+│   │   └── ErrorBoundary.tsx     # Captura de erros React
 │   ├── lib/
-│   │   ├── cogCatalog.ts         # Catálogo de experimentos, variáveis, alturas, COGs
+│   │   ├── cogCatalog.ts         # Catálogo de experimentos, variáveis, alturas
 │   │   ├── cogTileRenderer.ts    # Renderizador de tiles COG (GeoTIFF.js)
-│   │   ├── metadata.ts           # Conteúdo editável do FAQ e Project Info
-│   │   └── pixelQuery.ts         # Engine de consulta a GeoParquet via WebAssembly
-│   ├── App.css                   # Todos os estilos do aplicativo
+│   │   ├── metadata.ts           # Conteúdo do FAQ e Project Info
+│   │   └── pixelQuery.ts         # Engine de consulta GeoParquet via WebAssembly
 │   ├── App.tsx                   # Componente raiz com estado global
-│   ├── main.tsx                  # Ponto de entrada React
-│   └── vite-env.d.ts            # Tipos Vite
-├── index.html                    # HTML de entrada
-├── package.json                  # Dependências e scripts
-├── tsconfig.json                 # Configuração TypeScript
-├── tsconfig.app.json
-├── tsconfig.node.json
-├── vite.config.ts                # Configuração Vite
-├── pnpm-lock.yaml                # Lockfile pnpm
-└── METADADOS.md                  # Documentação dos metadados (opcional)
+│   ├── App.css                   # Estilos do sistema (mapa, dashboard, drawers)
+│   └── main.tsx                  # Ponto de entrada React
+├── tests/e2e/
+│   ├── 01-landing-page.spec.ts   # 9 testes — conteúdo da landing page
+│   ├── 02-navigation.spec.ts     # 7 testes — navegação landing ↔ sistema
+│   ├── 03-responsiveness.spec.ts # 4 testes — layout responsivo (3 breakpoints)
+│   ├── 04-scroll-and-inpage-nav.spec.ts  # 6 testes — scroll e âncoras
+│   └── 05-team-and-faq.spec.ts          # 10 testes — avatares, Lattes, FAQ accordion
+├── docs/
+│   ├── INFO_PROJECT.md           # Fonte oficial de metadados (equipe, parâmetros, citação)
+│   ├── TODO.md                   # Roadmap por fases
+│   └── TOFIX.md                  # Pontos de melhoria identificados na revisão
+├── CLAUDE.md                     # Instruções de desenvolvimento para IA e humanos
+├── playwright.config.ts          # Configuração E2E (base URL: localhost:3000)
+├── vite.config.ts                # Dev server na porta 3000
+└── package.json
 ```
 
 ---
@@ -88,12 +233,12 @@ cnpq-webgis-viewer/
 
 | Experimento | Descrição | Período | Cenário |
 |---|---|---|---|
-| **ERA5_atlas** | Reanálise ERA5 (ECMWF) com downscaling WRF | 2004–2024 | Histórico observacional |
-| **HIST** | WRF Histórico (forçado por ERA5) | 2004–2014 | Histórico simulado |
-| **SSP2-4.5** | Projeção CMIP6 SSP2-4.5 com downscaling WRF | 2015–2023 + 2030–2050 | Mitigação moderada (~4,5 W/m²) |
-| **SSP5-8.5** | Projeção CMIP6 SSP5-8.5 com downscaling WRF | 2015–2023 + 2030–2050 | Emissões elevadas (~8,5 W/m²) |
+| **ERA5_atlas** | Downscaling WRF forçado por ERA5 | 2004–2024 | Histórico observacional (referência) |
+| **HIST** | WRF Histórico (treinamento para bias correction) | 2004–2014 | Histórico simulado |
+| **SSP2-4.5** | Projeção CMIP6 (18 modelos) — mitigação moderada | 2015–2023 + 2030–2050 | ~4,5 W/m² |
+| **SSP5-8.5** | Projeção CMIP6 (18 modelos) — emissões elevadas | 2015–2023 + 2030–2050 | ~8,5 W/m² |
 
-### Variáveis
+### Variáveis disponíveis no frontend
 
 | Sigla | Descrição | Unidade |
 |---|---|---|
@@ -101,103 +246,102 @@ cnpq-webgis-viewer/
 | `wpd` | Densidade de potência eólica | W/m² |
 
 ### Alturas do perfil vertical
-10 m, 50 m, 100 m, 150 m, 200 m
+
+10 m · 50 m · 100 m · 150 m · 200 m
 
 ### Estações sazonais
-`ANNUAL` (anual), `DJF` (verão), `MAM` (outono), `JJA` (inverno), `SON` (primavera)
+
+`ANNUAL` · `DJF` (verão) · `MAM` (outono) · `JJA` (inverno) · `SON` (primavera)
 
 ### Resolução espacial
-Grade regular de 534 × 263 pontos (~140 mil células), resolução do modelo WRF de ~9 km, regridada para grade lat/lon com espaçamento de ~0,07° (~8 km). Projeção EPSG:4326 (WGS84).
+
+Grade regular de 534 × 263 pontos (~140 mil células), originada do domínio D02 do WRF (388 × 553, ~9 km), regridada para ~0,07° lat/lon. Projeção EPSG:4326 (WGS84).
 
 ---
 
 ## Tecnologias
 
-- **React 18** + **TypeScript** — Framework frontend
-- **Vite 6** — Bundler e dev server
-- **MapLibre GL JS** — Renderização de mapas (WebGL)
-- **Chart.js** + **react-chartjs-2** — Gráficos analíticos
-- **parquet-wasm** + **Apache Arrow** — Leitura de GeoParquet no navegador via WebAssembly
-- **GeoTIFF.js** — Decodificação de COGs client-side
-
----
-
-## Pré-requisitos
-
-- [Node.js](https://nodejs.org/) >= 18
-- [pnpm](https://pnpm.io/) >= 8
-
-## Instalação e execução
-
-```bash
-# 1. Instalar dependências
-pnpm install
-
-# 2. Iniciar servidor de desenvolvimento
-pnpm dev
-
-# 3. Abrir no navegador
-# http://localhost:5173
-```
-
-### Scripts disponíveis
-
-| Comando | Descrição |
-|---|---|
-| `pnpm dev` | Inicia servidor de desenvolvimento |
-| `pnpm build` | Compila TypeScript e faz build de produção |
-| `pnpm preview` | Serve o build de produção localmente |
-
----
-
-## Arquivos-chave para contribuir
-
-| Arquivo | O que faz | Como contribuir |
+| Tecnologia | Versão | Uso |
 |---|---|---|
-| `src/components/MapView.tsx` | Mapa principal, renderização de COGs, marcadores | Ajustar camadas, eventos, interações |
-| `src/components/DashboardView.tsx` | Painel analítico com 4 gráficos | Adicionar/remover gráficos, métricas |
-| `src/components/SidePanel.tsx` | Painel lateral com filtros (experimento, variável, altura, etc.) | Adicionar novos filtros ou controles |
-| `src/lib/pixelQuery.ts` | Engine de consulta GeoParquet | Otimizar queries, adicionar novas funções de agregação |
-| `src/lib/cogCatalog.ts` | Catálogo de experimentos e variáveis | Adicionar novos experimentos, variáveis, alturas |
-| `src/lib/cogTileRenderer.ts` | Renderizador de tiles COG | Otimizar performance de renderização |
-| `src/lib/metadata.ts` | Textos do FAQ e Informações do Projeto | Editar perguntas/respostas, metadados |
-| `src/App.css` | Todos os estilos | Ajustar layout, responsividade, temas |
-| `src/components/TabBar.tsx` | Barra de abas | Adicionar novas abas |
+| React | 18.x | Framework frontend |
+| TypeScript | 5.x | Tipagem estática (sem `any`) |
+| Vite | 6.x | Bundler e dev server (porta 3000) |
+| MapLibre GL JS | — | Renderização do mapa (WebGL) |
+| Chart.js + react-chartjs-2 | — | Gráficos analíticos |
+| parquet-wasm + Apache Arrow | — | Leitura de GeoParquet via WebAssembly |
+| GeoTIFF.js | — | Decodificação de COGs client-side |
+| Playwright | ^1.52.0 | Testes de regressão E2E |
 
 ---
 
-## Arquitetura de dados
+## Arquitetura
 
-### Fluxo de renderização do COG
+### Fluxo de renderização COG
+
 ```
-buildCogUrl() → fetch(tile) → GeoTIFF.parse() → canvas drawImage → addSource('image') → addLayer('raster')
+buildCogUrl() → fetch(tile) → GeoTIFF.parse() → canvas drawImage
+              → addSource('image') → addLayer('raster')
 ```
 
-### Fluxo de consulta a pixel
+### Fluxo de consulta pixel
+
 ```
-click no mapa → queryNearest(lat, lon) → busca euclidiana no array de ~140k pixels → retorna PixelDataSummary
+click no mapa → queryNearest(lat, lon) → busca euclidiana ~140k pixels
+             → retorna PixelDataSummary → ProfileChart + WeibullChart
 ```
 
 ### Fluxo de dashboard
+
 ```
-queryDashboardLocation(lat, lon) → agrega estatísticas por estação do allSeasonMap → armazena em pinnedLocations[] → gráficos reativos via useMemo()
+queryDashboardLocation(lat, lon) → agrega por estação via allSeasonMap
+                                 → pinnedLocations[] → gráficos reativos
+```
+
+### Navegação (sem react-router)
+
+```
+useState<TabId>('home')  →  'home': LandingPage
+                         →  'map':  TabBar + SidePanel + MapView
+                         →  'dashboard': TabBar + DashboardView
 ```
 
 ---
 
-## Notas sobre desenvolvimento
+## Guia de contribuição
 
-- O estado global (filtros, pins, abas) está centralizado em `App.tsx`
-- O GeoParquet é carregado via WebAssembly inteiramente no navegador — não há backend
-- O COG não é servido como WMS; cada tile é decodificado e pintado em um canvas, depois carregado como imagem no MapLibre
-- Para adicionar um novo experimento, edite `cogCatalog.ts` (tipo `Dataset`, array `DATASETS`, label) e adicione os dados em `public/data/cogs/wrf/` e `public/data/geoparquet/wrf/`
-- Os dados brutos estão armazenados em formato NetCDF no diretório `data/raw/` (~1,7 TB)
+### Adicionar um novo experimento
 
-> **⚠️ Aviso importante:** Os dados contidos em `public/data/` (COGs e GeoParquet) são **preliminares** e destinam-se exclusivamente ao desenvolvimento e validação do frontend. Os datasets finais, otimizados para performance de consulta e produção, serão publicados em versão futura do repositório.
+1. Edite `src/lib/cogCatalog.ts` — tipo `Dataset`, array `DATASETS`, labels
+2. Adicione dados em `public/data/cogs/wrf/{experimento}/` e `public/data/geoparquet/wrf/{experimento}/`
+3. Adicione o card correspondente em `SCENARIOS` no `LandingPage.tsx`
+
+### Editar textos do FAQ ou Project Info
+
+Edite `src/lib/metadata.ts`. Use `docs/INFO_PROJECT.md` como fonte de verdade para valores técnicos.
+
+### Arquivos de referência
+
+| Arquivo | Contém |
+|---|---|
+| `docs/INFO_PROJECT.md` | Metadados oficiais: equipe, parâmetros, experimentos, citação |
+| `docs/TODO.md` | Roadmap por fases — itens feitos e pendentes |
+| `src/lib/cogCatalog.ts` | Catálogo de experimentos, variáveis, alturas, caminhos de COG |
+| `src/lib/metadata.ts` | Textos do FAQ e painel de Informações do Projeto |
+
+---
+
+## Citação
+
+```
+Cenário atual e futuro do recurso eólico offshore no Brasil: ferramentas e aplicações.
+Projeto 407949/2022-4. Coordenação: Davidson Martins Moreira.
+CS2I — SENAI CIMATEC, Salvador, BA, Brasil.
+DOI: [a registrar no Zenodo]
+```
 
 ---
 
 ## Licença
 
-Dados: [Creative Commons Attribution](https://creativecommons.org/licenses/by/4.0/)
+Dados: [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/)
 Código: [MIT](LICENSE)

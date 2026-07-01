@@ -1,6 +1,6 @@
 import { memo } from 'react'
 
-export type TabId = 'map' | 'dashboard'
+export type TabId = 'home' | 'map' | 'dashboard'
 
 interface TabBarProps {
   tab: TabId
@@ -15,6 +15,10 @@ const TABS: { id: TabId; label: string }[] = [
 function TabBarInner({ tab, onChange }: TabBarProps) {
   return (
     <div className="tab-bar">
+      <button className="tab-home-btn" onClick={() => onChange('home')} title="Voltar à página inicial">
+        ← Home
+      </button>
+      <div className="tab-bar-divider" />
       {TABS.map(t => (
         <button
           key={t.id}
