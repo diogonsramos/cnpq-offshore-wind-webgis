@@ -1,16 +1,22 @@
-export type Dataset = 'ERA5_atlas' | 'HIST' | 'SSP2-4.5' | 'SSP5-8.5'
+export type Model = 'wrf' | 'mpas'
+export type Dataset = 'ERA5_atlas_historico' | 'ERA5_atlas_presente' | 'HIST_historico' | 'SSP2-4.5_presente' | 'SSP2-4.5_futuro' | 'SSP5-8.5_presente' | 'SSP5-8.5_futuro'
 export type Variable = 'ws' | 'wpd'
-export type Height = 10 | 100
+export type Height = 10 | 50 | 100 | 150 | 200
 export type Season = 'annual' | 'djf' | 'mam' | 'jja' | 'son'
 export type Region = 'nacional' | 'estadual'
 export type BathyBand = '0_20' | '20_50' | '50_100' | '0_100'
-
-export const DATASETS: Dataset[] = ['ERA5_atlas', 'HIST', 'SSP2-4.5', 'SSP5-8.5']
+export const MODELS: Model[] = ['wrf', 'mpas']
+export const DATASETS: Dataset[] = [
+  'ERA5_atlas_historico', 'ERA5_atlas_presente',
+  'HIST_historico',
+  'SSP2-4.5_presente', 'SSP2-4.5_futuro',
+  'SSP5-8.5_presente', 'SSP5-8.5_futuro',
+]
 export const VARIABLES: Variable[] = ['ws', 'wpd']
-export const HEIGHTS: Height[] = [10, 100]
+export const HEIGHTS: Height[] = [10, 50, 100, 150, 200]
 export const SEASONS: Season[] = ['annual', 'djf', 'mam', 'jja', 'son']
-export const BATHY_BANDS: BathyBand[] = ['0_20', '20_50', '50_100', '0_100']
 export const REGIONS: Region[] = ['nacional', 'estadual']
+export const BATHY_BANDS: BathyBand[] = ['0_20', '20_50', '50_100', '0_100']
 
 export interface StateDef {
   val: string
@@ -43,10 +49,18 @@ const VAR_LABEL: Record<Variable, { label: string; unit: string }> = {
 }
 
 const DATASET_LABEL: Record<Dataset, string> = {
-  ERA5_atlas: 'ERA5 Reanálise',
-  HIST: 'WRF Histórico',
-  'SSP2-4.5': 'WRF SSP2-4.5',
-  'SSP5-8.5': 'WRF SSP5-8.5',
+  ERA5_atlas_historico: 'ERA5 Reanálise (Histórico)',
+  ERA5_atlas_presente: 'ERA5 Reanálise (Presente)',
+  HIST_historico: 'Histórico',
+  'SSP2-4.5_presente': 'SSP2-4.5 (Presente)',
+  'SSP2-4.5_futuro': 'SSP2-4.5 (Futuro)',
+  'SSP5-8.5_presente': 'SSP5-8.5 (Presente)',
+  'SSP5-8.5_futuro': 'SSP5-8.5 (Futuro)',
+}
+
+const MODEL_LABEL: Record<Model, string> = {
+  wrf: 'WRF',
+  mpas: 'MPAS',
 }
 
 const BATHY_LABEL: Record<BathyBand, string> = {
@@ -58,6 +72,10 @@ const BATHY_LABEL: Record<BathyBand, string> = {
 
 export function datasetLabel(d: Dataset): string {
   return DATASET_LABEL[d]
+}
+
+export function modelLabel(m: Model): string {
+  return MODEL_LABEL[m]
 }
 
 export function varLabel(v: Variable): { label: string; unit: string } {
@@ -73,18 +91,8 @@ export function buildCogUrl(
   variable: Variable,
   height: Height,
   season: Season,
-  region: Region,
-  state?: string,
-  bathyBand?: BathyBand,
+  model: Model = 'wrf',
 ): string {
-  const base = `/data/cogs/wrf/${dataset}/${variable}${height}/${height}m/${season}`
-  if (region === 'nacional') {
-    if (bathyBand === '0_100') {
-      return `${base}_nacional_0_100.tif`
-    }
-    return `${base}_nacional_completo.tif`
-  }
-  const uf = (state || 'BA').toLowerCase()
-  const band = bathyBand || '0_20'
-  return `${base}_${uf}_${band}.tif`
+  const varLower = variable === 'ws' ? `ws${height}` : `wpd${height}`
+  return `/data/cogs/${model}/${dataset}/${varLower}/${height}m/${season}.tif`
 }

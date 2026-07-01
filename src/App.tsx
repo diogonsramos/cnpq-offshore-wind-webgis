@@ -9,21 +9,19 @@ import FAQPanel from './components/FAQPanel'
 import ProjectInfoPanel from './components/ProjectInfoPanel'
 import LandingPage from './components/LandingPage'
 import { queryDashboardLocation, isLoaded, type DashboardLocationData } from './lib/pixelQuery'
-import type { Dataset, Variable, Height, Season, Region, BathyBand } from './lib/cogCatalog'
+import type { Model, Dataset, Variable, Height, Season } from './lib/cogCatalog'
 import type { PixelDataSummary } from './lib/pixelQuery'
 import './App.css'
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('home')
-  const [dataset, setDataset] = useState<Dataset>('ERA5_atlas')
+  const [model, setModel] = useState<Model>('wrf')
+  const [dataset, setDataset] = useState<Dataset>('ERA5_atlas_historico')
   const [variable, setVariable] = useState<Variable>('ws')
   const [height, setHeight] = useState<Height>(100)
   const [season, setSeason] = useState<Season>('annual')
-  const [region, setRegion] = useState<Region>('nacional')
-  const [state, setState] = useState('BA')
-  const [bathyBand, setBathyBand] = useState<BathyBand>('0_20')
   const [showBathymetry, setShowBathymetry] = useState(true)
-  const [bathyLayer, setBathyLayer] = useState('batimetria_subfaixas_estadual')
+  const [bathyLayer, setBathyLayer] = useState('mn_zee_nacional')
   const [pixelData, setPixelData] = useState<PixelDataSummary | null>(null)
   const [parquetLoaded, setParquetLoaded] = useState(false)
   const [parquetLoading, setParquetLoading] = useState(false)
@@ -34,6 +32,15 @@ export default function App() {
   const [showProject, setShowProject] = useState(false)
   const pinnedRef = useRef(pinnedLocations)
   pinnedRef.current = pinnedLocations
+
+  useEffect(() => {
+    if (tab === 'home') {
+      document.documentElement.classList.add('landing-mode')
+    } else {
+      document.documentElement.classList.remove('landing-mode')
+    }
+    return () => document.documentElement.classList.remove('landing-mode')
+  }, [tab])
 
   const handlePixelClick = useCallback((data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => {
     setPixelData(data)
@@ -46,13 +53,17 @@ export default function App() {
     setPixelData(null)
   }, [])
 
-  const handleAddLocation = useCallback((lat: number, lon: number) => {
+  const handleAddLocation = useCallback(async (lat: number, lon: number) => {
     if (!isLoaded()) return
     const current = pinnedRef.current
     if (current.length >= 3) return
-    const data = queryDashboardLocation(lat, lon)
-    if (!data) return
-    setPinnedLocations(prev => [...prev, data])
+    try {
+      const data = await queryDashboardLocation(lat, lon)
+      if (!data) return
+      setPinnedLocations(prev => [...prev, data])
+    } catch (e) {
+      console.error('Failed to query dashboard location:', e)
+    }
   }, [])
 
   const handleRemoveLocation = useCallback((idx: number) => {
@@ -65,15 +76,6 @@ export default function App() {
 
   const switchToDashboard = useCallback(() => setTab('dashboard'), [])
 
-  useEffect(() => {
-    if (tab === 'home') {
-      document.documentElement.classList.add('landing-mode')
-    } else {
-      document.documentElement.classList.remove('landing-mode')
-    }
-    return () => document.documentElement.classList.remove('landing-mode')
-  }, [tab])
-
   return (
     <div className={`app${tab === 'home' ? ' app--landing' : ''}`}>
       {tab === 'home' ? (
@@ -83,13 +85,11 @@ export default function App() {
           <TabBar tab={tab} onChange={setTab} />
           <div className="tab-panel" style={{ display: tab === 'map' ? 'flex' : 'none' }}>
             <SidePanel
+              model={model} setModel={setModel}
               dataset={dataset} setDataset={setDataset}
               variable={variable} setVariable={setVariable}
               height={height} setHeight={setHeight}
               season={season} setSeason={setSeason}
-              region={region} setRegion={setRegion}
-              state={state} setState={setState}
-              bathyBand={bathyBand} setBathyBand={setBathyBand}
               showBathymetry={showBathymetry} setShowBathymetry={setShowBathymetry}
               bathyLayer={bathyLayer} setBathyLayer={setBathyLayer}
               onOpenDashboard={switchToDashboard}
@@ -98,9 +98,8 @@ export default function App() {
             />
             <div className="map-area">
               <MapView
-                dataset={dataset} variable={variable} height={height}
-                season={season} region={region}
-                state={state} bathyBand={bathyBand}
+                model={model} dataset={dataset} variable={variable} height={height}
+                season={season}
                 showBathymetry={showBathymetry} bathyLayer={bathyLayer}
                 basemap={basemap} onBasemapChange={setBasemap}
                 onPixelClick={handlePixelClick}
@@ -124,6 +123,7 @@ export default function App() {
           </div>
           <div className="tab-panel" style={{ display: tab === 'dashboard' ? 'flex' : 'none' }}>
             <DashboardView
+              model={model}
               dataset={dataset}
               pinnedLocations={pinnedLocations}
               onAddLocation={handleAddLocation}

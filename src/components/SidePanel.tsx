@@ -1,18 +1,16 @@
 import { useState } from 'react'
 import {
-  DATASETS, VARIABLES, HEIGHTS, SEASONS, REGIONS, BATHY_BANDS, COASTAL_STATES,
-  datasetLabel, varLabel, bathyLabel,
-  type Dataset, type Variable, type Height, type Season, type Region, type BathyBand,
+  MODELS, DATASETS, VARIABLES, HEIGHTS, SEASONS,
+  datasetLabel, modelLabel, varLabel,
+  type Model, type Dataset, type Variable, type Height, type Season,
 } from '../lib/cogCatalog'
 
 interface SidePanelProps {
+  model: Model; setModel: (v: Model) => void
   dataset: Dataset; setDataset: (v: Dataset) => void
   variable: Variable; setVariable: (v: Variable) => void
   height: Height; setHeight: (v: Height) => void
   season: Season; setSeason: (v: Season) => void
-  region: Region; setRegion: (v: Region) => void
-  state: string; setState: (v: string) => void
-  bathyBand: BathyBand; setBathyBand: (v: BathyBand) => void
   showBathymetry: boolean; setShowBathymetry: (v: boolean) => void
   bathyLayer: string; setBathyLayer: (v: string) => void
   onOpenDashboard: () => void
@@ -103,16 +101,17 @@ function SearchableSelect({ label, options, value, onChange }: {
 }
 
 const BATHY_LAYERS = [
-  { val: 'batimetria_subfaixas_estadual', label: 'Subfaixas / Estadual' },
-  { val: 'batimetria_0_20_50_75_100m', label: 'Faixas Nacionais' },
-  { val: 'batimetria_0_100m', label: 'Plataforma Continental' },
-  { val: 'batimetria_0_100m_estadual', label: 'Plataforma / Estadual' },
+  { val: 'mn_zee_nacional', label: 'ZEE Nacional' },
+  { val: 'mn_zee_estadual', label: 'ZEE Estadual' },
+  { val: 'bathy_0_100_nacional', label: 'Plataforma Nacional (0-100m)' },
+  { val: 'bathy_0_100_estadual', label: 'Plataforma Estadual (0-100m)' },
+  { val: 'bathy_0_20_50_75_100_nacional', label: 'Subfaixas Nacional' },
+  { val: 'bathy_0_20_50_75_100_estadual', label: 'Subfaixas Estadual' },
 ]
 
 export default function SidePanel({
-  dataset, setDataset, variable, setVariable, height, setHeight,
-  season, setSeason, region, setRegion,
-  state, setState, bathyBand, setBathyBand,
+  model, setModel, dataset, setDataset, variable, setVariable, height, setHeight,
+  season, setSeason,
   showBathymetry, setShowBathymetry, bathyLayer, setBathyLayer,
   onOpenDashboard,
   showFAQ, setShowFAQ, showProject, setShowProject,
@@ -121,14 +120,20 @@ export default function SidePanel({
     <div className="side-panel">
       <div className="header">
         <h1>CNPq WebGIS</h1>
-        <p className="subtitle">Visualizador de COGs — WRF</p>
+        <p className="subtitle">Visualizador de COGs — {modelLabel(model).toUpperCase()}</p>
       </div>
 
       <div className="filters">
-        <AccordionSection title="Experimento & Variável">
+        <AccordionSection title="Modelo & Experimento">
+          <SelectField
+            label="Modelo"
+            options={MODELS.map(m => ({ val: m, label: modelLabel(m) }))}
+            value={model}
+            onChange={v => setModel(v as Model)}
+          />
           <SearchableSelect
             label="Experimento"
-            options={DATASETS.map(d => ({ val: d, label: datasetLabel(d) }))}
+            options={DATASETS.map(d => ({ val: d, label: `${modelLabel(model)} ${datasetLabel(d)}` }))}
             value={dataset}
             onChange={v => setDataset(v as Dataset)}
           />
@@ -155,31 +160,6 @@ export default function SidePanel({
           />
         </AccordionSection>
 
-        <AccordionSection title="Região & Recorte" defaultOpen={false}>
-          <SelectField
-            label="Região"
-            options={REGIONS.map(r => ({ val: r, label: r === 'nacional' ? 'Nacional' : 'Estadual' }))}
-            value={region}
-            onChange={setRegion}
-          />
-          {region === 'estadual' && (
-            <>
-              <SearchableSelect
-                label="Estado"
-                options={COASTAL_STATES.map(s => ({ val: s.val, label: s.label }))}
-                value={state}
-                onChange={setState}
-              />
-              <SelectField
-                label="Faixa Batimétrica"
-                options={BATHY_BANDS.map(b => ({ val: b, label: bathyLabel(b) }))}
-                value={bathyBand}
-                onChange={v => setBathyBand(v as BathyBand)}
-              />
-            </>
-          )}
-        </AccordionSection>
-
         <AccordionSection title="Shapefiles de Batimetria" defaultOpen={false}>
           <label className="checkbox-row">
             <input type="checkbox" checked={showBathymetry} onChange={e => setShowBathymetry(e.target.checked)} />
@@ -199,7 +179,7 @@ export default function SidePanel({
       </div>
 
       <div className="footer">
-        <p className="footer-info">{datasetLabel(dataset)} | {varLabel(variable).label} {height}m | {region === 'nacional' ? 'Nacional' : `${state} ${bathyLabel(bathyBand)}`}</p>
+        <p className="footer-info">{modelLabel(model)} {datasetLabel(dataset)} | {varLabel(variable).label} {height}m</p>
         <div className="footer-icons">
           <button className="footer-icon-btn" onClick={() => setShowFAQ(true)} title="FAQ">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/><text x="8" y="11.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="currentColor">?</text></svg>

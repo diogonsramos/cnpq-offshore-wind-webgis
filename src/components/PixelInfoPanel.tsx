@@ -15,7 +15,7 @@ interface PixelInfoPanelProps {
 }
 
 function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, onClose, onOpenDashboard, onAddPin }: PixelInfoPanelProps) {
-  const className = `pixel-panel${data ? ' open' : ''}`
+  const className = `pixel-panel${(data || loading) ? ' open' : ''}`
 
   return (
     <div className={className}>
@@ -41,20 +41,21 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
               <Row label="Pixel ID" value={String(data.pixel_id)} />
               {data.state && <Row label="State" value={data.state} />}
               {data.bathy_zone && <Row label="Bathymetry" value={data.bathy_zone.replace('_', '-') + 'm'} />}
+              <Row label="Dist. Costa" value={fmt(data.distance_nm, ' nm')} />
             </Section>
 
             <Section title="Wind Speed 100m">
-              <Row label="Mean" value={fmt(data.ws100.mean, ' m/s')} />
-              <Row label="Min" value={fmt(data.ws100.min, ' m/s')} />
-              <Row label="Max" value={fmt(data.ws100.max, ' m/s')} />
-              <Row label="Std Dev" value={fmt(data.ws100.std, ' m/s')} />
+              <Row label="Mean" value={fmt(data.ws[100]?.mean, ' m/s')} />
+              <Row label="Min" value={fmt(data.ws[100]?.min, ' m/s')} />
+              <Row label="Max" value={fmt(data.ws[100]?.max, ' m/s')} />
+              <Row label="Std Dev" value={fmt(data.ws[100]?.std, ' m/s')} />
             </Section>
 
             <Section title="Wind Speed 10m">
-              <Row label="Mean" value={fmt(data.ws10.mean, ' m/s')} />
-              <Row label="Min" value={fmt(data.ws10.min, ' m/s')} />
-              <Row label="Max" value={fmt(data.ws10.max, ' m/s')} />
-              <Row label="Std Dev" value={fmt(data.ws10.std, ' m/s')} />
+              <Row label="Mean" value={fmt(data.ws[10]?.mean, ' m/s')} />
+              <Row label="Min" value={fmt(data.ws[10]?.min, ' m/s')} />
+              <Row label="Max" value={fmt(data.ws[10]?.max, ' m/s')} />
+              <Row label="Std Dev" value={fmt(data.ws[10]?.std, ' m/s')} />
             </Section>
 
             {data.profile_heights.length > 0 && (
@@ -63,15 +64,15 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
               </Section>
             )}
 
-            {data.weibull && (
+            {data.weibull[100] && (
               <Section title="Weibull Parameters">
-                <Row label="WS10 k" value={fmt(data.weibull.k_10m)} />
-                <Row label="WS10 c" value={fmt(data.weibull.c_10m, ' m/s')} />
-                <Row label="WS100 k" value={fmt(data.weibull.k_100m)} />
-                <Row label="WS100 c" value={fmt(data.weibull.c_100m, ' m/s')} />
-                <WeibullChart k={data.weibull.k_100m} c={data.weibull.c_100m} label="100m" />
-                {data.weibull.k_10m && data.weibull.c_10m && (
-                  <WeibullChart k={data.weibull.k_10m} c={data.weibull.c_10m} label="10m" />
+                <Row label="WS10 k" value={fmt(data.weibull[10]?.k)} />
+                <Row label="WS10 c" value={fmt(data.weibull[10]?.c, ' m/s')} />
+                <Row label="WS100 k" value={fmt(data.weibull[100]?.k)} />
+                <Row label="WS100 c" value={fmt(data.weibull[100]?.c, ' m/s')} />
+                <WeibullChart k={data.weibull[100]?.k ?? null} c={data.weibull[100]?.c ?? null} label="100m" />
+                {data.weibull[10]?.k != null && data.weibull[10]?.c != null && (
+                  <WeibullChart k={data.weibull[10]!.k} c={data.weibull[10]!.c} label="10m" />
                 )}
               </Section>
             )}
