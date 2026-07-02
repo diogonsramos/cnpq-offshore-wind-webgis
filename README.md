@@ -363,8 +363,8 @@ main ── PR#1 (f01) ── merge ── PR#2 (f02) ── merge ── ...
 Cada feature branch tem um arquivo `docs/TODO_fNN_NAME.md` com especificações completas para implementação via Claude Code:
 
 | Ordem | Branch | Feature |
-|---|---|---|
-| f01 | `feat/dashboard-controls` | Seletores de experimento/modelo, opacidade COG |
+|---|---|---|---|
+| f01 | `feat/dashboard-controls` | Seletores de experimento/modelo, opacidade COG, comparação multi-experimento/modelo, **GeoParquet Explorer (filtros espaciais)** |
 | f02 | `feat/dashboard-charts` | Weibull, WPD profile, heatmap |
 | f03 | `feat/ui-enhancements` | Export CSV, fullscreen, basemaps, export imagem |
 | f04 | `feat/performance` | Lazy Plotly, cache eviction |
