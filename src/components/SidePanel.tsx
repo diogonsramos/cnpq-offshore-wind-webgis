@@ -4,6 +4,7 @@ import {
   datasetLabel, modelLabel, varLabel,
   type Model, type Dataset, type Variable, type Height, type Season,
 } from '../lib/cogCatalog'
+import { t } from '../i18n/t'
 
 interface SidePanelProps {
   model: Model; setModel: (v: Model) => void
@@ -16,6 +17,7 @@ interface SidePanelProps {
   onOpenDashboard: () => void
   showFAQ: boolean; setShowFAQ: (v: boolean) => void
   showProject: boolean; setShowProject: (v: boolean) => void
+  opacity: number; setOpacity: (v: number) => void
 }
 
 function AccordionSection({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
@@ -115,6 +117,7 @@ export default function SidePanel({
   showBathymetry, setShowBathymetry, bathyLayer, setBathyLayer,
   onOpenDashboard,
   showFAQ, setShowFAQ, showProject, setShowProject,
+  opacity, setOpacity,
 }: SidePanelProps) {
   return (
     <div className="side-panel">
@@ -175,6 +178,20 @@ export default function SidePanel({
               ))}
             </div>
           )}
+        </AccordionSection>
+
+        <AccordionSection title={t('sidepanel.cog.section_title')} defaultOpen={false}>
+          <div className="range-field">
+            <p className="label">{t('sidepanel.cog.opacity_label')} — {Math.round(opacity * 100)}%</p>
+            <input
+              type="range"
+              min={0.1}
+              max={1}
+              step={0.1}
+              value={opacity}
+              onChange={e => setOpacity(Number(e.target.value))}
+            />
+          </div>
         </AccordionSection>
       </div>
 

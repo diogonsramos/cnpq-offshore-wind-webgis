@@ -86,6 +86,12 @@ export function bathyLabel(b: BathyBand): string {
   return BATHY_LABEL[b]
 }
 
+// Dataset ids carry a _historico/_presente/_futuro suffix that has no counterpart
+// on disk — the real geoparquet/cog folders only exist per base experiment.
+export function datasetFolder(d: Dataset): string {
+  return d.replace(/_(historico|presente|futuro)$/, '')
+}
+
 export function buildCogUrl(
   dataset: Dataset,
   variable: Variable,
@@ -94,5 +100,6 @@ export function buildCogUrl(
   model: Model = 'wrf',
 ): string {
   const varLower = variable === 'ws' ? `ws${height}` : `wpd${height}`
-  return `/data/cogs/${model}/${dataset}/${varLower}/${height}m/${season}.tif`
+  const folder = datasetFolder(dataset)
+  return `/data/cogs/${model}/${folder}/${varLower}/${height}m/${season}_nacional_0_100.tif`
 }

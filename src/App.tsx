@@ -27,6 +27,7 @@ export default function App() {
   const [parquetLoading, setParquetLoading] = useState(false)
   const [parquetCount, setParquetCount] = useState(0)
   const [basemap, setBasemap] = useState<string>('street')
+  const [cogOpacity, setCogOpacity] = useState<number>(0.7)
   const [pinnedLocations, setPinnedLocations] = useState<DashboardLocationData[]>([])
   const [showFAQ, setShowFAQ] = useState(false)
   const [showProject, setShowProject] = useState(false)
@@ -95,6 +96,7 @@ export default function App() {
               onOpenDashboard={switchToDashboard}
               showFAQ={showFAQ} setShowFAQ={setShowFAQ}
               showProject={showProject} setShowProject={setShowProject}
+              opacity={cogOpacity} setOpacity={setCogOpacity}
             />
             <div className="map-area">
               <MapView
@@ -102,6 +104,7 @@ export default function App() {
                 season={season}
                 showBathymetry={showBathymetry} bathyLayer={bathyLayer}
                 basemap={basemap} onBasemapChange={setBasemap}
+                opacity={cogOpacity}
                 onPixelClick={handlePixelClick}
                 pinnedLocations={pinnedLocations}
                 onAddPin={handleAddLocation}
@@ -123,8 +126,8 @@ export default function App() {
           </div>
           <div className="tab-panel" style={{ display: tab === 'dashboard' ? 'flex' : 'none' }}>
             <DashboardView
-              model={model}
-              dataset={dataset}
+              model={model} setModel={setModel}
+              dataset={dataset} setDataset={setDataset}
               pinnedLocations={pinnedLocations}
               onAddLocation={handleAddLocation}
               onRemoveLocation={handleRemoveLocation}

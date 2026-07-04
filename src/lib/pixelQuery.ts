@@ -158,7 +158,13 @@ async function fetchAndParseParquet(url: string, cacheKey: string): Promise<Tabl
   let buf: Uint8Array | null = await cacheGet(cacheKey)
   if (!buf) {
     const resp = await fetch(url)
-    if (!resp.ok) throw new Error(`Failed to fetch parquet: ${resp.status} ${resp.statusText}`)
+    const contentType = resp.headers.get('content-type') ?? ''
+    // A dev-server SPA fallback (or misconfigured host) returns 200+HTML for a
+    // missing file; treat that the same as "not found" instead of feeding
+    // HTML bytes to the parquet parser (which throws an opaque "Corrupt footer").
+    if (!resp.ok || contentType.includes('text/html')) {
+      throw new Error(`Parquet not available at ${url} (status ${resp.status}, content-type ${contentType})`)
+    }
     buf = new Uint8Array(await resp.arrayBuffer())
     cacheSet(cacheKey, buf)
   }
@@ -258,13 +264,21 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
     currentExperiment = experiment
     currentModel = model
     console.log(`PixelQuery: loaded ${records.length} pixels (ANNUAL) for ${experiment} (${model})`)
-  })().catch((e: unknown) => {
-    console.error('PixelQuery load failed:', e)
-    loaded = false
-    currentExperiment = ''
-    loading = null
-    loadedSeasons = new Set()
-  })
+  })()
+    .then(() => { loading = null })
+    .catch((e: unknown) => {
+      // Missing data for a given experiment/model pair is an expected condition
+      // (not every combination has been published yet), so this warns rather than
+      // errors — and clears `records`/`allSeasonMap` so a failed load can't leak
+      // the previous successful pair's data into a caller expecting "no data".
+      console.warn('PixelQuery: no data available for this experiment/model:', e)
+      loaded = false
+      currentExperiment = ''
+      loading = null
+      loadedSeasons = new Set()
+      records = []
+      allSeasonMap = null
+    })
   return loading
 }
 
@@ -353,7 +367,15 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
   }
 }
 
-export async function queryDashboardLocation(lat: number, lon: number): Promise<DashboardLocationData | null> {
+export async function queryDashboardLocation(
+  lat: number,
+  lon: number,
+  model?: string,
+  experiment?: string,
+): Promise<DashboardLocationData | null> {
+  if (model && experiment) {
+    await loadParquet(experiment, model)
+  }
   if (records.length === 0) return null
 
   try {
@@ -444,8 +466,177 @@ export async function queryDashboardLocation(lat: number, lon: number): Promise<
   }
 }
 
+// Reads a stat directly from an already-captured DashboardLocationData snapshot,
+// unlike queryPixelStat which reads the live singleton (wrong for comparison views
+// that sequentially load multiple experiment/model pairs into that same singleton).
+export function seasonStat(
+  loc: DashboardLocationData,
+  variable: 'ws' | 'wpd',
+  height: number,
+  season: string,
+  stat: 'mean' | 'min' | 'max' | 'std',
+): number | null {
+  const row = loc.seasons.find(s => s.season === season)
+  if (!row) return null
+  const key = `${variable}${height}_${stat}` as keyof SeasonalStats
+  const v = row[key]
+  return typeof v === 'number' ? v : null
+}
+
 export function isLoading(): boolean {
   return !loaded && loading !== null
+}
+
+export interface FilterCriteria {
+  model: string
+  experiment: string
+  variable: 'ws' | 'wpd'
+  height: number
+  states?: string[]
+  bathyZones?: string[]
+  distanceMin?: number
+  distanceMax?: number
+}
+
+export interface HistogramBin { binStart: number; binEnd: number; count: number }
+export interface StateAggregate { state: string; count: number; mean: number; std: number; values: number[] }
+export interface BathyZoneAggregate { zone: string; count: number; mean: number; std: number; values: number[] }
+
+export interface FilteredAggregates {
+  count: number
+  mean: number | null
+  median: number | null
+  std: number | null
+  min: number | null
+  max: number | null
+  cv: number | null
+  histogram: HistogramBin[]
+  byState: StateAggregate[]
+  byBathyZone: BathyZoneAggregate[]
+  distances: number[]
+  values: number[]
+  profileHeights: number[]
+  profileMeans: number[]
+  profileStds: number[]
+}
+
+const HIST_BINS = 20
+const RANGE_BY_VAR: Record<'ws' | 'wpd', [number, number]> = { ws: [0, 20], wpd: [0, 1500] }
+
+function meanOf(arr: number[]): number {
+  return arr.reduce((a, b) => a + b, 0) / arr.length
+}
+
+function stdOf(arr: number[], m: number): number {
+  if (arr.length === 0) return 0
+  return Math.sqrt(arr.reduce((a, b) => a + (b - m) ** 2, 0) / arr.length)
+}
+
+function histogramOf(values: number[], min: number, max: number, bins: number): HistogramBin[] {
+  const width = (max - min) / bins
+  const counts = new Array(bins).fill(0)
+  for (const v of values) {
+    let idx = Math.floor((v - min) / width)
+    if (idx < 0) idx = 0
+    if (idx >= bins) idx = bins - 1
+    counts[idx]++
+  }
+  return counts.map((count, i) => ({ binStart: min + i * width, binEnd: min + (i + 1) * width, count }))
+}
+
+function emptyAggregates(): FilteredAggregates {
+  return {
+    count: 0, mean: null, median: null, std: null, min: null, max: null, cv: null,
+    histogram: [], byState: [], byBathyZone: [], distances: [], values: [],
+    profileHeights: [], profileMeans: [], profileStds: [],
+  }
+}
+
+// Filters the already-loaded, in-memory pixel array by state/bathy_zone/distance
+// and aggregates pre-computed GeoParquet columns across the surviving set — no
+// local computation of any physical (wind) value, only arithmetic over existing
+// per-pixel stats (mean of means, std of means, histogram binning).
+export function queryFilteredPixels(filters: FilterCriteria): FilteredAggregates {
+  if (!loaded || !allSeasonMap) return emptyAggregates()
+  // Single-slot cache guard: only the currently-loaded model+experiment pair can
+  // be aggregated. A mismatch means the caller asked for a pair that hasn't been
+  // loaded into this slot (or failed to load) — return zero results rather than
+  // silently aggregating a different pair's data.
+  if (currentModel !== filters.model || currentExperiment.toLowerCase() !== filters.experiment.toLowerCase()) {
+    return emptyAggregates()
+  }
+
+  const distMin = filters.distanceMin ?? 0
+  const distMax = filters.distanceMax ?? 400
+  const stateSet = filters.states && filters.states.length > 0 ? new Set(filters.states) : null
+  const bathySet = filters.bathyZones && filters.bathyZones.length > 0 ? new Set(filters.bathyZones) : null
+  const meanKey = `${filters.variable}${filters.height}_ANNUAL_mean`
+  const profileArrKey = filters.variable === 'ws' ? 'profile_means' : 'wpd_profile_means'
+
+  const matched: { pixel: RawPixel; value: number }[] = []
+  for (const r of records) {
+    if (stateSet && !stateSet.has(r.state)) continue
+    if (bathySet && !bathySet.has(r.bathy_zone)) continue
+    if (r.distance_nm < distMin || r.distance_nm > distMax) continue
+    const annualRow = allSeasonMap.get(r.pixel_id)?.get('ANNUAL')
+    if (!annualRow) continue
+    const v = num(annualRow[meanKey])
+    if (v === null) continue
+    matched.push({ pixel: r, value: v })
+  }
+  if (matched.length === 0) return emptyAggregates()
+
+  const values = matched.map(m => m.value)
+  const mean = meanOf(values)
+  const std = stdOf(values, mean)
+  const sorted = [...values].sort((a, b) => a - b)
+  const median = sorted[Math.floor(sorted.length / 2)]
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const cv = mean !== 0 ? (std / mean) * 100 : 0
+
+  const [rangeMin, rangeMax] = RANGE_BY_VAR[filters.variable]
+  const histogram = histogramOf(values, rangeMin, rangeMax, HIST_BINS)
+
+  const stateGroups = new Map<string, number[]>()
+  const bathyGroups = new Map<string, number[]>()
+  for (const m of matched) {
+    if (m.pixel.state) {
+      if (!stateGroups.has(m.pixel.state)) stateGroups.set(m.pixel.state, [])
+      stateGroups.get(m.pixel.state)!.push(m.value)
+    }
+    if (m.pixel.bathy_zone) {
+      if (!bathyGroups.has(m.pixel.bathy_zone)) bathyGroups.set(m.pixel.bathy_zone, [])
+      bathyGroups.get(m.pixel.bathy_zone)!.push(m.value)
+    }
+  }
+  const byState: StateAggregate[] = Array.from(stateGroups.entries())
+    .map(([state, vals]) => { const m = meanOf(vals); return { state, count: vals.length, mean: m, std: stdOf(vals, m), values: vals } })
+    .sort((a, b) => b.count - a.count)
+  const byBathyZone: BathyZoneAggregate[] = Array.from(bathyGroups.entries())
+    .map(([zone, vals]) => { const m = meanOf(vals); return { zone, count: vals.length, mean: m, std: stdOf(vals, m), values: vals } })
+    .sort((a, b) => b.count - a.count)
+
+  const distances = matched.map(m => m.pixel.distance_nm)
+
+  const profileHeights = matched[0].pixel.profile_heights
+  const profileMeans: number[] = []
+  const profileStds: number[] = []
+  profileHeights.forEach((_, hi) => {
+    const col = matched
+      .map(m => (m.pixel[profileArrKey] as number[] | undefined)?.[hi])
+      .filter((x): x is number => typeof x === 'number' && isFinite(x))
+    if (col.length === 0) { profileMeans.push(NaN); profileStds.push(0); return }
+    const cm = meanOf(col)
+    profileMeans.push(cm)
+    profileStds.push(stdOf(col, cm))
+  })
+
+  return {
+    count: matched.length, mean, median, std, min, max, cv,
+    histogram, byState, byBathyZone, distances, values,
+    profileHeights, profileMeans, profileStds,
+  }
 }
 
 export function queryPixelStat(

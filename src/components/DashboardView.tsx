@@ -1,27 +1,27 @@
 import { useState, useMemo, memo } from 'react'
 import {
-  DATASETS, VARIABLES, HEIGHTS,
+  MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
 import { type DashboardLocationData, queryPixelStat, isLoaded } from '../lib/pixelQuery'
+import {
+  SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS,
+} from '../lib/dashboardChartConstants'
 import MiniMap from './MiniMap'
+import DashboardComparisonView from './DashboardComparisonView'
+import GeoParquetExplorer from './GeoParquetExplorer'
 import Plot from 'react-plotly.js'
+import { t } from '../i18n/t'
 
-const SEASON_ORDER = ['ANNUAL', 'DJF', 'MAM', 'JJA', 'SON']
-const COLORS = ['#0072B2', '#D55E00', '#009E73']
-const SECTOR_LABELS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']
-const HEIGHT_TICKVALS = [10, 50, 100, 150, 200]
-const HEIGHT_TICKTEXT = ['10m', '50m', '100m', '150m', '200m']
-
-const SEASON_LABELS: Record<string, string> = {
-  ANNUAL: 'Anual', DJF: 'DJF (Verão)',
-  MAM: 'MAM (Outono)', JJA: 'JJA (Inverno)', SON: 'SON (Primavera)',
-}
+type DashboardTab = 'simple' | 'compare_exp' | 'compare_model' | 'geoparquet'
 
 interface DashboardViewProps {
   model: Model
+  setModel: (v: Model) => void
   dataset: Dataset
+  setDataset: (v: Dataset) => void
   pinnedLocations: DashboardLocationData[]
   onAddLocation: (lat: number, lon: number) => void
   onRemoveLocation: (idx: number) => void
@@ -29,11 +29,14 @@ interface DashboardViewProps {
 
 function DashboardViewInner({
   model,
+  setModel,
   dataset,
+  setDataset,
   pinnedLocations,
   onAddLocation,
   onRemoveLocation,
 }: DashboardViewProps) {
+  const [dvTab, setDvTab] = useState<DashboardTab>('simple')
   const [dashboardVar, setDashboardVar] = useState<Variable>('ws')
   const [dashboardHeight, setDashboardHeight] = useState<Height>(100)
   const [latInput, setLatInput] = useState('')
@@ -118,11 +121,47 @@ function DashboardViewInner({
 
   return (
     <div className="dashboard-view">
+      <div className="dv-inner-tabs">
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'simple' ? 'active' : ''}`}
+          onClick={() => setDvTab('simple')}
+        >
+          {t('dashboard.tab.simple')}
+        </button>
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'compare_exp' ? 'active' : ''}`}
+          onClick={() => setDvTab('compare_exp')}
+        >
+          {t('dashboard.tab.compare_exp')}
+        </button>
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'compare_model' ? 'active' : ''}`}
+          onClick={() => setDvTab('compare_model')}
+        >
+          {t('dashboard.tab.compare_model')}
+        </button>
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'geoparquet' ? 'active' : ''}`}
+          onClick={() => setDvTab('geoparquet')}
+        >
+          {t('dashboard.tab.geoparquet')}
+        </button>
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'simple' ? 'flex' : 'none' }}>
       <div className="dv-body">
         <div className="dv-filter-bar">
           <div className="dv-filter-group">
-            <label className="dv-label">Experiment</label>
-            <select value={dataset} disabled className="dv-select">
+            <label className="dv-label">{t('dashboard.filters.model_label')}</label>
+            <select value={model} onChange={e => setModel(e.target.value as Model)} className="dv-select">
+              {MODELS.map(m => (
+                <option key={m} value={m}>{modelLabel(m)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="dv-filter-group">
+            <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
+            <select value={dataset} onChange={e => setDataset(e.target.value as Dataset)} className="dv-select">
               {DATASETS.map(d => (
                 <option key={d} value={d}>{datasetLabel(d)}</option>
               ))}
@@ -183,7 +222,7 @@ function DashboardViewInner({
                     marker: { color: COLORS[i % COLORS.length] },
                   }))}
                   layout={{
-                    title: `Média Sazonal — ${varLabel(dashboardVar).label} ${dashboardHeight}m`,
+                    title: { text: `Média Sazonal — ${varLabel(dashboardVar).label} ${dashboardHeight}m` },
                     xaxis: { title: { text: 'Sazonalidade', standoff: 10 } },
                     yaxis: {
                       title: { text: `Velocidade do Vento (${varUnit})`, standoff: 10 },
@@ -226,7 +265,7 @@ function DashboardViewInner({
                     }
                   })}
                   layout={{
-                    title: `Distribuição Weibull — ${dashboardHeight}m`,
+                    title: { text: `Distribuição Weibull — ${dashboardHeight}m` },
                     xaxis: {
                       title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
                       range: [0, 30],
@@ -266,7 +305,7 @@ function DashboardViewInner({
                     }
                   })}
                   layout={{
-                    title: `Rosa dos Ventos — ${dashboardHeight}m`,
+                    title: { text: `Rosa dos Ventos — ${dashboardHeight}m` },
                     height: 260,
                     margin: { t: 40, b: 30, l: 50, r: 50 },
                     paper_bgcolor: 'transparent',
@@ -300,7 +339,7 @@ function DashboardViewInner({
                     marker: { color: COLORS[i], size: 6 },
                   }))}
                   layout={{
-                    title: 'Perfil Vertical — Velocidade do Vento',
+                    title: { text: 'Perfil Vertical — Velocidade do Vento' },
                     xaxis: {
                       title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
                       range: [0, 25],
@@ -333,7 +372,7 @@ function DashboardViewInner({
                     marker: { color: COLORS[i], size: 6 },
                   }))}
                   layout={{
-                    title: 'Perfil Vertical — Densidade de Potência',
+                    title: { text: 'Perfil Vertical — Densidade de Potência' },
                     xaxis: {
                       title: { text: 'Densidade de Potência (W/m²)', standoff: 10 },
                       range: [0, 1500],
@@ -362,6 +401,19 @@ function DashboardViewInner({
         <div className="minimap">
           <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} />
         </div>
+      </div>
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'compare_exp' ? 'flex' : 'none' }}>
+        <DashboardComparisonView mode="experiments" currentModel={model} currentDataset={dataset} />
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'compare_model' ? 'flex' : 'none' }}>
+        <DashboardComparisonView mode="models" currentModel={model} currentDataset={dataset} />
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'geoparquet' ? 'flex' : 'none' }}>
+        <GeoParquetExplorer currentModel={model} currentDataset={dataset} />
       </div>
     </div>
   )

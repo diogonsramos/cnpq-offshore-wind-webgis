@@ -4,6 +4,156 @@ Este documento centraliza as atividades necessárias para corrigir as regressõe
 
 ---
 
+## ✅ f01 (Fase 1) — Seletores & Opacidade no Dashboard — 2026-07-03
+
+> **Status:** Implementado e validado (`pnpm test` — 47 passed). Escopo completo em `docs/TODO_new.md`; esta fase cobre apenas a seção "Selectors & opacity". As abas de comparação (Compare Experiments/Compare Models) e o GeoParquet Explorer ficam para fases seguintes.
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| Experiment select do Dashboard desabilitado | `disabled` removido em `DashboardView.tsx`; `onChange` agora chama `setDataset` (estado global de `App.tsx`) |
+| Sem Model select no Dashboard | Novo `<select>` WRF/MPAS adicionado ao `dv-filter-bar`, sincronizado com `model` global |
+| Opacidade do COG fixa em `0.7` | Novo slider (0.1–1.0, step 0.1) em `SidePanel.tsx`, seção "Camada COG"; estado `cogOpacity` em `App.tsx`, aplicado via `setPaintProperty` em `MapView.tsx` sem refetch de tile |
+| Trocar experimento/modelo não recarregava o parquet de consulta de pixel | Novo `useEffect` em `MapView.tsx` chama `loadParquet(dataset, model)` a cada mudança explícita (não na montagem, para não mascarar/disparar erro de dados incompleto) |
+| Textos novos sem i18n (f06 ainda não mergeado) | Stub mínimo `src/i18n/t.ts` + `src/i18n/pt-BR.ts`; substituível sem alterar call sites quando f06 chegar |
+
+### Bug pré-existente corrigido — mismatch Dataset id ↔ pastas reais de dados
+
+Os valores do tipo `Dataset` (`ERA5_atlas_historico`, `HIST_historico`, etc.) carregam um sufixo `_historico`/`_presente`/`_futuro` que não existe nas pastas reais de `public/data/geoparquet/` e `public/data/cogs/` (ex.: pasta real é `ERA5_atlas`/`era5_atlas`, sem sufixo). Em dev, o Vite retornava fallback HTML com status 200 para esses caminhos incorretos, e `pixelQuery.ts` tentava ler HTML como Parquet, logando `"Invalid Parquet file. Corrupt footer"`. Os COGs reais também usam uma convenção mais granular (`{season}_{regiao}_{faixa_batimetria}.tif`, ex. `annual_nacional_0_100.tif`) do que a que `buildCogUrl` construía (`{season}.tif`).
+
+**Correção:** nova função `datasetFolder(d: Dataset)` em `cogCatalog.ts` remove o sufixo antes de resolver qualquer caminho; `buildCogUrl` passou a apontar para `{season}_nacional_0_100.tif` (recorte "Plataforma Nacional 0-100m", a mesma área de interesse já usada no shapefile de batimetria); `MapView.tsx` aplica `datasetFolder()` antes de todo `loadParquet()`. Validado via `curl` no dev server: `/data/geoparquet/wrf/hist/season=annual/data.parquet` e `/data/cogs/wrf/HIST/ws10/10m/annual_nacional_0_100.tif` agora retornam os arquivos reais (não mais fallback HTML), e o teste `T43` comprova zero erro de console ao trocar de experimento.
+
+### O que não foi implementado (limitações) e o que falta para implementar
+
+1. **Dados do modelo MPAS inexistentes.** `public/data/cogs/mpas/` não existe e `public/data/geoparquet/mpas/` está vazio — selecionar MPAS no Dashboard ou no SidePanel resulta em "sem dados" (tratado sem erro de console, mas sem conteúdo real). **O que falta:** publicar os arquivos `.tif`/`.parquet` de MPAS seguindo a mesma convenção de nomes já usada pelo WRF (`{season}_{estado|nacional}_{faixa_batimetria}.tif` para COG; `season=<season>/data.parquet` por pasta de experimento). Nenhuma mudança de código é necessária além de publicar os dados — o pipeline de leitura já foi corrigido nesta fase e funciona para qualquer modelo/experimento cuja pasta exista.
+2. **Seletor de Região/Faixa de Batimetria do COG não exposto na UI.** O recorte renderizado no mapa está fixo em `nacional_0_100` (Plataforma Nacional 0–100m) dentro de `buildCogUrl()`. Os tipos `Region` e `BathyBand` já existem em `cogCatalog.ts` (e os arquivos `.tif` por estado/faixa já existem em disco), mas não há nenhum controle de UI para o usuário trocar esse recorte. **O que falta:** (a) adicionar `region`/`bathyBand` como estado global em `App.tsx`, análogo a `cogOpacity`; (b) adicionar dois seletores no `SidePanel.tsx` (um para os 17 estados costeiros + "Nacional", outro para as faixas `0–20/20–50/50–100/0–100`); (c) estender `buildCogUrl()` para aceitar esses dois parâmetros em vez de usar os valores fixos; (d) novos testes E2E cobrindo a troca de recorte.
+3. **i18n é apenas um stub, sem troca de idioma real.** `src/i18n/t.ts` lê de um único dicionário (`pt-BR.ts`); não existe `en.ts`, nem toggle de idioma na UI, nem persistência da preferência do usuário — como o próprio `docs/TODO_new.md` já antecipava, isso depende da feature `f06` (ainda não mergeada neste repositório). **O que falta:** implementar `f06` (dicionário `en.ts`, um `LanguageProvider`/estado global de idioma, um seletor de idioma na UI) e então trocar a implementação interna de `t()` para ler do dicionário ativo — sem precisar alterar nenhum call site `t('chave')` já escrito.
+
+### Testes novos — `tests/e2e/06-dashboard-controls.spec.ts`
+
+| Teste | O que valida |
+|---|---|
+| T38 | Experiment select do Dashboard habilitado; mudança reflete no combobox do SidePanel |
+| T39 | Model select (WRF/MPAS) aparece no Dashboard; mudança reflete no select do SidePanel |
+| T40 | Slider de opacidade aparece na seção "Camada COG" com valor inicial 70% |
+| T41 | Mover o slider atualiza o texto de porcentagem exibido |
+| T42 | Nenhum erro de console ao mover o slider e alternar de aba |
+| T43 | Trocar o experimento (WRF) recarrega o parquet real (`hist`) sem erro de console — regressão do bug de mismatch de pastas |
+
+### Arquivos modificados
+
+`src/App.tsx`, `src/components/SidePanel.tsx`, `src/components/MapView.tsx`, `src/components/DashboardView.tsx`, `src/lib/cogCatalog.ts`, `src/App.css`, `src/i18n/pt-BR.ts` (novo), `src/i18n/t.ts` (novo), `tests/e2e/06-dashboard-controls.spec.ts` (novo)
+
+---
+
+## ✅ f01 (Fase 2) — Abas Compare Experiments / Compare Models — 2026-07-03
+
+> **Status:** Implementado e validado (`pnpm test` — 52 passed). Escopo completo em `docs/TODO_new.md`; esta fase cobre a seção "Multi-experiment & multi-model comparison". O GeoParquet Explorer (4ª aba) fica para a fase seguinte.
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| Dashboard sem abas internas de comparação | Nova barra de abas internas (`Visão Simples` / `Comparar Experimentos` / `Comparar Modelos`) em `DashboardView.tsx`; as 3 permanecem montadas simultaneamente (alternância via CSS `display`) para preservar seleção/cache ao trocar de aba |
+| Sem forma de comparar múltiplos experimentos/modelos | Novo `DashboardComparisonView.tsx` — atende as duas abas via prop `mode: 'experiments' \| 'models'`, reaproveitando os 5 tipos de gráfico (sazonal, Weibull, rosa dos ventos, perfil WS, perfil WPD) já usados na Visão Simples |
+| Compare Experiments | Checkboxes para até 3 pares modelo+experimento (limite reforçado na UI); cada par ganha uma cor fixa da paleta e um "chip" de legenda acima dos gráficos |
+| Compare Models | Seletor único de experimento; compara automaticamente WRF (linha sólida) vs MPAS (linha tracejada), mesma cor; métrica de diferença (%) entre as médias anuais exibida quando ambos os modelos têm dado |
+| `queryDashboardLocation` só suportava o par model+experiment globalmente carregado | Assinatura estendida para `queryDashboardLocation(lat, lon, model?, experiment?)` — carrega o par informado antes de consultar, sem exigir um segundo "slot" de memória |
+| Gráficos de comparação liam do singleton `allSeasonMap` (dado errado ao comparar >1 par) | Nova `seasonStat(loc, variable, height, season, stat)` em `pixelQuery.ts`, que lê direto do snapshot `DashboardLocationData` já capturado por par — não depende do estado global |
+| Paleta de cores duplicada/pouco acessível | Nova `src/lib/dashboardChartConstants.ts` com paleta Okabe-Ito (colorblind-safe, equivalente a ColorBrewer/Tableau10) compartilhada entre `DashboardView` e `DashboardComparisonView` |
+
+### Bugs pré-existentes corrigidos (necessários para a comparação funcionar corretamente)
+
+1. **`loading` nunca era resetado após um carregamento bem-sucedido em `pixelQuery.ts`** — só o `catch` de falha zerava `loading`. Depois do primeiro `loadParquet` com sucesso na sessão, qualquer chamada subsequente para um par *diferente* de model+experiment batia no guard `if (loading) return loading` e devolvia silenciosamente a promise antiga (já resolvida) do par anterior — ou seja, comparar 2+ experimentos retornava os mesmos dados repetidos, sem erro visível. Corrigido encadeando `.then(() => { loading = null })` antes do `.catch()`.
+2. **Efeito de sincronização do parquet em `MapView.tsx` disparava um fetch fantasma do dataset padrão em dev** — usava uma flag booleana (`skipParquetSyncRef`) que virava `false` após a primeira execução; o double-invoke de efeitos do React StrictMode (só em dev) repete a montagem do efeito, e na segunda repetição a flag já estava `false`, disparando um `loadParquet` indesejado do dataset global padrão. Combinado com o bug (1), esse fetch fantasma "sequestrava" a promise de carregamento e fazia a Compare Models/Experiments nunca buscar os pares reais. Corrigido trocando a flag por uma comparação contra o último valor sincronizado (`lastSyncedRef`), robusta a replays do StrictMode.
+3. **`MiniMap.tsx` chamava `addSource`/`addLayer` sem esperar o carregamento do estilo do MapLibre** — inofensivo na Visão Simples (pins só são adicionados bem depois do mount), mas as novas abas de comparação criam sua própria instância de `MiniMap` e podem receber uma localização quase imediatamente, expondo a corrida ("Style is not done loading"). Corrigido com o mesmo padrão `ready`/`m.on('load', ...)` já usado em `MapView.tsx`.
+
+### O que não foi implementado (limitações) e o que falta para implementar
+
+1. **MPAS continua sem nenhum dado publicado** (mesma limitação da Fase 1: `public/data/cogs/mpas/` não existe; `public/data/geoparquet/mpas/` está vazio). Na aba "Comparar Modelos", o par MPAS é buscado, falha de forma limpa (sem erro de console, graças ao `console.warn` + verificação de `content-type` já introduzidos na Fase 1) e a UI mostra o chip "— sem dados disponíveis" em vez de travar ou mostrar dado errado. Consequentemente, a métrica de "Diferença MPAS vs WRF" nunca aparece na prática hoje. **O que falta:** o mesmo item 1 da Fase 1 — publicar os dados de MPAS; nenhuma mudança de código adicional é necessária.
+2. **Carregamento sequencial, não concorrente, dos pares comparados.** `pixelQuery.ts` mantém uma arquitetura *single-slot* (um parquet carregado por vez). Para comparar 2–3 pares, `DashboardComparisonView.tsx` carrega um par, espera terminar, copia o resultado para um cache local e só então inicia o próximo — funciona e o resultado final é cacheado corretamente, mas para 3 pares grandes (~8MB cada) o tempo total de espera é a soma dos 3 carregamentos, não o maior deles. **O que falta:** refatorar `pixelQuery.ts` para um cache multi-slot chaveado por `model+experiment` (em vez de um único `records`/`allSeasonMap` global), permitindo carregar múltiplos pares em paralelo com `Promise.all`. É uma refatoração maior do módulo, por isso foi deixada fora do escopo desta fase — o `queryDashboardLocation(lat, lon, model?, experiment?)` já tem a assinatura certa para isso, só a implementação interna precisaria mudar.
+3. **Legenda não é um widget único interativo.** O requisito pedia "uma única legenda compartilhada, no topo ou lateral do grid de gráficos". O que foi implementado é uma fileira de "chips" coloridos (mesmo padrão da Visão Simples para localizações fixadas) — resolve a associação cor↔par visualmente, mas não permite clicar num chip para esconder/mostrar aquele traço em todos os gráficos simultaneamente (o que o Plotly já faz *por gráfico*, individualmente, ao clicar na legenda nativa de cada `<Plot>`). **O que falta:** um componente de legenda customizado que, ao clicar num chip, alterne a visibilidade do traço correspondente em todos os 5 `<Plot>` do grid (via prop `visible` no array `data` de cada gráfico, controlado por um estado `Set<pairKey>` de traços ocultos).
+4. **Métrica de diferença é texto simples, não annotation/subplot.** Implementada como uma linha de texto (`"Diferença MPAS vs WRF (Anual): X%"`) acima dos gráficos, cobrindo só a variável+altura selecionadas no momento — não é uma annotation dentro de cada gráfico do Plotly nem um subplot dedicado comparando todas as alturas/estações de uma vez. **O que falta:** decidir o formato final (annotation por gráfico é mais trabalhoso de implementar corretamente com o Plotly `layout.annotations`; um subplot dedicado exigiria um 6º chart card) e implementar.
+5. **Títulos de gráfico e rótulos de eixo ainda não usam `t()`.** Só a "moldura" nova (nomes das abas, textos do seletor de pares, painel de localização, estados dos chips) usa i18n — os títulos/eixos dos 5 gráficos Plotly (ex. `"Média Sazonal — ..."`, `"Velocidade do Vento (m/s)"`) continuam hardcoded em pt-BR, replicando o padrão já existente na Visão Simples (que também nunca foi convertida). **O que falta:** depende do item 3 da Fase 1 (`f06` real) + uma passada dedicada convertendo essas strings em `t('dashboard.chart.xxx')` tanto em `DashboardView.tsx` quanto em `DashboardComparisonView.tsx` — uma tarefa transversal, por isso não foi misturada com a entrega das novas abas.
+6. **GeoParquet Explorer (4ª aba) não foi iniciado.** Nenhum arquivo desta seção do `docs/TODO_new.md` foi criado (`GeoParquetExplorer.tsx`, `FilterHistogram.tsx`, `FilterBoxplot.tsx`, `queryFilteredPixels()`). **O que falta:** é a Fase 3 completa — painel de filtros (modelo, experimento, variável, altura, faixa de batimetria, estado, distância da costa), a função `queryFilteredPixels(filters: FilterCriteria): FilteredAggregates` em `pixelQuery.ts` (filtra o array `records` já carregado e agrega estatísticas pré-computadas, sem calcular nenhum valor físico localmente), e os 4 gráficos (histograma, boxplot, scatter, perfil comparativo) — todo o comportamento já está detalhado em `docs/TODO_new.md` → "GeoParquet Explorer tab".
+
+### Testes novos — `tests/e2e/07-dashboard-comparison.spec.ts`
+
+| Teste | O que valida |
+|---|---|
+| T44 | As 3 abas internas aparecem; clicar alterna a aba ativa e o painel visível |
+| T45 | Compare Experiments: selecionar 2 pares WRF renderiza os 5 gráficos com 2 traços, sem erro de console |
+| T46 | Compare Experiments: seleção é limitada a 3 pares (checkboxes extras ficam desabilitados) |
+| T47 | Compare Models: WRF traz dados reais e MPAS mostra "sem dados disponíveis", sem erro de console |
+| T48 | Alternar para outra aba principal e voltar preserva a seleção de pares (estado não é perdido) |
+
+### Arquivos modificados
+
+`src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx` (novo), `src/components/MiniMap.tsx`, `src/components/MapView.tsx`, `src/lib/pixelQuery.ts`, `src/lib/dashboardChartConstants.ts` (novo), `src/App.css`, `src/i18n/pt-BR.ts`, `tests/e2e/07-dashboard-comparison.spec.ts` (novo)
+
+---
+
+## ✅ f01 (Fase 3) — GeoParquet Explorer (4ª aba) — 2026-07-04
+
+> **Status:** Implementado e validado (`pnpm test` — 57 passed). Escopo completo em `docs/TODO_new.md` → "GeoParquet Explorer (4th dashboard tab)". Esta é a última fase pendente do `f01`; não há mais nenhuma seção do escopo original em aberto.
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| 4ª aba interna do Dashboard | `GeoParquetExplorer.tsx` (novo) adicionado à barra de abas internas de `DashboardView.tsx`; fica montado simultaneamente com as outras 3 (alternância via CSS `display`, mesmo padrão) |
+| Painel de filtros | Modelo, Experimento, Variável, Altura (`dv-select`, reaproveitando o layout de filtros já usado nas outras abas); checkboxes de Batimetria (3 faixas) e Estado (17 estados costeiros, de `COASTAL_STATES`); dois `<input type="range">` sobrepostos para a distância da costa (0–400 nm, gap mínimo de 10 nm reforçado em `handleDistMinChange`/`handleDistMaxChange`) |
+| Consulta via colunas pré-computadas, sem cálculo físico local | Nova `queryFilteredPixels(filters: FilterCriteria): FilteredAggregates` em `pixelQuery.ts` — filtra o array `records` já carregado por state/bathy_zone/distance e agrega apenas colunas existentes (`{variable}{height}_ANNUAL_mean`, `profile_means`/`wpd_profile_means`); a única aritmética local é média/desvio/mediana/histograma sobre esses valores já prontos |
+| "Aplicar Filtros" — filtros não são aplicados a cada mudança | Nenhum `useEffect` reage a mudanças nos seletores; só o clique em "Aplicar Filtros" (`handleApply`) lê o estado atual, chama `loadParquet` e `queryFilteredPixels`, e só então atualiza `appliedFilters`/`result` — trocar um filtro sem clicar não altera os gráficos exibidos (`T52`) |
+| Cache em memória por fingerprint | `cacheRef` (`Map<string, FilteredAggregates>`) chaveado por `JSON.stringify` dos filtros normalizados (arrays de state/bathy ordenados) — reaplica os mesmos filtros sem reconsultar `records` |
+| Estatísticas agregadas | Barra de chips com Média, Mediana, Desvio Padrão, Mín, Máx e CV (`gpe-stats-bar`) |
+| Histograma | 20 bins fixos (0–20 m/s para `ws`, 0–1500 W/m² para `wpd`), eixo X com faixas fixas |
+| Boxplot por Estado / por Batimetria | Um box por categoria com pixels no conjunto filtrado; cada um só renderiza quando o respectivo filtro (Estado ou Batimetria) **não** está ativo — caso contrário mostra um card com a explicação (`chart-empty`) |
+| Scatter distância × média + tendência | Pontos + reta de regressão linear simples (mínimos quadrados, calculada localmente — permitido pelo requisito, que só proíbe cálculo de grandezas físicas) |
+| Perfil vertical com banda de incerteza | Médias por altura do conjunto filtrado (a partir de `profile_means`/`wpd_profile_means` por pixel) com barras de erro (`error_x`) = desvio padrão entre pixels |
+| Paleta e eixos fixos | Reaproveita `CHART_COLORS` (Okabe-Ito) e os mesmos limites de eixo especificados no `docs/TODO_new.md` para esta aba |
+| Sem re-render em mudança não relacionada | Filtros vivem em estado local do componente; `result`/`appliedFilters` só mudam dentro de `handleApply`; `histogramTrace`/`regression` usam `useMemo` |
+
+### Bug pré-existente corrigido — título dos gráficos Plotly não aparecia em nenhuma aba
+
+Ao inspecionar visualmente a nova aba, nenhum `<Plot>` do projeto (Visão Simples, Compare Experiments, Compare Models e o novo Explorer) renderizava o título principal do gráfico — só os títulos de eixo apareciam. Causa: `layout.title` era passado como string simples (ex. `` title: `Média Sazonal — ...` `` ou `title: 'Perfil Vertical — ...'`), enquanto os eixos já usavam a forma de objeto (`title: { text: '...' }`); na versão do `plotly.js` instalada (3.7.0) só a forma de objeto é renderizada para o título principal. **Correção:** todas as 15 ocorrências de `layout.title` em `DashboardView.tsx`, `DashboardComparisonView.tsx` e `GeoParquetExplorer.tsx` foram convertidas para `title: { text: ... }`. Validado visualmente (screenshot com `.gtitle` populado) nas 4 abas; nenhum teste E2E precisou mudar (nenhum deles fazia asserção sobre texto de título).
+
+### O que não foi implementado (limitações) e o que falta para implementar
+
+1. **MPAS continua sem nenhum dado publicado** (mesma limitação das Fases 1 e 2). Selecionar Modelo=MPAS no Explorer e clicar "Aplicar Filtros" retorna 0 pixels (guard de `queryFilteredPixels` contra o par não carregado), mostrando a mensagem de "nenhum pixel encontrado". **O que falta:** publicar os dados, sem mudança de código.
+2. **A coluna `distance_nm` não existe nos arquivos GeoParquet reais** — `pixelQuery.ts` já tratava sua ausência com fallback `?? 0` (implementado na Fase 1), então todo pixel real tem `distance_nm = 0`. Isso torna o filtro de "Distância da Costa" e o gráfico de dispersão funcionalmente inertes hoje (todos os pontos caem em x=0; a reta de regressão degenera e não é desenhada, `den === 0`) — não é um bug desta fase, é uma limitação do dado publicado. **O que falta:** a pipeline de geração do GeoParquet precisa calcular e escrever `distance_nm` por pixel (distância até a linha de costa mais próxima); nenhuma mudança é necessária no código do Explorer, que já consome a coluna corretamente quando ela existir.
+3. **A variável `wpd` (densidade de potência) não existe nos arquivos reais** — só há colunas `ws10_ANNUAL_*`/`ws100_ANNUAL_*` e `profile_means` (sem `wpd_profile_means`) nos parquets publicados atualmente. Selecionar Variável=Densidade de Potência retorna 0 pixels. Mesma limitação de dado (não de código) já presente nas Fases 1/2 para os gráficos WPD da Visão Simples/Compare. **O que falta:** publicar as colunas `wpd*` no pipeline de geração do GeoParquet.
+4. **Alturas 50/150/200 m não têm colunas `ws{h}_ANNUAL_mean` nos arquivos reais** (só 10 e 100 m existem hoje) — mesma limitação de dado, não de código; selecionar essas alturas retorna 0 pixels no Explorer, igual ao comportamento (silencioso, sem erro) já existente nas outras abas para Weibull/altura fora de 10/100m.
+5. **Faixas de batimetria reais divergem do mockup do `docs/TODO_new.md`.** O ASCII mockup sugeria checkboxes "0–20m, 20–50m, 50–100m, 100m+"; os valores de `bathy_zone` de fato presentes no GeoParquet são só `0_20`, `20_50`, `50_100` (sem uma categoria "100+"/além da plataforma) — confirmado inspecionando os arquivos publicados. O Explorer usa esses 3 valores reais (`BATHY_ZONE_OPTIONS` em `dashboardChartConstants.ts`) em vez de inventar uma 4ª opção sem dado correspondente.
+6. **Slider de distância dual-handle simplificado.** O mockup mostra um único trilho com dois "puxadores" (`[●────●───]`). A implementação usa dois `<input type="range">` sobrepostos (mín/máx), sem uma faixa colorida única entre os dois — funcionalmente equivalente (define um intervalo com gap mínimo de 10 nm), mas visualmente mais simples que um componente de slider de faixa dupla customizado. **O que falta, se o visual do mockup for necessário:** um componente de dual-range com trilho preenchido entre os dois "thumbs" (CSS puro é possível, mas exige mais markup/JS do que os dois `<input type="range">` padrão do HTML).
+7. **Boxplot por Estado e por Batimetria são exibidos de forma independente**, cada um com sua própria condição de visibilidade — e não um único chart card que troca entre os dois conforme qual filtro está inativo, como o mockup (com só 4 caixas de gráfico) sugere visualmente. Essa foi uma escolha deliberada: os critérios de aceite do `docs/TODO_new.md` listam "Boxplot by state" e "Boxplot by bathy zone" como dois itens distintos, cada um com sua própria condição — a leitura literal dos critérios (2 gráficos) foi priorizada sobre a contagem de caixas do mockup ASCII (ilustrativo).
+8. **Sem exportação de CSV.** O mockup do `docs/TODO_new.md` inclui um botão "📥 Exportar CSV dos resultados", mas nenhum item da lista de critérios de aceite ("Acceptance criteria" → GeoParquet Explorer) pede essa funcionalidade — não foi implementada. **O que falta, se desejado:** um botão que serialize `result.values`/`result.distances`/`result.byState` como CSV e dispare um download via Blob/`URL.createObjectURL`, sem depender de nenhum pacote novo.
+9. **Consulta ainda é single-slot (empresta e devolve o parquet global), como nas Fases 1/2.** `handleApply` chama `loadParquet(dataset, model)`, consulta, e depois restaura o par globalmente selecionado (`loadParquet(currentDataset, currentModel)`) — mesmo padrão de "emprestar e devolver" já usado em `DashboardComparisonView.tsx`. Isso significa que trocar de Modelo/Experimento no Explorer e clicar "Aplicar Filtros" momentaneamente troca o slot de memória usado pelo clique no mapa também, embora seja restaurado ao final. **O que falta:** mesma refatoração multi-slot já apontada como pendente na Fase 2, que beneficiaria também esta aba (evitaria a troca temporária do slot global).
+10. **Títulos dos 5 gráficos usam `t()`, mas rótulos de eixo continuam hardcoded em pt-BR** — ex. `t('geoparquet_explorer.charts.histogram_title')` é usado no título, mas o eixo Y do histograma (`'Nº de pixels'`) e o eixo X do scatter (`'Distância da Costa (nm)'`) são strings fixas. Mesma limitação estrutural já registrada nas Fases 1/2 (depende de `f06` para fazer sentido converter tudo, já que não há troca de idioma real ainda).
+
+### Testes novos — `tests/e2e/08-geoparquet-explorer.spec.ts`
+
+| Teste | O que valida |
+|---|---|
+| T49 | A aba aparece e o painel de filtros mostra Modelo, Experimento, Variável, Altura, 3 checkboxes de Batimetria, 17 checkboxes de Estado e os 2 sliders de distância |
+| T50 | "Aplicar Filtros" consulta dados reais (WRF ERA5 Histórico, sem trocar nenhum seletor) — 30773 pixels, 6 chips de estatística, 5 gráficos, nenhum boxplot oculto, sem erro de console |
+| T51 | Filtrar por Estado=BA reduz a contagem para 588 pixels e oculta o boxplot por Estado (mostra o card de explicação) |
+| T52 | Marcar um filtro sem clicar em "Aplicar Filtros" não altera a contagem/gráficos exibidos; só o clique subsequente aplica |
+| T53 | Alternar para outra aba principal e voltar preserva o filtro marcado e o resultado já aplicado |
+
+### Deviação pontual em testes existentes (mesmo padrão já registrado na Fase 2 para o `T38`)
+
+A 4ª aba adiciona um 4º `.dv-tab-panel` e um 2º seletor "Modelo"/"Experimento" ainda montado no DOM (mesmo padrão das outras abas) — isso quebrou duas asserções pré-existentes por violação de strict-mode/contagem, corrigidas nesta fase:
+- `T39` (`tests/e2e/06-dashboard-controls.spec.ts`): locator do select de Modelo escopado ao primeiro `.dv-tab-panel` (mesmo ajuste já aplicado ao `T38` na Fase 2).
+- `T44` (`tests/e2e/07-dashboard-comparison.spec.ts`): contagem esperada de `.dv-inner-tab-btn` atualizada de 3 para 4.
+
+### Arquivos modificados
+
+`src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/GeoParquetExplorer.tsx` (novo), `src/lib/pixelQuery.ts`, `src/lib/dashboardChartConstants.ts`, `src/App.css`, `src/i18n/pt-BR.ts`, `tests/e2e/06-dashboard-controls.spec.ts`, `tests/e2e/07-dashboard-comparison.spec.ts`, `tests/e2e/08-geoparquet-explorer.spec.ts` (novo)
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.
