@@ -168,7 +168,7 @@ function DashboardViewInner({
             </select>
           </div>
           <div className="dv-filter-group">
-            <label className="dv-label">Variable</label>
+            <label className="dv-label">{t('dashboard.filters.variable_label')}</label>
             <select value={dashboardVar} onChange={e => setDashboardVar(e.target.value as Variable)} className="dv-select">
               {VARIABLES.map(v => (
                 <option key={v} value={v}>{varLabel(v).label}</option>
@@ -176,7 +176,7 @@ function DashboardViewInner({
             </select>
           </div>
           <div className="dv-filter-group">
-            <label className="dv-label">Height</label>
+            <label className="dv-label">{t('dashboard.filters.height_label')}</label>
             <select value={dashboardHeight} onChange={e => setDashboardHeight(Number(e.target.value) as Height)} className="dv-select">
               {HEIGHTS.map(h => (
                 <option key={h} value={h}>{h}m</option>
@@ -201,7 +201,16 @@ function DashboardViewInner({
             </span>
           ))}
           {pinnedLocations.length > 0 && (
-            <button className="dv-remove-all" onClick={() => pinnedLocations.forEach((_, i) => onRemoveLocation(i))}>
+            <button
+              className="dv-remove-all"
+              onClick={() => {
+                // Removing ascending indices while onRemoveLocation splices the array
+                // (idx: number) => void shifts every later index down, so removing
+                // 0,1,2 in order only ever removes 0 and what becomes the new 1 —
+                // descending order removes each item before the shift can affect it.
+                for (let i = pinnedLocations.length - 1; i >= 0; i--) onRemoveLocation(i)
+              }}
+            >
               Remove All
             </button>
           )}
@@ -212,7 +221,7 @@ function DashboardViewInner({
         ) : (
           <div className="dv-main">
             <div className="dv-chart-grid">
-              <div className="chart-card">
+              <div className="chart-card" data-testid="chart-seasonal">
                 <Plot
                   data={seasonChartData.datasets.map((ds, i) => ({
                     x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
@@ -225,7 +234,7 @@ function DashboardViewInner({
                     title: { text: `Média Sazonal — ${varLabel(dashboardVar).label} ${dashboardHeight}m` },
                     xaxis: { title: { text: 'Sazonalidade', standoff: 10 } },
                     yaxis: {
-                      title: { text: `Velocidade do Vento (${varUnit})`, standoff: 10 },
+                      title: { text: `${varLabel(dashboardVar).label} (${varUnit})`, standoff: 10 },
                       range: dashboardVar === 'ws' ? [0, 25] : [0, 1500],
                       zeroline: false,
                     },
@@ -243,7 +252,7 @@ function DashboardViewInner({
                 />
               </div>
 
-              <div className="chart-card">
+              <div className="chart-card" data-testid="chart-weibull">
                 <Plot
                   data={pinnedLocations.map((loc, i) => {
                     const w = loc.weibull?.[dashboardHeight]
@@ -290,7 +299,7 @@ function DashboardViewInner({
                 />
               </div>
 
-              <div className="chart-card">
+              <div className="chart-card" data-testid="chart-windrose">
                 <Plot
                   data={pinnedLocations.map((loc, i) => {
                     const wr = loc.wind_rose?.[dashboardHeight]

@@ -104,11 +104,11 @@ interface RawPixel {
   profile_heights: number[]
   profile_means: number[]
   wpd_profile_means: number[]
-  weibull_10: RawWeibull | null
-  weibull_50: RawWeibull | null
-  weibull_100: RawWeibull | null
-  weibull_150: RawWeibull | null
-  weibull_200: RawWeibull | null
+  weibull_10m: RawWeibull | null
+  weibull_50m: RawWeibull | null
+  weibull_100m: RawWeibull | null
+  weibull_150m: RawWeibull | null
+  weibull_200m: RawWeibull | null
 }
 
 export interface SeasonalStats {
@@ -240,17 +240,17 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
           profile_heights: safeArray(row.profile_heights),
           profile_means: safeArray(row.profile_means),
           wpd_profile_means: safeArray(row.wpd_profile_means),
-          weibull_10: null, weibull_50: null, weibull_100: null, weibull_150: null, weibull_200: null,
+          weibull_10m: null, weibull_50m: null, weibull_100m: null, weibull_150m: null, weibull_200m: null,
         })
       }
 
       const p = recordsMap.get(pixel_id)!
       if (season === 'ANNUAL') {
-        p.weibull_10 = row.weibull_10 ? (row.weibull_10 as any as RawWeibull) : null
-        p.weibull_50 = row.weibull_50 ? (row.weibull_50 as any as RawWeibull) : null
-        p.weibull_100 = row.weibull_100 ? (row.weibull_100 as any as RawWeibull) : null
-        p.weibull_150 = row.weibull_150 ? (row.weibull_150 as any as RawWeibull) : null
-        p.weibull_200 = row.weibull_200 ? (row.weibull_200 as any as RawWeibull) : null
+        p.weibull_10m = row.weibull_10m ? (row.weibull_10m as any as RawWeibull) : null
+        p.weibull_50m = row.weibull_50m ? (row.weibull_50m as any as RawWeibull) : null
+        p.weibull_100m = row.weibull_100m ? (row.weibull_100m as any as RawWeibull) : null
+        p.weibull_150m = row.weibull_150m ? (row.weibull_150m as any as RawWeibull) : null
+        p.weibull_200m = row.weibull_200m ? (row.weibull_200m as any as RawWeibull) : null
         p.profile_heights = safeArray(row.profile_heights)
         p.profile_means = safeArray(row.profile_means)
         p.wpd_profile_means = safeArray(row.wpd_profile_means)
@@ -313,7 +313,7 @@ function buildHeightStats(row: Record<string, unknown>, prefix: string, height: 
 function buildWeibullRecord(p: RawPixel): Record<number, { k: number; c: number } | null> {
   const w: Record<number, { k: number; c: number } | null> = {}
   for (const h of HEIGHTS) {
-    const key = `weibull_${h}` as keyof RawPixel
+    const key = `weibull_${h}m` as keyof RawPixel
     const v = p[key]
     w[h] = v ? (v as RawWeibull) : null
   }
@@ -436,7 +436,7 @@ export async function queryDashboardLocation(
   const heatmap: Record<string, number[] | null> = {}
   if (annualRow) {
     for (const h of HEIGHTS) {
-      const wrKey = `wind_rose_${h}`
+      const wrKey = `wind_rose_${h}m`
       windRose[h] = annualRow[wrKey]
         ? (annualRow[wrKey] as any as Record<string, { freq: number; mean_ws: number }>)
         : null

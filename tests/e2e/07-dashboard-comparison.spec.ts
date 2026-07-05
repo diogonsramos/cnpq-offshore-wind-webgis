@@ -88,4 +88,25 @@ test.describe('Dashboard — abas internas de comparação', () => {
 
     await expect(checkbox).toBeChecked()
   })
+
+  test('T56 — Compare Experiments: Weibull exibe k=/c= com dado real para os 2 pares', async ({ page }) => {
+    // Regressão do bug de nomenclatura de colunas (weibull_100 vs. weibull_100m real) —
+    // sem o fix, ambos os traços renderizam com curva zerada e sem "k=" no nome.
+    await page.click('.dv-inner-tab-btn:has-text("Comparar Experimentos")')
+    const panel = page.locator('.dv-tab-panel').nth(1)
+
+    const wrfCol = panel.locator('.dv-pair-col').nth(0)
+    await wrfCol.locator('.dv-pair-checkbox').filter({ hasText: /^Histórico$/ }).locator('input').check()
+    await wrfCol.locator('.dv-pair-checkbox', { hasText: 'SSP2-4.5 (Futuro)' }).locator('input').check()
+
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await panel.locator('.dv-add-btn').click()
+
+    const weibullPlot = panel.locator('[data-testid="chart-weibull"] .js-plotly-plot')
+    await expect(weibullPlot).toBeVisible({ timeout: 20000 })
+
+    const names = await weibullPlot.evaluate((el: any) => (el.data ?? []).map((d: any) => d.name as string))
+    expect(names.filter(n => /k=\d+\.\d{2}, c=\d+\.\d{2}/.test(n))).toHaveLength(2)
+  })
 })

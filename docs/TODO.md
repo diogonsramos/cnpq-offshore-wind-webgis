@@ -154,6 +154,92 @@ A 4ª aba adiciona um 4º `.dv-tab-panel` e um 2º seletor "Modelo"/"Experimento
 
 ---
 
+## ✅ f01 (Fase 3.1) — Correção de nomenclatura Weibull/Wind Rose (bug pré-merge, TOFIX.md) — 2026-07-05
+
+> **Status:** Implementado e validado (`pnpm test` — 60 passed). Plano completo em `docs/TOFIX.md` (removido após esta entrega).
+
+### Bug pré-existente corrigido — colunas Weibull/Wind Rose lidas com o nome errado
+
+O GeoParquet real (WRF) grava as colunas de Weibull e rosa dos ventos com sufixo `m` (`weibull_10m`, `weibull_100m`, `wind_rose_100m`), mas `pixelQuery.ts` lia essas colunas sem o sufixo (`weibull_10`, `wind_rose_100`). O acesso retornava `undefined` → fallback `null` — os dados existiam no arquivo mas nunca chegavam à UI, em qualquer aba que passasse por `queryDashboardLocation`/`queryNearest` (Visão Simples, Comparar Experimentos, Comparar Modelos). **Correção**, toda em `src/lib/pixelQuery.ts`:
+- Interface `RawPixel`: os 5 campos `weibull_10`/`50`/`100`/`150`/`200` renomeados para `weibull_10m`/`50m`/`100m`/`150m`/`200m`.
+- Inicialização e leitura do ANNUAL em `loadParquet`: mesmas 5 chaves atualizadas na atribuição a partir da linha do Arrow.
+- `buildWeibullRecord` (não estava no relato original do bug, mas é a mesma causa): montava a chave de leitura como `` `weibull_${h}` `` a partir do `RawPixel` — sem ajustar para `` `weibull_${h}m` `` aqui, `queryNearest`/`queryDashboardLocation` continuariam retornando `null` mesmo com os itens acima corrigidos.
+- Chave da wind rose: `` `wind_rose_${h}` `` → `` `wind_rose_${h}m` ``.
+
+**GeoParquet Explorer não foi afetado** por este bug — `queryFilteredPixels` só agrega colunas `ws*`/`wpd*`, nunca `weibull_*`/`wind_rose_*`; foi incluído apenas na regressão manual pós-fix, sem mudança de código.
+
+Confirmado via inspeção direta do schema real (`pyarrow`) que WRF (`era5_atlas`, `hist`, `ssp2-4.5`, `ssp5-8.5`) publica **apenas** `weibull_10m`/`weibull_100m`/`wind_rose_100m` — não há `weibull_50m/150m/200m` nem `wind_rose_10m` nos arquivos atuais (mesma limitação de dado já registrada nas Fases 1–3 para outras alturas/variáveis).
+
+### Validação visual manual (pós-fix, com dado real)
+
+Rodado localmente contra o parquet real (WRF, Histórico, lat=-10/lon=-35): Weibull exibe `k=4.41, c=7.85` (100m) e `k=4.74, c=7.01` (10m); rosa dos ventos preenchida em 100m (vazia em 10m — limitação de dado, sem erro de console); Comparar Experimentos (Histórico + SSP2-4.5 Futuro) mostra 2 curvas Weibull reais e distintas (`k=4.41,c=7.85` e `k=5.20,c=8.46`). Nenhum `console.error` observado em nenhum dos passos.
+
+### Testes novos — cobrindo a lacuna de conteúdo (não só contagem/visibilidade)
+
+Adicionado `data-testid` (`chart-weibull`, `chart-windrose`, `chart-seasonal`) nos `chart-card` de `DashboardView.tsx` e `DashboardComparisonView.tsx`, para asserções não dependerem da estrutura SVG interna do Plotly.
+
+| Teste | Arquivo | O que valida |
+|---|---|---|
+| T54 | `06-dashboard-controls.spec.ts` | Visão Simples: `chart-weibull` recebe um trace cujo `name` contém `k=X.XX, c=X.XX` com dado real, nas alturas 10m e 100m |
+| T55 | `06-dashboard-controls.spec.ts` | Visão Simples: `chart-windrose` (100m) tem ao menos um setor com frequência (`r`) > 0 |
+| T56 | `07-dashboard-comparison.spec.ts` | Comparar Experimentos: `chart-weibull` recebe 2 traces (Histórico + SSP2-4.5 Futuro), ambos com `k=/c=` real na legenda |
+
+Não foi criado um novo `09-*.spec.ts` — são extensões de contextos já cobertos (regra do `CLAUDE.md`). Nenhuma asserção nova foi adicionada ao GeoParquet Explorer (`08-*.spec.ts`): como o bug não o afeta, os testes T49–T53 já existentes já cobrem a regressão.
+
+**Nota de implementação dos testes:** `handleManualAdd` (Visão Simples) só aceita um pino se `isLoaded()` já for `true` — mas o parquet inicial só é buscado ao clicar no mapa ou ao trocar Modelo/Experimento (`MapView.tsx`), nunca automaticamente no mount, mesmo com o `MapView` sempre montado atrás da aba Dashboard. T54/T55 trocam o Experimento no `beforeEach` (dispara o carregamento) e usam um retry-click (`expect(...).toPass()`) até o pino ser aceito, evitando depender do canvas real do MapLibre nos testes (fora do escopo de E2E, conforme `CLAUDE.md`).
+
+### Arquivos modificados
+
+`src/lib/pixelQuery.ts`, `src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `tests/e2e/06-dashboard-controls.spec.ts`, `tests/e2e/07-dashboard-comparison.spec.ts`, `docs/TOFIX.md` (removido)
+
+---
+
+## ✅ f01 (Fase 3.2) — Checagem visual/interativa do Dashboard (4 abas) — 2026-07-05
+
+> **Status:** Implementado e validado (`pnpm test` — 67 passed). Varredura visual manual (Playwright fora do runner de testes, contra dados reais) pelas 4 abas do Dashboard, em 3 breakpoints, procurando bugs que os testes de contagem/visibilidade não pegam. 4 bugs reais encontrados e corrigidos; nenhum estava relacionado ao fix da Fase 3.1.
+
+### Bug 1 — "Remove All" (Visão Simples) deixava 1 local para trás
+
+`onClick={() => pinnedLocations.forEach((_, i) => onRemoveLocation(i))}` chamava `onRemoveLocation(i)` com os índices originais (0,1,2) em sequência; como `handleRemoveLocation` em `App.tsx` faz `setPinnedLocations(prev => prev.filter((_, idx) => idx !== idx_alvo))`, remover em ordem ascendente sobre um array que encolhe a cada chamada sempre deixava o item do meio para trás (testado: 3 pinos → "Remove All" → sobrava 1). **Correção:** `DashboardView.tsx` agora itera em ordem decrescente (`for (let i = pinnedLocations.length - 1; i >= 0; i--) onRemoveLocation(i)`), removendo cada item antes que o shift do array afete os índices restantes.
+
+### Bug 2 — Rejection não tratada ao carregar a camada de Batimetria (dispara em toda sessão)
+
+`MapView.tsx` fica sempre montado atrás da aba Dashboard (mesmo padrão já documentado na Fase 3.1 para o parquet) e busca a camada de batimetria padrão assim que monta. `BATHY_FILES` apontava para `/data/shp/*.geojson` — caminho que nunca existiu (os arquivos reais estão em `/data/bathymetry/batimetria_*_cured.geojson`, confirmado inspecionando `public/data/bathymetry/`) — e a camada padrão em `App.tsx` (`bathyLayer = 'mn_zee_nacional'`) não tem nenhum arquivo publicado (não é um problema de caminho: essa camada de limite de ZEE simplesmente nunca foi entregue). O `fetch(file).then(r => r.json())` não checava `r.ok`/content-type, então o fallback SPA do Vite (200 + HTML) quebrava o `r.json()` com `"Unexpected token '<'... is not valid JSON"` como uma **rejection não tratada** — invisível para `page.on('console')` (por isso nenhum teste existente pegou), mas visível para `page.on('pageerror')`, e portanto visível como erro real no console do navegador de qualquer usuário, em toda sessão, antes de qualquer interação. **Correção** em `src/components/MapView.tsx`:
+- 4 dos 6 caminhos de `BATHY_FILES` corrigidos para os arquivos reais (`bathy_0_100_nacional/estadual`, `bathy_0_20_50_75_100_nacional/estadual`).
+- `mn_zee_nacional`/`mn_zee_estadual` continuam sem arquivo real (mesma classe de limitação do MPAS) — ficaram documentados como tal no código.
+- O `fetch` ganhou o mesmo guard de `r.ok`/content-type já usado em `pixelQuery.ts`, com `.catch(console.warn)` em vez de deixar a rejection escapar.
+- `bathyLayer` padrão em `App.tsx` trocado de `'mn_zee_nacional'` (sem dado) para `'bathy_0_100_nacional'` (com dado real), para a sessão não iniciar já em cima de uma camada sem publicação.
+
+### Bug 3 — Eixo Y do gráfico "Média Sazonal" sempre rotulado "Velocidade do Vento", mesmo com Variável = Densidade de Potência
+
+Em `DashboardView.tsx` e `DashboardComparisonView.tsx`, o *título* do gráfico já usava `varLabel(dashboardVar).label` corretamente (ex. "Média Sazonal — Dens. Potência 100m"), mas o `yaxis.title` estava hardcoded como `` `Velocidade do Vento (${varUnit})` `` — ao trocar a Variável para WPD, o eixo Y continuava dizendo "Velocidade do Vento (W/m²)". `GeoParquetExplorer.tsx` já fazia isso corretamente (`varLabel(appliedVariable).label`), então os outros dois componentes ficaram inconsistentes com o padrão já estabelecido. **Correção:** ambos os `yaxis.title.text` trocados para `` `${varLabel(...).label} (${varUnit})` ``.
+
+### Bug 4 — Rótulos "Variable"/"Height" em inglês na Visão Simples (as 3 outras abas já usavam `t()`)
+
+As chaves `dashboard.filters.variable_label` (`"Variável"`) e `dashboard.filters.height_label` (`"Altura"`) já existiam em `src/i18n/pt-BR.ts` e já eram usadas por `DashboardComparisonView.tsx` e `GeoParquetExplorer.tsx`, mas `DashboardView.tsx` (Visão Simples) tinha ficado com `<label>Variable</label>`/`<label>Height</label>` hardcoded em inglês — a única das 4 abas nessa condição. **Correção:** as duas labels agora usam `t('dashboard.filters.variable_label')`/`t('dashboard.filters.height_label')`, igual às outras abas. (Os placeholders "Latitude"/"Longitude" e o texto do botão "+ Add Location" continuam em inglês nas 2 abas que os têm — Visão Simples e Comparar Experimentos/Modelos — de forma consistente entre si; isso é o mesmo item já registrado nas limitações da Fase 2 ("rótulos... ainda não usam `t()`"), não uma inconsistência nova, e não foi alterado aqui.)
+
+### Bug 5 (CSS, mais grave) — Visão Simples inutilizável em mobile/tablet (≤900px)
+
+A regra responsiva `@media (max-width: 900px) { .dv-sidebar { width: 100%; } }` foi escrita pensando em `.dv-main` (usado por Comparar Experimentos/Modelos), que na mesma regra também vira `flex-direction: column` — então "width:100%" do mini-mapa faz sentido (100% da coluna, depois de empilhar). A Visão Simples, porém, aninha `.dv-body` + `.dv-sidebar` diretamente sob `.dv-tab-panel` (não sob `.dv-main`), e `.dv-tab-panel` não tinha nenhuma regra correspondente — então em ≤900px o mini-mapa ficava com `width:100%` **enquanto o layout continuava em linha (row)**, espremendo `.dv-body` (filtros, Latitude/Longitude, "+ Add Location") para uma fatia de ~30px de largura, efetivamente invisível/inutilizável (confirmado via `getBoundingClientRect`: `.dv-body` renderizando com 32px de largura em 375px de viewport). Como `.dv-tab-panel` tem `overflow: hidden`, isso nunca aparecia como scroll horizontal — por isso passou despercebido pelos testes `T08` (que só cobrem a landing page, não o Dashboard). **Correção:** adicionado `.dv-tab-panel { flex-direction: column; }` na mesma media query — seguro para as outras 3 abas porque `.dv-compare`/`.gpe` (seus únicos filhos diretos de `.dv-tab-panel`) já têm `flex: 1`, preenchendo 100% de largura/altura independente da direção do flex do pai.
+
+### Testes novos — cobrindo os 5 bugs (T57–T61)
+
+| Teste | Arquivo | O que valida |
+|---|---|---|
+| T57 | `06-dashboard-controls.spec.ts` | Trocar a camada de Batimetria (ZEE Nacional → Plataforma Nacional → Subfaixas Nacional) não lança exceção não tratada (`page.on('pageerror')`) |
+| T58 | `06-dashboard-controls.spec.ts` | Abrir o Dashboard direto (sem interação) não lança exceção não tratada — cobre o caso de toda sessão herdar a camada padrão quebrada |
+| T59 | `06-dashboard-controls.spec.ts` | Fixar 3 locais e clicar "Remove All" remove os 3 (não deixa 1 para trás) |
+| T60 | `03-responsiveness.spec.ts` | Dashboard sem scroll horizontal nas 4 abas, nos 3 breakpoints (375/768/1280) |
+| T61 | `03-responsiveness.spec.ts` | Em mobile, o botão "+ Add Location" da Visão Simples renderiza com largura > 80px (não espremido a uma fatia) |
+
+`T42`/`T43` (já existentes) ganharam também um listener de `page.on('pageerror')` além do de `console`, já que uma rejection não tratada (Bug 2) não aparece em `page.on('console')` — só em `pageerror`. Isso é o motivo pelo qual o Bug 2 nunca apareceu em nenhum teste anterior apesar de disparar em toda sessão.
+
+### Arquivos modificados
+
+`src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/MapView.tsx`, `src/App.tsx`, `src/App.css`, `tests/e2e/06-dashboard-controls.spec.ts`, `tests/e2e/03-responsiveness.spec.ts`
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.

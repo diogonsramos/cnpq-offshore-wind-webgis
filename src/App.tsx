@@ -21,7 +21,7 @@ export default function App() {
   const [height, setHeight] = useState<Height>(100)
   const [season, setSeason] = useState<Season>('annual')
   const [showBathymetry, setShowBathymetry] = useState(true)
-  const [bathyLayer, setBathyLayer] = useState('mn_zee_nacional')
+  const [bathyLayer, setBathyLayer] = useState('bathy_0_100_nacional')
   const [pixelData, setPixelData] = useState<PixelDataSummary | null>(null)
   const [parquetLoaded, setParquetLoaded] = useState(false)
   const [parquetLoading, setParquetLoading] = useState(false)

@@ -237,7 +237,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
       ) : (
         <div className="dv-main">
           <div className="dv-chart-grid">
-            <div className="chart-card">
+            <div className="chart-card" data-testid="chart-seasonal">
               <Plot
                 data={readyEntries.map(e => ({
                   x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
@@ -250,7 +250,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   title: { text: `Média Sazonal — ${varLabel(variable).label} ${height}m` },
                   xaxis: { title: { text: 'Sazonalidade', standoff: 10 } },
                   yaxis: {
-                    title: { text: `Velocidade do Vento (${varUnit})`, standoff: 10 },
+                    title: { text: `${varLabel(variable).label} (${varUnit})`, standoff: 10 },
                     range: variable === 'ws' ? [0, 25] : [0, 1500],
                     zeroline: false,
                   },
@@ -268,7 +268,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
               />
             </div>
 
-            <div className="chart-card">
+            <div className="chart-card" data-testid="chart-weibull">
               <Plot
                 data={readyEntries.map(e => {
                   const w = e.data!.weibull?.[height]
@@ -305,7 +305,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
               />
             </div>
 
-            <div className="chart-card">
+            <div className="chart-card" data-testid="chart-windrose">
               <Plot
                 data={readyEntries.map(e => {
                   const wr = e.data!.wind_rose?.[height]

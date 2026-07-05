@@ -62,7 +62,9 @@ test.describe('SidePanel — opacidade do COG', () => {
 
   test('T42 — nenhum erro de console ao mover o slider e alternar de aba', async ({ page }) => {
     const errors: string[] = []
+    const pageErrors: string[] = []
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
+    page.on('pageerror', err => pageErrors.push(err.message))
 
     const slider = page.locator('.range-field input[type="range"]')
     await slider.focus()
@@ -73,11 +75,14 @@ test.describe('SidePanel — opacidade do COG', () => {
     await expect(page.locator('.dashboard-view')).toBeVisible()
 
     expect(errors).toEqual([])
+    expect(pageErrors).toEqual([])
   })
 
   test('T43 — trocar o experimento (WRF) recarrega o parquet real sem erro de console', async ({ page }) => {
     const errors: string[] = []
+    const pageErrors: string[] = []
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
+    page.on('pageerror', err => pageErrors.push(err.message))
 
     const experimentSelect = page.locator('.select-field', { hasText: 'Experimento' }).locator('.combobox-input')
     await experimentSelect.click()
@@ -86,5 +91,127 @@ test.describe('SidePanel — opacidade do COG', () => {
     await page.waitForTimeout(500)
 
     expect(errors).toEqual([])
+    expect(pageErrors).toEqual([])
+  })
+
+  test('T57 — trocar a camada de Batimetria não lança exceção não tratada (regressão)', async ({ page }) => {
+    // Regressão: fetch(file).then(r => r.json()) sem checar r.ok/content-type
+    // lançava "Unexpected token '<'... is not valid JSON" (rejection não tratada,
+    // invisível para page.on('console') mas visível para page.on('pageerror'))
+    // sempre que a camada apontava para um arquivo inexistente — incluindo a
+    // camada padrão ("ZEE Nacional"), então isso disparava em toda sessão.
+    const pageErrors: string[] = []
+    page.on('pageerror', err => pageErrors.push(err.message))
+
+    await page.click('.accordion-header:has-text("Shapefiles de Batimetria")')
+    await page.click('label:has-text("ZEE Nacional")')
+    await page.click('label:has-text("Plataforma Nacional (0-100m)")')
+    await page.click('label:has-text("Subfaixas Nacional")')
+    await page.waitForTimeout(1000)
+
+    expect(pageErrors).toEqual([])
+  })
+})
+
+test.describe('Dashboard — carregamento inicial', () => {
+  test('T58 — abrir o Dashboard direto não lança exceção não tratada (MapView monta por trás)', async ({ page }) => {
+    // Regressão: MapView fica sempre montado atrás da aba Dashboard e busca a
+    // camada de batimetria padrão assim que monta — se essa camada apontar para
+    // um arquivo inexistente, toda sessão dispara uma rejection não tratada antes
+    // de qualquer interação do usuário. page.on('console') não pega isso; só
+    // page.on('pageerror') (por isso passou despercebido nos testes anteriores).
+    // O listener precisa ser registrado antes do goto/click para capturar o erro
+    // disparado no mount, que ocorre assim que a navegação para o Dashboard termina.
+    const pageErrors: string[] = []
+    page.on('pageerror', err => pageErrors.push(err.message))
+
+    await page.goto('/')
+    await page.click('.lp-cta-secondary')
+    await expect(page.locator('.dashboard-view')).toBeVisible()
+    await page.waitForTimeout(1000)
+
+    expect(pageErrors).toEqual([])
+  })
+})
+
+test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa dos Ventos', () => {
+  // Regressão do bug de nomenclatura de colunas (weibull_10/weibull_100 vs. weibull_10m/weibull_100m
+  // reais no GeoParquet) — cobre o caso que os testes de contagem/visibilidade não pegavam.
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.click('.lp-cta-secondary')
+    await expect(page.locator('.dashboard-view')).toBeVisible()
+
+    // "+ Add Location" exige isLoaded() global, mas o parquet inicial só é buscado
+    // ao clicar no mapa ou ao trocar Modelo/Experimento (MapView.tsx) — nunca no
+    // mount, mesmo com o MapView sempre montado por trás da aba Dashboard. Trocar
+    // o Experimento aqui dispara esse carregamento sem depender do canvas do mapa.
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('HIST_historico')
+  })
+
+  test('T54 — Weibull exibe k=/c= com dado real nas alturas 10m e 100m', async ({ page }) => {
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    // Retry: a troca de experimento acima ainda pode não ter terminado o fetch/parse
+    // do parquet real no momento do clique.
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    const weibullPlot = panel.locator('[data-testid="chart-weibull"] .js-plotly-plot')
+    await expect(weibullPlot).toBeVisible({ timeout: 20000 })
+
+    const name100 = await weibullPlot.evaluate((el: any) => el.data?.[0]?.name ?? '')
+    expect(name100).toMatch(/k=\d+\.\d{2}, c=\d+\.\d{2}/)
+
+    await panel.locator('.dv-filter-group', { hasText: 'Altura' }).locator('select').selectOption('10')
+    const name10 = await weibullPlot.evaluate((el: any) => el.data?.[0]?.name ?? '')
+    expect(name10).toMatch(/k=\d+\.\d{2}, c=\d+\.\d{2}/)
+  })
+
+  test('T55 — rosa dos ventos (100m) tem dado real (ao menos um setor com frequência > 0)', async ({ page }) => {
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    const windRosePlot = panel.locator('[data-testid="chart-windrose"] .js-plotly-plot')
+    await expect(windRosePlot).toBeVisible({ timeout: 20000 })
+
+    const maxR = await windRosePlot.evaluate((el: any) => Math.max(0, ...(el.data?.[0]?.r ?? [])))
+    expect(maxR).toBeGreaterThan(0)
+  })
+
+  test('T59 — "Remove All" remove todos os locais fixados (regressão)', async ({ page }) => {
+    // Regressão: o forEach chamava onRemoveLocation(i) com os índices originais
+    // (0,1,2) em sequência; como cada chamada já filtra o array pelo índice atual,
+    // remover em ordem ascendente deixava sempre 1 local para trás (o do meio).
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    const chips = panel.locator('.dv-chips .chip-state')
+
+    // 1º pino: retry até o parquet global terminar de carregar (mesmo motivo do T54/T55).
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(chips).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    // 2º e 3º pinos: isLoaded() já é true, um clique basta.
+    for (const [lat, lon, expected] of [['-13', '-38', 2], ['-23', '-42', 3]] as const) {
+      await panel.locator('.dv-input').nth(0).fill(lat)
+      await panel.locator('.dv-input').nth(1).fill(lon)
+      await panel.locator('.dv-add-btn').click()
+      await expect(chips).toHaveCount(expected)
+    }
+
+    await panel.locator('.dv-remove-all').click()
+    await expect(chips).toHaveCount(0)
   })
 })

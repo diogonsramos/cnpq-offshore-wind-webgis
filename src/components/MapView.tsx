@@ -30,13 +30,15 @@ const BS = 'bathy-src'
 const BF = 'bathy-fill'
 const BL = 'bathy-line'
 
+// mn_zee_nacional/mn_zee_estadual have no published file yet (no ZEE boundary
+// data delivered so far) — same "not published" class as MPAS in pixelQuery.ts.
 const BATHY_FILES: Record<string, string> = {
   mn_zee_nacional: '/data/shp/mn_zee_nacional.geojson',
   mn_zee_estadual: '/data/shp/mn_zee_estadual.geojson',
-  bathy_0_100_nacional: '/data/shp/bathy_0_100_nacional.geojson',
-  bathy_0_100_estadual: '/data/shp/bathy_0_100_estadual.geojson',
-  bathy_0_20_50_75_100_nacional: '/data/shp/bathy_0_20_50_75_100_nacional.geojson',
-  bathy_0_20_50_75_100_estadual: '/data/shp/bathy_0_20_50_75_100_estadual.geojson',
+  bathy_0_100_nacional: '/data/bathymetry/batimetria_0_100m_cured.geojson',
+  bathy_0_100_estadual: '/data/bathymetry/batimetria_0_100m_estadual_cured.geojson',
+  bathy_0_20_50_75_100_nacional: '/data/bathymetry/batimetria_0_20_50_75_100m_cured.geojson',
+  bathy_0_20_50_75_100_estadual: '/data/bathymetry/batimetria_subfaixas_estadual_cured.geojson',
 }
 
 const BASEMAP_TILES: Record<string, { tiles: string[]; attribution: string }> = {
@@ -216,12 +218,23 @@ function MapViewInner(props: MapViewProps) {
       m.addLayer({ id: BL, type: 'line', source: BS, paint: { 'line-color': '#1a5a9e', 'line-width': 0.8, 'line-opacity': 0.5 } })
       return
     }
-    fetch(file).then(r => r.json()).then(gj => {
+    fetch(file).then(r => {
+      // A dev-server SPA fallback (or a layer with no published file yet, e.g.
+      // mn_zee_*) returns 200+HTML instead of 404 — treat both as "unavailable"
+      // instead of feeding HTML to r.json() (which throws an unhandled rejection).
+      const contentType = r.headers.get('content-type') ?? ''
+      if (!r.ok || contentType.includes('text/html')) {
+        throw new Error(`Bathymetry layer not available at ${file} (status ${r.status})`)
+      }
+      return r.json()
+    }).then(gj => {
       cache.current.set(bathyLayer, gj)
       if (!map.current) return
       map.current.addSource(BS, { type: 'geojson', data: gj })
       map.current.addLayer({ id: BF, type: 'fill', source: BS, paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.15 } })
       map.current.addLayer({ id: BL, type: 'line', source: BS, paint: { 'line-color': '#1a5a9e', 'line-width': 0.8, 'line-opacity': 0.5 } })
+    }).catch(e => {
+      console.warn('MapView: bathymetry layer unavailable:', e)
     })
   }, [showBathymetry, bathyLayer, ready])
 
