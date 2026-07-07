@@ -43,6 +43,19 @@ export const COASTAL_STATES: StateDef[] = [
   { val: 'SP', label: 'São Paulo' },
 ]
 
+// Geographic Norte→Sul ordering of the coastal states, used to sort the
+// per-state boxplot so it reads as a latitudinal gradient down the coast.
+// COASTAL_STATES itself stays alphabetical (easier to locate a state in the
+// checkbox grid); this is the separate geographic axis.
+export const STATE_ORDER_NORTH_SOUTH: string[] = [
+  'AP', 'PA', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA', 'ES', 'RJ', 'SP', 'PR', 'SC', 'RS',
+]
+
+export function stateNorthSouthIndex(code: string): number {
+  const i = STATE_ORDER_NORTH_SOUTH.indexOf(code)
+  return i === -1 ? STATE_ORDER_NORTH_SOUTH.length : i
+}
+
 const VAR_LABEL: Record<Variable, { label: string; unit: string }> = {
   ws: { label: 'Vel. Vento', unit: 'm/s' },
   wpd: { label: 'Dens. Potência', unit: 'W/m²' },

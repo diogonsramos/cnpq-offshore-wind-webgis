@@ -132,6 +132,26 @@ test.describe('Dashboard — carregamento inicial', () => {
 
     expect(pageErrors).toEqual([])
   })
+
+  test('T65 — "+ Add Location" funciona sem clique prévio no mapa (auto-load do parquet)', async ({ page }) => {
+    // Antes, o parquet só era buscado ao clicar no mapa ou trocar de experimento,
+    // então o Add Location no Dashboard falhava com "Parquet data not loaded yet.
+    // Click the map first." O Dashboard agora auto-carrega o par selecionado ao entrar.
+    await page.goto('/')
+    await page.click('.lp-cta-secondary')
+    await expect(page.locator('.dashboard-view')).toBeVisible()
+
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    // Nenhuma mensagem de erro "click the map first" deve aparecer.
+    await expect(panel.locator('.dv-error')).toHaveCount(0)
+  })
 })
 
 test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa dos Ventos', () => {
@@ -186,6 +206,50 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
 
     const maxR = await windRosePlot.evaluate((el: any) => Math.max(0, ...(el.data?.[0]?.r ?? [])))
     expect(maxR).toBeGreaterThan(0)
+  })
+
+  test('T66 — legenda dos gráficos usa apenas "Loc N" (sem modelo/experimento) (A4)', async ({ page }) => {
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    const seasonalPlot = panel.locator('[data-testid="chart-seasonal"] .js-plotly-plot')
+    await expect(seasonalPlot).toBeVisible({ timeout: 20000 })
+    const name = await seasonalPlot.evaluate((el: any) => el.data?.[0]?.name ?? '')
+    expect(name).toBe('Loc 1')
+  })
+
+  test('T67 — trocar o experimento re-consulta os pinned locations sem erro (A1)', async ({ page }) => {
+    const errors: string[] = []
+    const pageErrors: string[] = []
+    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
+    page.on('pageerror', err => pageErrors.push(err.message))
+
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    // Troca de experimento (HIST → ERA5 Histórico): o pino persiste e os gráficos
+    // continuam renderizando dados válidos (re-consulta contra o novo par).
+    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('ERA5_atlas_historico')
+
+    const weibullPlot = panel.locator('[data-testid="chart-weibull"] .js-plotly-plot')
+    await expect(async () => {
+      const name = await weibullPlot.evaluate((el: any) => el.data?.[0]?.name ?? '')
+      expect(name).toMatch(/k=\d+\.\d{2}, c=\d+\.\d{2}/)
+    }).toPass({ timeout: 20000 })
+
+    await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    expect(errors).toEqual([])
+    expect(pageErrors).toEqual([])
   })
 
   test('T59 — "Remove All" remove todos os locais fixados (regressão)', async ({ page }) => {

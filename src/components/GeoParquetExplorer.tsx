@@ -2,13 +2,13 @@ import { useMemo, useRef, useState, memo } from 'react'
 import Plot from 'react-plotly.js'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
-  datasetLabel, varLabel, modelLabel, datasetFolder, COASTAL_STATES,
+  datasetLabel, varLabel, modelLabel, datasetFolder, COASTAL_STATES, stateNorthSouthIndex,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
 import { loadParquet, queryFilteredPixels, type FilterCriteria, type FilteredAggregates } from '../lib/pixelQuery'
 import {
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, BATHY_ZONE_OPTIONS,
-  DISTANCE_MAX_NM, DISTANCE_MIN_GAP_NM,
+  DISTANCE_MAX_NM, DISTANCE_MIN_GAP_NM, PLOT_CONFIG,
 } from '../lib/dashboardChartConstants'
 import { t } from '../i18n/t'
 
@@ -119,8 +119,23 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
     return linearRegression(result.distances, result.values)
   }, [result])
 
-  const showBoxplotByState = appliedFilters !== null && (appliedFilters.states?.length ?? 0) === 0
-  const showBoxplotByBathy = appliedFilters !== null && (appliedFilters.bathyZones?.length ?? 0) === 0
+  // Boxplots compare distributions across categories, so they only make sense with
+  // 0 selected (all categories) or 2+ selected. Exactly 1 selected collapses to a
+  // single meaningless box — hide it then.
+  const showBoxplotByState = appliedFilters !== null && (appliedFilters.states?.length ?? 0) !== 1
+  const showBoxplotByBathy = appliedFilters !== null && (appliedFilters.bathyZones?.length ?? 0) !== 1
+
+  // Order the per-category boxes geographically (states Norte→Sul, bathy by depth)
+  // instead of by pixel count, so the axis reads as a physical gradient.
+  const byStateOrdered = useMemo(
+    () => result ? [...result.byState].sort((a, b) => stateNorthSouthIndex(a.state) - stateNorthSouthIndex(b.state)) : [],
+    [result],
+  )
+  const byBathyOrdered = useMemo(() => {
+    if (!result) return []
+    const order = BATHY_ZONE_OPTIONS.map(b => b.val)
+    return [...result.byBathyZone].sort((a, b) => order.indexOf(a.zone) - order.indexOf(b.zone))
+  }, [result])
 
   const profileYAxis = {
     title: { text: 'Altura do Perfil (m)', standoff: 10 },
@@ -237,7 +252,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   font: { size: 11 },
                   showlegend: false,
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />
@@ -246,14 +261,14 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
             {showBoxplotByState ? (
               <div className="chart-card">
                 <Plot
-                  data={result.byState.map((g, i) => ({
+                  data={byStateOrdered.map((g, i) => ({
                     y: g.values, type: 'box' as const, name: stateLabel(g.state),
                     marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
                     boxpoints: false as const,
                   }))}
                   layout={{
                     title: { text: t('geoparquet_explorer.charts.boxplot_state_title') },
-                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false },
+                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                     height: 260,
                     margin: { t: 40, b: 60, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
@@ -261,7 +276,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                     font: { size: 10 },
                     showlegend: false,
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -273,14 +288,14 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
             {showBoxplotByBathy ? (
               <div className="chart-card">
                 <Plot
-                  data={result.byBathyZone.map((g, i) => ({
+                  data={byBathyOrdered.map((g, i) => ({
                     y: g.values, type: 'box' as const, name: bathyOptionLabel(g.zone),
                     marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
                     boxpoints: false as const,
                   }))}
                   layout={{
                     title: { text: t('geoparquet_explorer.charts.boxplot_bathy_title') },
-                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false },
+                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
@@ -288,7 +303,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                     font: { size: 11 },
                     showlegend: false,
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -313,8 +328,8 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                 ]}
                 layout={{
                   title: { text: t('geoparquet_explorer.charts.scatter_title') },
-                  xaxis: { title: { text: 'Distância da Costa (nm)', standoff: 10 }, range: [0, DISTANCE_MAX_NM], zeroline: false },
-                  yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false },
+                  xaxis: { title: { text: 'Distância da Costa (nm)', standoff: 10 }, range: [0, DISTANCE_MAX_NM], zeroline: false, hoverformat: '.1f' },
+                  yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
@@ -323,7 +338,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   showlegend: true,
                   legend: { x: 1, xanchor: 'right', y: 1 },
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />
@@ -340,7 +355,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                 }]}
                 layout={{
                   title: { text: t('geoparquet_explorer.charts.profile_title') },
-                  xaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false },
+                  xaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                   yaxis: profileYAxis,
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
@@ -349,7 +364,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   font: { size: 11 },
                   showlegend: false,
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />

@@ -240,6 +240,45 @@ A regra responsiva `@media (max-width: 900px) { .dv-sidebar { width: 100%; } }` 
 
 ---
 
+## ✅ f01 (Fase 3.3) — Correções de UX/dados do Dashboard (TOFIX.md, categoria A) — 2026-07-07
+
+> **Status:** Implementado e validado (`pnpm test` — 73 passed, `pnpm test:types` — 0 erros). Fecha a categoria A do `docs/TOFIX.md` (6 bugs de código bloqueando o merge) + o auto-load do parquet (item C2, promovido a correção por ser regressão de UX reportada com a auditoria).
+
+### Itens concluídos (categoria A do TOFIX)
+
+| Item | Resolução |
+|---|---|
+| **A1** — Pinned locations não atualizavam ao trocar experimento/modelo | Novo `useEffect([model, dataset])` em `App.tsx` re-consulta cada localização fixada com `queryDashboardLocation(lat, lon, model, datasetFolder(dataset))` e substitui o `pinnedLocations`. Snapshots com dado nulo (par sem publicação, ex. MPAS) preservam o pino anterior — trocar de par nunca apaga as coordenadas fixadas. Os gráficos de Weibull/rosa/perfil (que leem do snapshot da `loc`) passam a refletir o par atual, não mais o par do momento do clique. |
+| **A2** — Boxplot por Estado ordenado por contagem decrescente | Nova constante `STATE_ORDER_NORTH_SOUTH` + `stateNorthSouthIndex()` em `cogCatalog.ts` (AP→RS). `GeoParquetExplorer.tsx` ordena `byState` por esse índice geográfico (memo `byStateOrdered`); `COASTAL_STATES` segue alfabético para o grid de checkboxes. Boxplot de Batimetria também ordenado por profundidade (`0_20`→`50_100`) via `byBathyOrdered`. |
+| **A3** — Boxplot por Estado sumia com 1 estado e com 2+ | Lógica trocada de `=== 0` para `!== 1`: o boxplot aparece com 0 (todas as categorias) ou 2+ selecionados; some só com exatamente 1 (categoria única não faz sentido). Mesma regra para Batimetria. *(A doc do TOFIX sugeria `<= 1`, mas isso contradizia o próprio título "deveria exibir com 2+" — `!== 1` é a implementação que satisfaz o comportamento descrito e mantém o `T51` passando.)* |
+| **A4** — Legenda "WRF — ERA5 (Loc N)" redundante | `locLabel` em `DashboardView.tsx` agora retorna só `Loc ${i+1}` — modelo/experimento/variável/altura já estão explícitos na barra de filtros acima. |
+| **A5** — Modebar do Plotly desabilitada nos 15 gráficos | Nova constante compartilhada `PLOT_CONFIG` em `dashboardChartConstants.ts` (`displayModeBar: true`, `displaylogo: false`, remove `lasso2d`/`select2d`, `toImageButtonOptions` PNG 900×600). As 15 ocorrências de `config={{ displayModeBar: false, responsive: true }}` nos 3 componentes passaram a `config={PLOT_CONFIG}`. |
+| **A6** — Precisão decimal excessiva no hover | `hoverformat: '.2f'` nos eixos de valor (velocidade do vento, densidade de potência) dos 3 componentes; `.4f` no eixo de densidade de probabilidade do Weibull; `.1f` no eixo de distância do scatter. |
+| **Auto-load (C2)** — Dashboard só funcionava após clicar no mapa | Novo `useEffect` em `App.tsx` chama `loadParquet(datasetFolder(dataset), model)` ao entrar nas abas Map/Dashboard; `handleAddLocation` passa o par para `queryDashboardLocation` (carrega sob demanda); removido o bloqueio `isLoaded()` + mensagem "Click the map first" em `DashboardView.tsx`. |
+
+### Testes novos — T62–T67
+
+| Teste | Arquivo | O que valida |
+|---|---|---|
+| T62 | `08-geoparquet-explorer.spec.ts` | Boxplot por Estado reaparece com 2+ estados selecionados (A3) |
+| T63 | `08-geoparquet-explorer.spec.ts` | Boxplot por Estado ordenado Norte→Sul — sequência de índices geográficos ascendente (A2) |
+| T64 | `08-geoparquet-explorer.spec.ts` | Modebar habilitada: botão de download PNG presente, lasso/box-select ausentes (A5) |
+| T65 | `06-dashboard-controls.spec.ts` | "+ Add Location" funciona sem clique prévio no mapa (auto-load do parquet) |
+| T66 | `06-dashboard-controls.spec.ts` | Legenda dos gráficos usa só "Loc N" (A4) |
+| T67 | `06-dashboard-controls.spec.ts` | Trocar experimento re-consulta os pinned locations, o pino persiste e não há erro de console (A1) |
+
+**Validação manual (checklist TOFIX):** trocar experimento no Dashboard atualiza os pinned locations; boxplot por Estado com 0/1/2/3+ estados; modebar com zoom/download funcionando.
+
+### Categoria B do TOFIX — limitações do pipeline de dados (não são bugs de código)
+
+Os GeoParquet publicados em `public/data/geoparquet/wrf/*/season=annual/data.parquet` só contêm as colunas listadas no TOFIX (`profile_*`, `weibull_10m`/`weibull_100m`, `wind_rose_100m`, `ws10_*`/`ws100_*` por estação). O código já procura por todas as alturas/estações — **o dado é que não foi gerado**. Colunas ausentes a gerar no pipeline (registrado aqui para a versão final dos dados): `ws50/150/200_*`, todos os `wpd*_*`, `wpd_profile_means`, `weibull_50m/150m/200m`, `wind_rose_10m/50m/150m/200m`, `distance_nm`. Enquanto não existirem: média sazonal só em 10m/100m, densidade de potência inerte, Weibull só 10m/100m, rosa dos ventos só 100m, filtro/scatter de distância inertes.
+
+### Arquivos modificados
+
+`src/App.tsx`, `src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/GeoParquetExplorer.tsx`, `src/lib/cogCatalog.ts`, `src/lib/dashboardChartConstants.ts`, `tests/e2e/06-dashboard-controls.spec.ts`, `tests/e2e/08-geoparquet-explorer.spec.ts`
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.
@@ -514,6 +553,15 @@ Ferramenta: **Playwright 1.52.0** (`@playwright/test`) + Chromium 149 (playwrigh
   - [ ] Configurar os gráficos do Plotly no Dashboard (Série Temporal, Perfil Vertical e Weibull) para renderizar até 3 linhas/séries na mesma tela quando houver múltiplos pontos selecionados.
 - [ ] **4.3. Entrada Manual de Coordenadas:**
   - [ ] Desenvolver o formulário de validação numérica no topo do Dashboard para inserção direta de valores de Latitude e Longitude via teclado, disparando a busca no GeoParquet da mesma forma que o clique no mapa.
+- [ ] **4.4. Melhorias pós-merge do Dashboard (TOFIX.md, categoria C):**
+  - [x] **C2** — Auto-load do parquet ao entrar no Dashboard *(feito na Fase 3.3)*
+  - [x] **C5** — Boxplot de Batimetria ordenado por profundidade (`0_20`, `20_50`, `50_100`) *(feito na Fase 3.3)*
+  - [ ] **C1** — Botão "Recarregar Dashboard" (alternativa manual à re-consulta automática dos pinned locations)
+  - [ ] **C3** — Minitabela de coordenadas abaixo do minimapa ("Local | Lat | Lon" + botão de remoção por linha)
+  - [ ] **C4** — Remover o perfil vertical de WPD do Dashboard ou substituir por placeholder "sem dados" (coluna `wpd_profile_means` não existe no pipeline — ver categoria B)
+  - [ ] **C6** — Adicionar curva Weibull ao GeoParquet Explorer (ao lado do histograma)
+  - [ ] **C7** — Scatter de distância com agregação por steps discretos (0, 20, 50, 100, 200 nm) — depende de `distance_nm` existir no pipeline
+  - [ ] **C8** — Publicar dados COG e GeoParquet do MPAS em `public/data/cogs/mpas/` e `public/data/geoparquet/mpas/`
 
 ---
 

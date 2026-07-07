@@ -8,7 +8,7 @@ import {
 import { queryDashboardLocation, loadParquet, seasonStat, type DashboardLocationData } from '../lib/pixelQuery'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
-  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, PLOT_CONFIG,
 } from '../lib/dashboardChartConstants'
 import MiniMap from './MiniMap'
 import { t } from '../i18n/t'
@@ -253,6 +253,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                     title: { text: `${varLabel(variable).label} (${varUnit})`, standoff: 10 },
                     range: variable === 'ws' ? [0, 25] : [0, 1500],
                     zeroline: false,
+                    hoverformat: '.2f',
                   },
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
@@ -262,7 +263,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   showlegend: true,
                   legend: { x: 1, xanchor: 'right', y: 1 },
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />
@@ -289,8 +290,8 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                 })}
                 layout={{
                   title: { text: `Distribuição Weibull — ${height}m` },
-                  xaxis: { title: { text: 'Velocidade do Vento (m/s)', standoff: 10 }, range: [0, 30], zeroline: false },
-                  yaxis: { title: { text: 'Densidade de Probabilidade f(v)', standoff: 10 }, range: [0, 0.3], zeroline: false },
+                  xaxis: { title: { text: 'Velocidade do Vento (m/s)', standoff: 10 }, range: [0, 30], zeroline: false, hoverformat: '.2f' },
+                  yaxis: { title: { text: 'Densidade de Probabilidade f(v)', standoff: 10 }, range: [0, 0.3], zeroline: false, hoverformat: '.4f' },
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
@@ -299,7 +300,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   showlegend: true,
                   legend: { x: 1, xanchor: 'right', y: 1 },
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />
@@ -334,7 +335,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                     radialaxis: { visible: true, title: { text: 'Frequência (%)' }, ticksuffix: '%' },
                   },
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />
@@ -353,7 +354,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                 }))}
                 layout={{
                   title: { text: 'Perfil Vertical — Velocidade do Vento' },
-                  xaxis: { title: { text: 'Velocidade do Vento (m/s)', standoff: 10 }, range: [0, 25], zeroline: false },
+                  xaxis: { title: { text: 'Velocidade do Vento (m/s)', standoff: 10 }, range: [0, 25], zeroline: false, hoverformat: '.2f' },
                   yaxis: profileYAxis,
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
@@ -363,7 +364,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   showlegend: true,
                   legend: { x: 1, xanchor: 'right', y: 1 },
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />
@@ -382,7 +383,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                 }))}
                 layout={{
                   title: { text: 'Perfil Vertical — Densidade de Potência' },
-                  xaxis: { title: { text: 'Densidade de Potência (W/m²)', standoff: 10 }, range: [0, 1500], zeroline: false },
+                  xaxis: { title: { text: 'Densidade de Potência (W/m²)', standoff: 10 }, range: [0, 1500], zeroline: false, hoverformat: '.2f' },
                   yaxis: profileYAxis,
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
@@ -392,7 +393,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   showlegend: true,
                   legend: { x: 1, xanchor: 'right', y: 1 },
                 }}
-                config={{ displayModeBar: false, responsive: true }}
+                config={PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />

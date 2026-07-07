@@ -4,10 +4,10 @@ import {
   datasetLabel, varLabel, modelLabel,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
-import { type DashboardLocationData, queryPixelStat, isLoaded } from '../lib/pixelQuery'
+import { type DashboardLocationData, queryPixelStat } from '../lib/pixelQuery'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
-  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG,
 } from '../lib/dashboardChartConstants'
 import MiniMap from './MiniMap'
 import DashboardComparisonView from './DashboardComparisonView'
@@ -53,10 +53,6 @@ function DashboardViewInner({
       setLocError('Enter valid numeric lat/lon.')
       return
     }
-    if (!isLoaded()) {
-      setLocError('Parquet data not loaded yet. Click the map first.')
-      return
-    }
     if (pinnedLocations.length >= 3) {
       setLocError('Maximum 3 locations allowed.')
       return
@@ -67,8 +63,10 @@ function DashboardViewInner({
     setLocError('')
   }
 
-  const locLabel = (loc: DashboardLocationData, i: number): string =>
-    `${modelLabelStr} — ${datasetLabelStr} (Loc ${i + 1})`
+  // Model/experiment/variable/height are already explicit in the filter bar above,
+  // so the legend only needs to disambiguate which pinned point each trace is.
+  const locLabel = (_loc: DashboardLocationData, i: number): string =>
+    `Loc ${i + 1}`
 
   const varUnit = dashboardVar === 'ws' ? 'm/s' : 'W/m²'
 
@@ -237,6 +235,7 @@ function DashboardViewInner({
                       title: { text: `${varLabel(dashboardVar).label} (${varUnit})`, standoff: 10 },
                       range: dashboardVar === 'ws' ? [0, 25] : [0, 1500],
                       zeroline: false,
+                      hoverformat: '.2f',
                     },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
@@ -246,7 +245,7 @@ function DashboardViewInner({
                     showlegend: true,
                     legend: { x: 1, xanchor: 'right', y: 1 },
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -279,11 +278,13 @@ function DashboardViewInner({
                       title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
                       range: [0, 30],
                       zeroline: false,
+                      hoverformat: '.2f',
                     },
                     yaxis: {
                       title: { text: 'Densidade de Probabilidade f(v)', standoff: 10 },
                       range: [0, 0.3],
                       zeroline: false,
+                      hoverformat: '.4f',
                     },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
@@ -293,7 +294,7 @@ function DashboardViewInner({
                     showlegend: true,
                     legend: { x: 1, xanchor: 'right', y: 1 },
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -330,7 +331,7 @@ function DashboardViewInner({
                       radialaxis: { visible: true, title: { text: 'Frequência (%)' }, ticksuffix: '%' },
                     },
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -353,6 +354,7 @@ function DashboardViewInner({
                       title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
                       range: [0, 25],
                       zeroline: false,
+                      hoverformat: '.2f',
                     },
                     yaxis: profileYAxis,
                     height: 260,
@@ -363,7 +365,7 @@ function DashboardViewInner({
                     showlegend: true,
                     legend: { x: 1, xanchor: 'right', y: 1 },
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -386,6 +388,7 @@ function DashboardViewInner({
                       title: { text: 'Densidade de Potência (W/m²)', standoff: 10 },
                       range: [0, 1500],
                       zeroline: false,
+                      hoverformat: '.2f',
                     },
                     yaxis: profileYAxis,
                     height: 260,
@@ -396,7 +399,7 @@ function DashboardViewInner({
                     showlegend: true,
                     legend: { x: 1, xanchor: 'right', y: 1 },
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />

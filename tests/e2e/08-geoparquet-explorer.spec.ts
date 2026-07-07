@@ -87,4 +87,52 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     await expect(p.locator('.gpe-checkbox-col', { hasText: 'Estado' }).locator('.dv-pair-checkbox', { hasText: 'BA' }).locator('input')).toBeChecked()
     await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('588 pixels encontrados')
   })
+
+  test('T62 — Boxplot por Estado reaparece com 2+ estados selecionados (A3)', async ({ page }) => {
+    // Regressão A3: antes o boxplot por Estado só aparecia com 0 estados selecionados
+    // (== 0), sumindo justamente quando o usuário selecionava 2+ para comparar.
+    const p = panel(page)
+    const stateCol = p.locator('.gpe-checkbox-col', { hasText: 'Estado' })
+    await stateCol.locator('.dv-pair-checkbox', { hasText: 'BA' }).locator('input').check()
+    await stateCol.locator('.dv-pair-checkbox', { hasText: 'SE' }).locator('input').check()
+    await p.locator('.dv-add-btn').click()
+    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toBeVisible()
+
+    // Com 2 estados, o boxplot por Estado renderiza (nenhum card fica oculto).
+    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(0)
+  })
+
+  test('T63 — Boxplot por Estado ordenado Norte→Sul (A2)', async ({ page }) => {
+    const NORTH_SOUTH = [
+      'Amapá', 'Pará', 'Maranhão', 'Piauí', 'Ceará', 'Rio Grande do Norte', 'Paraíba',
+      'Pernambuco', 'Alagoas', 'Sergipe', 'Bahia', 'Espírito Santo', 'Rio de Janeiro',
+      'São Paulo', 'Paraná', 'Santa Catarina', 'Rio Grande do Sul',
+    ]
+    const p = panel(page)
+    await p.locator('.dv-add-btn').click()
+    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('30773 pixels encontrados')
+
+    // Sem filtro de Estado, os cards são: histograma, boxplot-Estado, boxplot-Batimetria,
+    // scatter, perfil. O boxplot por Estado é o 2º card (nth(1)).
+    const stateBoxplot = p.locator('.chart-card').nth(1).locator('.js-plotly-plot')
+    const names: string[] = await stateBoxplot.evaluate((el: any) => (el.data ?? []).map((t: any) => t.name))
+
+    expect(names.length).toBeGreaterThan(1)
+    const expectedOrder = NORTH_SOUTH.filter(s => names.includes(s))
+    expect(names).toEqual(expectedOrder)
+  })
+
+  test('T64 — modebar do Plotly habilitada (zoom/pan/download) nos gráficos (A5)', async ({ page }) => {
+    const p = panel(page)
+    await p.locator('.dv-add-btn').click()
+    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('30773 pixels encontrados')
+
+    const firstChart = p.locator('.chart-card .js-plotly-plot').first()
+    // displayModeBar: true renderiza a barra de ferramentas com os botões no DOM.
+    await expect(firstChart.locator('.modebar-btn').first()).toBeAttached()
+    // O botão de download PNG deve existir; lasso/select foram removidos da config.
+    await expect(firstChart.locator('.modebar-btn[data-title="Download plot as a PNG"]')).toHaveCount(1)
+    await expect(firstChart.locator('.modebar-btn[data-title="Box Select"]')).toHaveCount(0)
+    await expect(firstChart.locator('.modebar-btn[data-title="Lasso Select"]')).toHaveCount(0)
+  })
 })

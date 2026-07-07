@@ -23,3 +23,19 @@ export const BATHY_ZONE_OPTIONS: { val: string; label: string }[] = [
 
 export const DISTANCE_MAX_NM = 400
 export const DISTANCE_MIN_GAP_NM = 10
+
+// Shared Plotly config for every dashboard chart: enables the modebar (zoom, pan,
+// reset, PNG export) while dropping the lasso/box-select tools that only clutter
+// read-only analytical charts. displaylogo:false removes the Plotly watermark.
+export const PLOT_CONFIG = {
+  displayModeBar: true,
+  displaylogo: false,
+  modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+  responsive: true,
+  toImageButtonOptions: {
+    format: 'png',
+    filename: 'webgis-chart',
+    height: 600,
+    width: 900,
+  },
+}
