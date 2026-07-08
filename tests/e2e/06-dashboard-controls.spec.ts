@@ -208,6 +208,53 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
     expect(maxR).toBeGreaterThan(0)
   })
 
+  test('T68 — Rosa dos Ventos: botão "Resetar zoom" restaura o autorange radial após zoom', async ({ page }) => {
+    // Regressão: gráficos polar (scatterpolar) não ganham o botão nativo de reset
+    // do Plotly (só cartesian/geo/3d/mapbox ganham) — sem um botão customizado,
+    // dar zoom na Rosa dos Ventos deixava o usuário sem forma visível de voltar
+    // à view original.
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    const windRosePlot = panel.locator('[data-testid="chart-windrose"] .js-plotly-plot')
+    await expect(windRosePlot).toBeVisible({ timeout: 20000 })
+    await windRosePlot.scrollIntoViewIfNeeded()
+
+    const resetBtn = windRosePlot.locator('.modebar-btn[data-title="Resetar zoom"]')
+    await expect(resetBtn).toBeAttached()
+
+    const box = (await windRosePlot.boundingBox())!
+    const cx = box.x + box.width / 2
+    const cy = box.y + box.height / 2
+    const initialRange = await windRosePlot.evaluate((el: any) => el._fullLayout.polar.radialaxis.range)
+
+    // A slow, stepped drag (with small pauses) is needed for Plotly's D3-based
+    // polar drag handler to register the zoom in a headless/automated context.
+    await page.mouse.move(cx - 90, cy - 20)
+    await page.mouse.down()
+    for (let i = 1; i <= 20; i++) {
+      await page.mouse.move(cx - 90 + i * 7, cy - 20 + i * 2)
+      await page.waitForTimeout(20)
+    }
+    await page.mouse.up()
+
+    await expect(async () => {
+      const zoomedRange = await windRosePlot.evaluate((el: any) => el._fullLayout.polar.radialaxis.range)
+      expect(zoomedRange).not.toEqual(initialRange)
+    }).toPass({ timeout: 5000 })
+
+    await resetBtn.click()
+    await expect(async () => {
+      const resetRange = await windRosePlot.evaluate((el: any) => el._fullLayout.polar.radialaxis.range)
+      expect(resetRange).toEqual(initialRange)
+    }).toPass({ timeout: 5000 })
+  })
+
   test('T66 — legenda dos gráficos usa apenas "Loc N" (sem modelo/experimento) (A4)', async ({ page }) => {
     const panel = page.locator('.dv-tab-panel').nth(0)
     await panel.locator('.dv-input').nth(0).fill('-10')

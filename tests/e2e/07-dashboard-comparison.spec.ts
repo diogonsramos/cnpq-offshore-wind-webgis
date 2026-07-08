@@ -26,7 +26,7 @@ test.describe('Dashboard — abas internas de comparação', () => {
     await expect(page.locator('.dv-pair-picker')).toBeVisible()
   })
 
-  test('T45 — Compare Experiments: 2 pares WRF selecionados renderizam os 5 gráficos sem erro de console', async ({ page }) => {
+  test('T45 — Compare Experiments: 2 pares WRF selecionados renderizam os 4 gráficos sem erro de console', async ({ page }) => {
     const errors: string[] = []
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
 
@@ -42,7 +42,7 @@ test.describe('Dashboard — abas internas de comparação', () => {
     await panel.locator('.dv-add-btn').click()
 
     await expect(panel.locator('.dv-legend-chip')).toHaveCount(2)
-    await expect(panel.locator('.dv-chart-grid .chart-card')).toHaveCount(5, { timeout: 20000 })
+    await expect(panel.locator('.dv-chart-grid .chart-card')).toHaveCount(4, { timeout: 20000 })
 
     expect(errors).toEqual([])
   })

@@ -279,6 +279,35 @@ Os GeoParquet publicados em `public/data/geoparquet/wrf/*/season=annual/data.par
 
 ---
 
+## ✅ f01 (Fase 3.4) — Legendas/hover redundantes, gráfico órfão de WPD e filtro de distância (PR review) — 2026-07-07
+
+> **Status:** Implementado e validado (`pnpm test` — 74 passed, `pnpm test:types` — 0 erros). Fecha 4 bugs reportados na revisão da PR do Dashboard (screenshots anotados nas abas "Comparar Experimentos" e "Explorador GeoParquet") + 1 melhoria de UX (botão de reset na Rosa dos Ventos) pedida em follow-up na mesma revisão.
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| **Legenda redundante nos subplots** | `showlegend: false` nos gráficos de Média Sazonal, Rosa dos Ventos e Perfil Vertical em `DashboardView.tsx` e `DashboardComparisonView.tsx` — a cor/nome de cada série já está na "legenda universal" (chips) acima do grid. O gráfico de Weibull mantém `showlegend: true`, pois seu nome de série carrega os parâmetros `k=`/`c=` (única informação sem duplicata em outro lugar da tela). |
+| **Hover com "modelo–experimento–período–valor" demais para o tamanho do subplot** | Novas constantes `CHART_FONT` (`size: 12`, padronizado em todos os gráficos, antes variava entre 10/11) e `HOVER_LABEL_STYLE` (painel branco translúcido `rgba(255,255,255,0.92)`) em `dashboardChartConstants.ts`. Média Sazonal/Weibull usam `hovermode: 'x unified'`; os perfis verticais usam `hovermode: 'y unified'` (eixo compartilhado é a altura, não o valor). Cada traço ganhou `hovertemplate` só com o valor (`<extra></extra>` suprime o nome da série) — o hover agora mostra os valores empilhados verticalmente, coloridos por série, sem repetir o rótulo já visível na legenda/chips. Rosa dos Ventos (polar) não suporta hovermode unificado; manteve `closest` com hovertemplate reduzido (`setor: valor%`) e a caixa de hover tingida da cor do traço. Aplicado nas 4 abas do Dashboard, incluindo histograma/scatter/perfil do Explorador GeoParquet. |
+| **Gráfico órfão "Perfil Vertical — Densidade de Potência"** | Removido de `DashboardView.tsx` (Visão Simples) e `DashboardComparisonView.tsx` (Comparar Experimentos/Modelos) — a categoria B do TOFIX (Fase 3.3) já registra que a coluna `wpd_profile_means` não é publicada em nenhum GeoParquet real, então o card só renderizava vazio. O Explorador GeoParquet não foi afetado: seu único card de perfil já é dinâmico por variável (`ws`/`wpd`), não duplicado. |
+| **Eixo X do "Distância vs. Média" não acompanhava o filtro** | O `range` do eixo X e da linha de tendência estava fixo em `[0, DISTANCE_MAX_NM]` (0–400 nm) mesmo após aplicar um filtro de distância mais estreito, desperdiçando a maior parte do gráfico. Agora usa `appliedFilters.distanceMin/distanceMax`. |
+| **Slider manual de distância trocado por checkboxes** | O slider de duas alças (`gpe-range-pair`) foi substituído por 3 checkboxes — `DISTANCE_ZONE_OPTIONS` em `dashboardChartConstants.ts` (0–12 nm / 0–20 nm / 0–200 nm, os limites oficiais de mar territorial/ZEE) — como uma 2ª coluna do `gpe-checkbox-panel`, no mesmo padrão visual da Batimetria. Como as faixas são aninhadas a partir de 0 (não disjuntas como Batimetria), marcar múltiplas apenas amplia o filtro até o maior limite selecionado (`distanceMaxFromZones`). |
+| **Rosa dos Ventos sem forma de resetar o zoom** (follow-up) | O modebar padrão do Plotly só ganha botão de reset ("home") para subplots cartesian/geo/3d/mapbox — polar (`scatterpolar`) fica só com os botões de download e zoom, sem reset visível (dar zoom deixava o usuário preso, só dava pra voltar via double-click, um gesto não descoberto pela UI). Novo `WINDROSE_PLOT_CONFIG` em `dashboardChartConstants.ts`: reusa `PLOT_CONFIG` + um botão customizado ("Resetar zoom", ícone `home` do Plotly) que chama `Plotly.relayout(gd, {'polar.radialaxis.autorange': true})`. Usado só nos 2 gráficos de Rosa dos Ventos (`DashboardView.tsx`/`DashboardComparisonView.tsx`); as outras abas continuam com `PLOT_CONFIG`. Exigiu adicionar `plotly.js` como dependência direta do projeto — era só peerDependency do `react-plotly.js`, resolvida internamente por ele mas invisível para import direto do nosso código sob o layout estrito do pnpm. |
+
+### Testes atualizados
+
+| Teste | Arquivo | Mudança |
+|---|---|---|
+| T45 | `07-dashboard-comparison.spec.ts` | Contagem de `.chart-card` em Comparar Experimentos: 5 → 4 (removido o card de WPD) |
+| T49 | `08-geoparquet-explorer.spec.ts` | Assert do slider (`.gpe-range-pair input[type="range"]`) trocado por assert da nova coluna de checkboxes "Distância da Costa" (3 opções) |
+| T68 (novo) | `06-dashboard-controls.spec.ts` | Rosa dos Ventos: zoom via drag simulado + clique em "Resetar zoom" restaura `polar.radialaxis.range` ao autorange original |
+
+### Arquivos modificados
+
+`src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/GeoParquetExplorer.tsx`, `src/lib/dashboardChartConstants.ts`, `src/App.css`, `package.json`, `pnpm-lock.yaml`, `tests/e2e/06-dashboard-controls.spec.ts`, `tests/e2e/07-dashboard-comparison.spec.ts`, `tests/e2e/08-geoparquet-explorer.spec.ts`
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.

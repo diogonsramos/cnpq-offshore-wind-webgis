@@ -7,7 +7,8 @@ import {
 import { type DashboardLocationData, queryPixelStat } from '../lib/pixelQuery'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
-  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG, WINDROSE_PLOT_CONFIG,
+  CHART_FONT, HOVER_LABEL_STYLE,
 } from '../lib/dashboardChartConstants'
 import MiniMap from './MiniMap'
 import DashboardComparisonView from './DashboardComparisonView'
@@ -88,18 +89,6 @@ function DashboardViewInner({
       datasets: pinnedLocations.map((loc, i) => ({
         label: locLabel(loc, i),
         data: loc.profile_means.length > 0 ? loc.profile_means : [],
-        borderColor: COLORS[i],
-      })),
-    }
-  }, [pinnedLocations, modelLabelStr, datasetLabelStr])
-
-  const wpdProfileData = useMemo(() => {
-    if (pinnedLocations.length === 0) return { heights: [] as number[], datasets: [] as { label: string; data: number[]; borderColor: string }[] }
-    return {
-      heights: pinnedLocations[0].profile_heights,
-      datasets: pinnedLocations.map((loc, i) => ({
-        label: locLabel(loc, i),
-        data: loc.wpd_profile_means.length > 0 ? loc.wpd_profile_means : [],
         borderColor: COLORS[i],
       })),
     }
@@ -227,6 +216,7 @@ function DashboardViewInner({
                     type: 'bar',
                     name: ds.label,
                     marker: { color: COLORS[i % COLORS.length] },
+                    hovertemplate: '%{y:.2f}<extra></extra>',
                   }))}
                   layout={{
                     title: { text: `Média Sazonal — ${varLabel(dashboardVar).label} ${dashboardHeight}m` },
@@ -241,9 +231,10 @@ function DashboardViewInner({
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hovermode: 'x unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
                   config={PLOT_CONFIG}
                   style={{ width: '100%' }}
@@ -270,6 +261,7 @@ function DashboardViewInner({
                       line: { color: COLORS[i], width: 2 },
                       fill: 'tozeroy',
                       fillcolor: COLORS[i] + '22',
+                      hovertemplate: '%{y:.4f}<extra></extra>',
                     }
                   })}
                   layout={{
@@ -290,9 +282,11 @@ function DashboardViewInner({
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
+                    font: CHART_FONT,
                     showlegend: true,
                     legend: { x: 1, xanchor: 'right', y: 1 },
+                    hovermode: 'x unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
                   config={PLOT_CONFIG}
                   style={{ width: '100%' }}
@@ -312,6 +306,8 @@ function DashboardViewInner({
                       fill: 'toself',
                       name: locLabel(loc, i),
                       marker: { color: COLORS[i] },
+                      hovertemplate: '%{theta}: %{r:.1f}%<extra></extra>',
+                      hoverlabel: { bgcolor: COLORS[i] },
                     }
                   })}
                   layout={{
@@ -320,9 +316,9 @@ function DashboardViewInner({
                     margin: { t: 40, b: 30, l: 50, r: 50 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hoverlabel: { font: { size: 12, color: '#fff' } },
                     polar: {
                       angularaxis: {
                         direction: 'clockwise',
@@ -331,7 +327,7 @@ function DashboardViewInner({
                       radialaxis: { visible: true, title: { text: 'Frequência (%)' }, ticksuffix: '%' },
                     },
                   }}
-                  config={PLOT_CONFIG}
+                  config={WINDROSE_PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -347,6 +343,7 @@ function DashboardViewInner({
                     name: ds.label,
                     line: { color: COLORS[i], width: 2 },
                     marker: { color: COLORS[i], size: 6 },
+                    hovertemplate: '%{x:.2f}<extra></extra>',
                   }))}
                   layout={{
                     title: { text: 'Perfil Vertical — Velocidade do Vento' },
@@ -361,43 +358,10 @@ function DashboardViewInner({
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
-                  }}
-                  config={PLOT_CONFIG}
-                  style={{ width: '100%' }}
-                  useResizeHandler
-                />
-              </div>
-
-              <div className="chart-card">
-                <Plot
-                  data={wpdProfileData.datasets.map((ds, i) => ({
-                    x: ds.data,
-                    y: wpdProfileData.heights,
-                    type: 'scatter' as const,
-                    mode: 'lines+markers' as const,
-                    name: ds.label,
-                    line: { color: COLORS[i], width: 2 },
-                    marker: { color: COLORS[i], size: 6 },
-                  }))}
-                  layout={{
-                    title: { text: 'Perfil Vertical — Densidade de Potência' },
-                    xaxis: {
-                      title: { text: 'Densidade de Potência (W/m²)', standoff: 10 },
-                      range: [0, 1500],
-                      zeroline: false,
-                      hoverformat: '.2f',
-                    },
-                    yaxis: profileYAxis,
-                    height: 260,
-                    margin: { t: 40, b: 40, l: 55, r: 20 },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hovermode: 'y unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
                   config={PLOT_CONFIG}
                   style={{ width: '100%' }}

@@ -456,23 +456,6 @@ html.landing-mode #root {
   grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
   gap: 2px 8px;
 }
-.gpe-distance-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: #fff;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-.gpe-range-pair {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.gpe-range-pair input[type="range"] {
-  flex: 1;
-}
 .gpe-apply-row {
   display: flex;
   align-items: center;

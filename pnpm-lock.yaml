@@ -23,6 +23,9 @@ importers:
       parquet-wasm:
         specifier: ^0.7.1
         version: 0.7.1
+      plotly.js:
+        specifier: ^3.7.0
+        version: 3.7.0(mapbox-gl@1.13.3)
       plotly.js-dist-min:
         specifier: ^3.0.0
         version: 3.7.0

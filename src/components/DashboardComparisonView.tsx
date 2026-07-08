@@ -8,7 +8,8 @@ import {
 import { queryDashboardLocation, loadParquet, seasonStat, type DashboardLocationData } from '../lib/pixelQuery'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
-  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, PLOT_CONFIG,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, PLOT_CONFIG, WINDROSE_PLOT_CONFIG,
+  CHART_FONT, HOVER_LABEL_STYLE,
 } from '../lib/dashboardChartConstants'
 import MiniMap from './MiniMap'
 import { t } from '../i18n/t'
@@ -245,6 +246,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   type: 'bar',
                   name: e.label,
                   marker: { color: e.style.color, pattern: e.style.dash === 'dash' ? { shape: '/' } : undefined },
+                  hovertemplate: '%{y:.2f}<extra></extra>',
                 }))}
                 layout={{
                   title: { text: `Média Sazonal — ${varLabel(variable).label} ${height}m` },
@@ -259,9 +261,10 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
                   plot_bgcolor: 'transparent',
-                  font: { size: 11 },
-                  showlegend: true,
-                  legend: { x: 1, xanchor: 'right', y: 1 },
+                  font: CHART_FONT,
+                  showlegend: false,
+                  hovermode: 'x unified',
+                  hoverlabel: HOVER_LABEL_STYLE,
                 }}
                 config={PLOT_CONFIG}
                 style={{ width: '100%' }}
@@ -286,6 +289,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                     x: xs, y: ys, type: 'scatter' as const, mode: 'lines' as const,
                     name: `${e.label} (k=${w.k.toFixed(2)}, c=${w.c.toFixed(2)})`,
                     line: { color: e.style.color, width: 2, dash: e.style.dash },
+                    hovertemplate: '%{y:.4f}<extra></extra>',
                   }
                 })}
                 layout={{
@@ -296,9 +300,11 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
                   plot_bgcolor: 'transparent',
-                  font: { size: 11 },
+                  font: CHART_FONT,
                   showlegend: true,
                   legend: { x: 1, xanchor: 'right', y: 1 },
+                  hovermode: 'x unified',
+                  hoverlabel: HOVER_LABEL_STYLE,
                 }}
                 config={PLOT_CONFIG}
                 style={{ width: '100%' }}
@@ -319,6 +325,8 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                     name: e.label,
                     marker: { color: e.style.color },
                     line: { dash: e.style.dash },
+                    hovertemplate: '%{theta}: %{r:.1f}%<extra></extra>',
+                    hoverlabel: { bgcolor: e.style.color },
                   }
                 })}
                 layout={{
@@ -327,15 +335,15 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   margin: { t: 40, b: 30, l: 50, r: 50 },
                   paper_bgcolor: 'transparent',
                   plot_bgcolor: 'transparent',
-                  font: { size: 11 },
-                  showlegend: true,
-                  legend: { x: 1, xanchor: 'right', y: 1 },
+                  font: CHART_FONT,
+                  showlegend: false,
+                  hoverlabel: { font: { size: 12, color: '#fff' } },
                   polar: {
                     angularaxis: { direction: 'clockwise', rotation: 90 },
                     radialaxis: { visible: true, title: { text: 'Frequência (%)' }, ticksuffix: '%' },
                   },
                 }}
-                config={PLOT_CONFIG}
+                config={WINDROSE_PLOT_CONFIG}
                 style={{ width: '100%' }}
                 useResizeHandler
               />
@@ -351,6 +359,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   name: e.label,
                   line: { color: e.style.color, width: 2, dash: e.style.dash },
                   marker: { color: e.style.color, size: 6 },
+                  hovertemplate: '%{x:.2f}<extra></extra>',
                 }))}
                 layout={{
                   title: { text: 'Perfil Vertical — Velocidade do Vento' },
@@ -360,38 +369,10 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
                   plot_bgcolor: 'transparent',
-                  font: { size: 11 },
-                  showlegend: true,
-                  legend: { x: 1, xanchor: 'right', y: 1 },
-                }}
-                config={PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
-            </div>
-
-            <div className="chart-card">
-              <Plot
-                data={readyEntries.map(e => ({
-                  x: e.data!.wpd_profile_means,
-                  y: e.data!.profile_heights,
-                  type: 'scatter' as const,
-                  mode: 'lines+markers' as const,
-                  name: e.label,
-                  line: { color: e.style.color, width: 2, dash: e.style.dash },
-                  marker: { color: e.style.color, size: 6 },
-                }))}
-                layout={{
-                  title: { text: 'Perfil Vertical — Densidade de Potência' },
-                  xaxis: { title: { text: 'Densidade de Potência (W/m²)', standoff: 10 }, range: [0, 1500], zeroline: false, hoverformat: '.2f' },
-                  yaxis: profileYAxis,
-                  height: 260,
-                  margin: { t: 40, b: 40, l: 55, r: 20 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: { size: 11 },
-                  showlegend: true,
-                  legend: { x: 1, xanchor: 'right', y: 1 },
+                  font: CHART_FONT,
+                  showlegend: false,
+                  hovermode: 'y unified',
+                  hoverlabel: HOVER_LABEL_STYLE,
                 }}
                 config={PLOT_CONFIG}
                 style={{ width: '100%' }}

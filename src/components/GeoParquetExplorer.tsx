@@ -8,7 +8,7 @@ import {
 import { loadParquet, queryFilteredPixels, type FilterCriteria, type FilteredAggregates } from '../lib/pixelQuery'
 import {
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, BATHY_ZONE_OPTIONS,
-  DISTANCE_MAX_NM, DISTANCE_MIN_GAP_NM, PLOT_CONFIG,
+  DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS, PLOT_CONFIG, CHART_FONT, HOVER_LABEL_STYLE,
 } from '../lib/dashboardChartConstants'
 import { t } from '../i18n/t'
 
@@ -49,6 +49,13 @@ function stateLabel(code: string): string {
 
 const bathyOptionLabel = (val: string): string => BATHY_ZONE_OPTIONS.find(b => b.val === val)?.label ?? val
 
+// Distance zones nest from 0 (0-12 ⊂ 0-20 ⊂ 0-200), so multiple checked boxes
+// just widen the range to the largest selected boundary rather than union of bins.
+function distanceMaxFromZones(zones: string[]): number {
+  if (zones.length === 0) return DISTANCE_MAX_NM
+  return Math.max(...zones.map(z => DISTANCE_ZONE_OPTIONS.find(o => o.val === z)?.max ?? DISTANCE_MAX_NM))
+}
+
 function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExplorerProps) {
   const [model, setModel] = useState<Model>(currentModel)
   const [dataset, setDataset] = useState<Dataset>(currentDataset)
@@ -56,8 +63,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
   const [height, setHeight] = useState<Height>(100)
   const [bathyZones, setBathyZones] = useState<string[]>([])
   const [states, setStates] = useState<string[]>([])
-  const [distMin, setDistMin] = useState(0)
-  const [distMax, setDistMax] = useState(DISTANCE_MAX_NM)
+  const [distanceZones, setDistanceZones] = useState<string[]>([])
 
   const [appliedFilters, setAppliedFilters] = useState<FilterCriteria | null>(null)
   const [result, setResult] = useState<FilteredAggregates | null>(null)
@@ -68,9 +74,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
 
   const toggleBathy = (v: string) => setBathyZones(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
   const toggleState = (v: string) => setStates(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
-
-  const handleDistMinChange = (v: number) => setDistMin(Math.min(v, distMax - DISTANCE_MIN_GAP_NM))
-  const handleDistMaxChange = (v: number) => setDistMax(Math.max(v, distMin + DISTANCE_MIN_GAP_NM))
+  const toggleDistanceZone = (v: string) => setDistanceZones(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
 
   const handleApply = async () => {
     const myGen = ++loadGenRef.current
@@ -80,7 +84,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
 
     const filters: FilterCriteria = {
       model, experiment: datasetFolder(dataset), variable, height,
-      states, bathyZones, distanceMin: distMin, distanceMax: distMax,
+      states, bathyZones, distanceMin: 0, distanceMax: distanceMaxFromZones(distanceZones),
     }
     const fp = fingerprint(filters)
     let r = cacheRef.current.get(fp)
@@ -103,6 +107,8 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
   const appliedHeight = appliedFilters?.height ?? height
   const varUnit = appliedVariable === 'ws' ? 'm/s' : 'W/m²'
   const xRange: [number, number] = appliedVariable === 'ws' ? [0, 20] : [0, 1500]
+  const appliedDistanceMin = appliedFilters?.distanceMin ?? 0
+  const appliedDistanceMax = appliedFilters?.distanceMax ?? DISTANCE_MAX_NM
 
   const histogramTrace = useMemo(() => {
     if (!result) return null
@@ -184,6 +190,15 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
             </label>
           ))}
         </div>
+        <div className="gpe-checkbox-col">
+          <p className="dv-pair-picker-title">{t('geoparquet_explorer.filters.distance_title')}</p>
+          {DISTANCE_ZONE_OPTIONS.map(d => (
+            <label key={d.val} className="dv-pair-checkbox">
+              <input type="checkbox" checked={distanceZones.includes(d.val)} onChange={() => toggleDistanceZone(d.val)} />
+              <span>{d.label}</span>
+            </label>
+          ))}
+        </div>
         <div className="gpe-checkbox-col gpe-checkbox-col--states">
           <p className="dv-pair-picker-title">{t('geoparquet_explorer.filters.state_title')}</p>
           <div className="gpe-state-grid">
@@ -194,20 +209,6 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
               </label>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="gpe-distance-row">
-        <label className="dv-label">{t('geoparquet_explorer.filters.distance_title')}: {distMin} – {distMax} nm</label>
-        <div className="gpe-range-pair">
-          <input
-            type="range" min={0} max={DISTANCE_MAX_NM} value={distMin}
-            onChange={e => handleDistMinChange(Number(e.target.value))}
-          />
-          <input
-            type="range" min={0} max={DISTANCE_MAX_NM} value={distMax}
-            onChange={e => handleDistMaxChange(Number(e.target.value))}
-          />
         </div>
       </div>
 
@@ -240,7 +241,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
           <div className="dv-chart-grid">
             <div className="chart-card">
               <Plot
-                data={histogramTrace ? [histogramTrace] : []}
+                data={histogramTrace ? [{ ...histogramTrace, hovertemplate: '%{y} pixels<extra></extra>' }] : []}
                 layout={{
                   title: { text: `${t('geoparquet_explorer.charts.histogram_title')} — ${varLabel(appliedVariable).label} ${appliedHeight}m` },
                   xaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 } },
@@ -249,8 +250,9 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
                   plot_bgcolor: 'transparent',
-                  font: { size: 11 },
+                  font: CHART_FONT,
                   showlegend: false,
+                  hoverlabel: HOVER_LABEL_STYLE,
                 }}
                 config={PLOT_CONFIG}
                 style={{ width: '100%' }}
@@ -273,8 +275,9 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                     margin: { t: 40, b: 60, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 10 },
+                    font: CHART_FONT,
                     showlegend: false,
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
                   config={PLOT_CONFIG}
                   style={{ width: '100%' }}
@@ -300,8 +303,9 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
+                    font: CHART_FONT,
                     showlegend: false,
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
                   config={PLOT_CONFIG}
                   style={{ width: '100%' }}
@@ -318,25 +322,31 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   {
                     x: result.distances, y: result.values, type: 'scatter' as const, mode: 'markers' as const,
                     name: 'Pixels', marker: { color: CHART_COLORS[0], size: 5, opacity: 0.6 },
+                    hovertemplate: '%{x:.1f} nm, %{y:.2f}<extra></extra>',
                   },
                   ...(regression ? [{
-                    x: [0, DISTANCE_MAX_NM],
-                    y: [regression.intercept, regression.intercept + regression.slope * DISTANCE_MAX_NM],
+                    x: [appliedDistanceMin, appliedDistanceMax],
+                    y: [
+                      regression.intercept + regression.slope * appliedDistanceMin,
+                      regression.intercept + regression.slope * appliedDistanceMax,
+                    ],
                     type: 'scatter' as const, mode: 'lines' as const, name: 'Tendência (linear)',
                     line: { color: CHART_COLORS[1], width: 2, dash: 'dash' as const },
+                    hovertemplate: '%{y:.2f}<extra></extra>',
                   }] : []),
                 ]}
                 layout={{
                   title: { text: t('geoparquet_explorer.charts.scatter_title') },
-                  xaxis: { title: { text: 'Distância da Costa (nm)', standoff: 10 }, range: [0, DISTANCE_MAX_NM], zeroline: false, hoverformat: '.1f' },
+                  xaxis: { title: { text: 'Distância da Costa (nm)', standoff: 10 }, range: [appliedDistanceMin, appliedDistanceMax], zeroline: false, hoverformat: '.1f' },
                   yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
                   plot_bgcolor: 'transparent',
-                  font: { size: 11 },
+                  font: CHART_FONT,
                   showlegend: true,
                   legend: { x: 1, xanchor: 'right', y: 1 },
+                  hoverlabel: HOVER_LABEL_STYLE,
                 }}
                 config={PLOT_CONFIG}
                 style={{ width: '100%' }}
@@ -352,6 +362,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   line: { color: CHART_COLORS[0], width: 2 },
                   marker: { color: CHART_COLORS[0], size: 6 },
                   error_x: { type: 'data' as const, array: result.profileStds, visible: true, color: CHART_COLORS[0] + '88' },
+                  hovertemplate: '%{x:.2f}<extra></extra>',
                 }]}
                 layout={{
                   title: { text: t('geoparquet_explorer.charts.profile_title') },
@@ -361,8 +372,10 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
                   plot_bgcolor: 'transparent',
-                  font: { size: 11 },
+                  font: CHART_FONT,
                   showlegend: false,
+                  hovermode: 'y unified',
+                  hoverlabel: HOVER_LABEL_STYLE,
                 }}
                 config={PLOT_CONFIG}
                 style={{ width: '100%' }}
