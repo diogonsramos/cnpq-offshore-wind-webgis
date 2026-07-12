@@ -263,19 +263,6 @@ html.landing-mode #root {
   background: #e74c3c;
   color: #fff;
 }
-.dv-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-left: 3px solid #4a90d9;
-  border-radius: 6px;
-  font-size: 11px;
-  color: #555;
-}
-
 /* Main area: chart grid + mini-map sidebar */
 .dv-main {
   display: flex;
@@ -384,6 +371,10 @@ html.landing-mode #root {
   cursor: pointer;
 }
 .dv-pair-checkbox input:disabled {
+  cursor: not-allowed;
+}
+.dv-pair-checkbox--disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -938,12 +929,6 @@ html.landing-mode #root {
   font-weight: 600;
 }
 
-/* ── Dashboard Modal (dead, kept for reference) ── */
-.chip-state {
-  font-weight: 600;
-  color: #4a90d9;
-  font-size: 10px;
-}
 .chip-remove {
   background: none;
   border: none;

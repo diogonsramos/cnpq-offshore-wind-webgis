@@ -639,6 +639,14 @@ export function queryFilteredPixels(filters: FilterCriteria): FilteredAggregates
   }
 }
 
+// The published GeoParquet files don't carry a real `distance_nm` column yet
+// (every pixel falls back to 0, see the `?? 0` above) — this lets the UI hide
+// the distance filter/scatter instead of showing a degenerate all-zero plot,
+// and re-enable automatically once the pipeline starts writing real values.
+export function hasRealDistanceData(result: FilteredAggregates): boolean {
+  return result.distances.some(d => d > 0)
+}
+
 export function queryPixelStat(
   pixelId: number,
   variable: string,

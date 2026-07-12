@@ -122,7 +122,7 @@ Ao inspecionar visualmente a nova aba, nenhum `<Plot>` do projeto (Visão Simple
 ### O que não foi implementado (limitações) e o que falta para implementar
 
 1. **MPAS continua sem nenhum dado publicado** (mesma limitação das Fases 1 e 2). Selecionar Modelo=MPAS no Explorer e clicar "Aplicar Filtros" retorna 0 pixels (guard de `queryFilteredPixels` contra o par não carregado), mostrando a mensagem de "nenhum pixel encontrado". **O que falta:** publicar os dados, sem mudança de código.
-2. **A coluna `distance_nm` não existe nos arquivos GeoParquet reais** — `pixelQuery.ts` já tratava sua ausência com fallback `?? 0` (implementado na Fase 1), então todo pixel real tem `distance_nm = 0`. Isso torna o filtro de "Distância da Costa" e o gráfico de dispersão funcionalmente inertes hoje (todos os pontos caem em x=0; a reta de regressão degenera e não é desenhada, `den === 0`) — não é um bug desta fase, é uma limitação do dado publicado. **O que falta:** a pipeline de geração do GeoParquet precisa calcular e escrever `distance_nm` por pixel (distância até a linha de costa mais próxima); nenhuma mudança é necessária no código do Explorer, que já consome a coluna corretamente quando ela existir.
+2. **A coluna `distance_nm` não existe nos arquivos GeoParquet reais** — `pixelQuery.ts` já tratava sua ausência com fallback `?? 0` (implementado na Fase 1), então todo pixel real tem `distance_nm = 0`. Isso tornava o filtro de "Distância da Costa" e o gráfico de dispersão funcionalmente inertes (todos os pontos caindo em x=0; a reta de regressão degenerava e não era desenhada, `den === 0`) — não é um bug de código, é uma limitação do dado publicado. **Mitigado na Fase 3.5:** o filtro fica desabilitado (com tooltip) e o scatter mostra um placeholder explícito em vez do gráfico degenerado (`hasRealDistanceData()` em `pixelQuery.ts`). **O que falta de verdade:** a pipeline de geração do GeoParquet precisa calcular e escrever `distance_nm` por pixel (distância até a linha de costa mais próxima); nenhuma mudança de código de consumo será necessária além de remover a mitigação de UI quando a coluna existir.
 3. **A variável `wpd` (densidade de potência) não existe nos arquivos reais** — só há colunas `ws10_ANNUAL_*`/`ws100_ANNUAL_*` e `profile_means` (sem `wpd_profile_means`) nos parquets publicados atualmente. Selecionar Variável=Densidade de Potência retorna 0 pixels. Mesma limitação de dado (não de código) já presente nas Fases 1/2 para os gráficos WPD da Visão Simples/Compare. **O que falta:** publicar as colunas `wpd*` no pipeline de geração do GeoParquet.
 4. **Alturas 50/150/200 m não têm colunas `ws{h}_ANNUAL_mean` nos arquivos reais** (só 10 e 100 m existem hoje) — mesma limitação de dado, não de código; selecionar essas alturas retorna 0 pixels no Explorer, igual ao comportamento (silencioso, sem erro) já existente nas outras abas para Weibull/altura fora de 10/100m.
 5. **Faixas de batimetria reais divergem do mockup do `docs/TODO_new.md`.** O ASCII mockup sugeria checkboxes "0–20m, 20–50m, 50–100m, 100m+"; os valores de `bathy_zone` de fato presentes no GeoParquet são só `0_20`, `20_50`, `50_100` (sem uma categoria "100+"/além da plataforma) — confirmado inspecionando os arquivos publicados. O Explorer usa esses 3 valores reais (`BATHY_ZONE_OPTIONS` em `dashboardChartConstants.ts`) em vez de inventar uma 4ª opção sem dado correspondente.
@@ -305,6 +305,41 @@ Os GeoParquet publicados em `public/data/geoparquet/wrf/*/season=annual/data.par
 ### Arquivos modificados
 
 `src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/GeoParquetExplorer.tsx`, `src/lib/dashboardChartConstants.ts`, `src/App.css`, `package.json`, `pnpm-lock.yaml`, `tests/e2e/06-dashboard-controls.spec.ts`, `tests/e2e/07-dashboard-comparison.spec.ts`, `tests/e2e/08-geoparquet-explorer.spec.ts`
+
+---
+
+## ✅ f01 (Fase 3.5) — ERA5 duplicado, legenda ausente na Visão Simples e scatter de distância (docs/TOFIX.md) — 2026-07-12
+
+> **Status:** Implementado e validado (`pnpm test` — 78 passed, `pnpm test:types` — 0 erros) + validação visual manual via dev server (screenshots dos 3 cenários, sem erro de console). Plano completo em `docs/TOFIX.md`.
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| **"ERA5 Reanálise (Presente)" e "(Histórico)" mostravam dado idêntico** | Causa raiz: `datasetFolder()` (`cogCatalog.ts`) remove o sufixo `_historico`/`_presente`/`_futuro` de qualquer `Dataset`, e as duas variantes de ERA5 colapsavam para a mesma (e única) pasta em disco, `ERA5_atlas/`. Como reanálise ERA5 é, por definição, um produto histórico (sem variante "presente" real), a opção `ERA5_atlas_presente` foi **removida** do `Dataset`, de `DATASETS` e de `DATASET_LABEL` em `cogCatalog.ts` — mantendo só "ERA5 Reanálise (Histórico)". |
+| **Aba "Visão Simples" não indicava qual cor era qual localização** | Causa raiz: o chip de cada local fixado usava a classe CSS `.chip-state`, marcada no próprio código como `/* Dashboard Modal (dead, kept for reference) */` — cor de texto fixa, sem `border` real, ignorando a prop `COLORS[i]` passada via inline style. Trocado o markup em `DashboardView.tsx` para o padrão `dv-legend-chip`/`dv-legend-swatch` já usado (e funcional) nas abas de comparação, com o rótulo `locLabel(loc, i)` ("Loc N") batendo com os nomes usados nos traços do gráfico de Weibull. Classes mortas `.chip-state` e `.dv-chip` (órfã, confirmada via grep) removidas de `App.css`. |
+| **Scatter "Distância vs. Média" com todos os pontos em X=0** | Causa raiz confirmada via schema real (`pyarrow`): a coluna `distance_nm` **não existe** em nenhum GeoParquet publicado — todo pixel cai no fallback `?? 0` em `pixelQuery.ts`. Não é bug de código (filtro e gráfico já leem a coluna certa); é limitação do dado, já registrada no TOFIX/TODO. Mitigação de UI: novo helper `hasRealDistanceData()` em `pixelQuery.ts`; os 3 checkboxes de "Distância da Costa" em `GeoParquetExplorer.tsx` ficam desabilitados com tooltip, e o card do scatter mostra um placeholder (`chart-card chart-empty`, mesmo padrão dos boxplots condicionais) em vez do gráfico degenerado. Autorreversível: quando o pipeline publicar `distance_nm` real, `hasRealDistanceData()` passa a retornar `true` e a UI volta a mostrar o gráfico sem nenhuma mudança de código adicional. |
+
+### Achado colateral (registrado, fora do escopo desta rodada)
+
+A mesma função `datasetFolder()` também colapsa `SSP2-4.5_presente`/`SSP2-4.5_futuro` (e o par `SSP5-8.5`) para a única pasta por cenário existente em disco — confirmado via `find` e via schema do parquet (nenhuma coluna distingue período presente/futuro). Diferente do caso ERA5, aqui a duplicidade é indevida: presente e futuro de um mesmo cenário climático deveriam ter dado real distinto. **Não corrigido nesta rodada** (depende do pipeline publicar dois períodos reais); fica para uma decisão de priorização futura, com a mesma mitigação de UI (aviso) como opção de curto prazo.
+
+### Testes novos — T69–T72
+
+| Teste | Arquivo | O que valida |
+|---|---|---|
+| T69 | `08-geoparquet-explorer.spec.ts` | Checkboxes de "Distância da Costa" aparecem desabilitados com tooltip de dado indisponível |
+| T70 | `08-geoparquet-explorer.spec.ts` | Card do scatter "Distância vs. Média" mostra placeholder em vez de pontos em X=0 |
+| T71 | `06-dashboard-controls.spec.ts` | Seletor de Experimento não oferece mais "ERA5 Reanálise (Presente)" |
+| T72 | `06-dashboard-controls.spec.ts` | Chips da Visão Simples mostram swatch colorido + rótulo "Loc N" por local fixado, com cores distintas |
+
+### Testes existentes ajustados (mecânico, mesma cobertura)
+
+`.dv-chips .chip-state` → `.dv-chips .dv-legend-chip` em 7 ocorrências (T54, T55, T59, T65, T66, T67, T68); T50/T51/T62 (`08-geoparquet-explorer.spec.ts`) tiveram a contagem esperada de `.chart-card.chart-empty` ajustada em +1 (o novo placeholder do scatter, sempre presente hoje) e passaram a checar o texto de cada placeholder especificamente, para não confundir o placeholder de Estado/Batimetria com o de distância.
+
+### Arquivos modificados
+
+`src/lib/cogCatalog.ts`, `src/lib/pixelQuery.ts`, `src/components/DashboardView.tsx`, `src/components/GeoParquetExplorer.tsx`, `src/i18n/pt-BR.ts`, `src/App.css`, `tests/e2e/06-dashboard-controls.spec.ts`, `tests/e2e/08-geoparquet-explorer.spec.ts`, `docs/TOFIX.md`
 
 ---
 
@@ -589,8 +624,9 @@ Ferramenta: **Playwright 1.52.0** (`@playwright/test`) + Chromium 149 (playwrigh
   - [ ] **C3** — Minitabela de coordenadas abaixo do minimapa ("Local | Lat | Lon" + botão de remoção por linha)
   - [ ] **C4** — Remover o perfil vertical de WPD do Dashboard ou substituir por placeholder "sem dados" (coluna `wpd_profile_means` não existe no pipeline — ver categoria B)
   - [ ] **C6** — Adicionar curva Weibull ao GeoParquet Explorer (ao lado do histograma)
-  - [ ] **C7** — Scatter de distância com agregação por steps discretos (0, 20, 50, 100, 200 nm) — depende de `distance_nm` existir no pipeline
+  - [ ] **C7** — Scatter de distância com agregação por steps discretos (0, 20, 50, 100, 200 nm) — depende de `distance_nm` existir no pipeline *(filtro/scatter desabilitados com aviso explícito na Fase 3.5, enquanto o dado não existe)*
   - [ ] **C8** — Publicar dados COG e GeoParquet do MPAS em `public/data/cogs/mpas/` e `public/data/geoparquet/mpas/`
+  - [ ] **C9** — `SSP2-4.5_presente`/`SSP2-4.5_futuro` (e o par `SSP5-8.5`) colapsam para a mesma pasta em disco (mesmo bug estrutural do ERA5 corrigido na Fase 3.5, mas aqui a duplicidade é indevida — presente/futuro de um cenário climático deveriam ter dado real distinto). Depende do pipeline publicar dois períodos reais por cenário; decisão de priorização pendente.
 
 ---
 

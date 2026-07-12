@@ -182,8 +182,9 @@ function DashboardViewInner({
 
         <div className="dv-chips">
           {pinnedLocations.map((loc, i) => (
-            <span key={i} className="chip-state" style={{ borderColor: COLORS[i] }}>
-              {modelLabelStr} ({loc.lat.toFixed(2)}, {loc.lon.toFixed(2)})
+            <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
+              <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
+              {locLabel(loc, i)} — {modelLabelStr} ({loc.lat.toFixed(2)}, {loc.lon.toFixed(2)})
               <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
             </span>
           ))}

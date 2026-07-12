@@ -1,5 +1,5 @@
 export type Model = 'wrf' | 'mpas'
-export type Dataset = 'ERA5_atlas_historico' | 'ERA5_atlas_presente' | 'HIST_historico' | 'SSP2-4.5_presente' | 'SSP2-4.5_futuro' | 'SSP5-8.5_presente' | 'SSP5-8.5_futuro'
+export type Dataset = 'ERA5_atlas_historico' | 'HIST_historico' | 'SSP2-4.5_presente' | 'SSP2-4.5_futuro' | 'SSP5-8.5_presente' | 'SSP5-8.5_futuro'
 export type Variable = 'ws' | 'wpd'
 export type Height = 10 | 50 | 100 | 150 | 200
 export type Season = 'annual' | 'djf' | 'mam' | 'jja' | 'son'
@@ -7,7 +7,7 @@ export type Region = 'nacional' | 'estadual'
 export type BathyBand = '0_20' | '20_50' | '50_100' | '0_100'
 export const MODELS: Model[] = ['wrf', 'mpas']
 export const DATASETS: Dataset[] = [
-  'ERA5_atlas_historico', 'ERA5_atlas_presente',
+  'ERA5_atlas_historico',
   'HIST_historico',
   'SSP2-4.5_presente', 'SSP2-4.5_futuro',
   'SSP5-8.5_presente', 'SSP5-8.5_futuro',
@@ -63,7 +63,6 @@ const VAR_LABEL: Record<Variable, { label: string; unit: string }> = {
 
 const DATASET_LABEL: Record<Dataset, string> = {
   ERA5_atlas_historico: 'ERA5 Reanálise (Histórico)',
-  ERA5_atlas_presente: 'ERA5 Reanálise (Presente)',
   HIST_historico: 'Histórico',
   'SSP2-4.5_presente': 'SSP2-4.5 (Presente)',
   'SSP2-4.5_futuro': 'SSP2-4.5 (Futuro)',

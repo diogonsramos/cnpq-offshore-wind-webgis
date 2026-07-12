@@ -36,6 +36,15 @@ test.describe('Dashboard — seletores de Experimento e Modelo', () => {
     const sidePanelModelSelect = page.locator('.select-field', { hasText: 'Modelo' }).locator('select')
     await expect(sidePanelModelSelect).toHaveValue('mpas')
   })
+
+  test('T71 — seletor de Experimento não oferece mais "ERA5 Reanálise (Presente)"', async ({ page }) => {
+    // ERA5 é um produto de reanálise (só histórico, por definição) — "Presente" era uma
+    // opção de UI que apontava para o mesmo dado do "Histórico" (mesma pasta em disco).
+    const experimentSelect = page.locator('.dv-tab-panel').first().locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select')
+    const texts = await experimentSelect.locator('option').allTextContents()
+    const era5Options = texts.filter(t => t.includes('ERA5'))
+    expect(era5Options).toEqual(['ERA5 Reanálise (Histórico)'])
+  })
 })
 
 test.describe('SidePanel — opacidade do COG', () => {
@@ -146,7 +155,7 @@ test.describe('Dashboard — carregamento inicial', () => {
     await panel.locator('.dv-input').nth(1).fill('-35')
     await expect(async () => {
       await panel.locator('.dv-add-btn').click()
-      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+      await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     }).toPass({ timeout: 20000 })
 
     // Nenhuma mensagem de erro "click the map first" deve aparecer.
@@ -178,7 +187,7 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
     // do parquet real no momento do clique.
     await expect(async () => {
       await panel.locator('.dv-add-btn').click()
-      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+      await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     }).toPass({ timeout: 20000 })
 
     const weibullPlot = panel.locator('[data-testid="chart-weibull"] .js-plotly-plot')
@@ -198,7 +207,7 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
     await panel.locator('.dv-input').nth(1).fill('-35')
     await expect(async () => {
       await panel.locator('.dv-add-btn').click()
-      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+      await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     }).toPass({ timeout: 20000 })
 
     const windRosePlot = panel.locator('[data-testid="chart-windrose"] .js-plotly-plot')
@@ -218,7 +227,7 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
     await panel.locator('.dv-input').nth(1).fill('-35')
     await expect(async () => {
       await panel.locator('.dv-add-btn').click()
-      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+      await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     }).toPass({ timeout: 20000 })
 
     const windRosePlot = panel.locator('[data-testid="chart-windrose"] .js-plotly-plot')
@@ -261,7 +270,7 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
     await panel.locator('.dv-input').nth(1).fill('-35')
     await expect(async () => {
       await panel.locator('.dv-add-btn').click()
-      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+      await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     }).toPass({ timeout: 20000 })
 
     const seasonalPlot = panel.locator('[data-testid="chart-seasonal"] .js-plotly-plot')
@@ -281,7 +290,7 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
     await panel.locator('.dv-input').nth(1).fill('-35')
     await expect(async () => {
       await panel.locator('.dv-add-btn').click()
-      await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+      await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     }).toPass({ timeout: 20000 })
 
     // Troca de experimento (HIST → ERA5 Histórico): o pino persiste e os gráficos
@@ -294,7 +303,7 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
       expect(name).toMatch(/k=\d+\.\d{2}, c=\d+\.\d{2}/)
     }).toPass({ timeout: 20000 })
 
-    await expect(panel.locator('.dv-chips .chip-state')).toHaveCount(1)
+    await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     expect(errors).toEqual([])
     expect(pageErrors).toEqual([])
   })
@@ -304,7 +313,7 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
     // (0,1,2) em sequência; como cada chamada já filtra o array pelo índice atual,
     // remover em ordem ascendente deixava sempre 1 local para trás (o do meio).
     const panel = page.locator('.dv-tab-panel').nth(0)
-    const chips = panel.locator('.dv-chips .chip-state')
+    const chips = panel.locator('.dv-chips .dv-legend-chip')
 
     // 1º pino: retry até o parquet global terminar de carregar (mesmo motivo do T54/T55).
     await panel.locator('.dv-input').nth(0).fill('-10')
@@ -324,5 +333,37 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
 
     await panel.locator('.dv-remove-all').click()
     await expect(chips).toHaveCount(0)
+  })
+
+  test('T72 — chips da Visão Simples mostram swatch colorido + rótulo "Loc N" por local fixado', async ({ page }) => {
+    // Regressão: os chips usavam a classe morta .chip-state (sem border/cor real),
+    // deixando o usuário sem forma de saber qual cor correspondia a qual local
+    // fora do gráfico de Weibull (o único que manteve legenda nativa do Plotly).
+    const panel = page.locator('.dv-tab-panel').nth(0)
+    const chips = panel.locator('.dv-chips .dv-legend-chip')
+
+    await panel.locator('.dv-input').nth(0).fill('-10')
+    await panel.locator('.dv-input').nth(1).fill('-35')
+    await expect(async () => {
+      await panel.locator('.dv-add-btn').click()
+      await expect(chips).toHaveCount(1)
+    }).toPass({ timeout: 20000 })
+
+    await panel.locator('.dv-input').nth(0).fill('-13')
+    await panel.locator('.dv-input').nth(1).fill('-38')
+    await panel.locator('.dv-add-btn').click()
+    await expect(chips).toHaveCount(2)
+
+    await expect(chips.nth(0)).toContainText('Loc 1')
+    await expect(chips.nth(1)).toContainText('Loc 2')
+
+    const swatch0 = chips.nth(0).locator('.dv-legend-swatch')
+    const swatch1 = chips.nth(1).locator('.dv-legend-swatch')
+    await expect(swatch0).toBeVisible()
+    await expect(swatch1).toBeVisible()
+
+    const color0 = await swatch0.evaluate(el => getComputedStyle(el).backgroundColor)
+    const color1 = await swatch1.evaluate(el => getComputedStyle(el).backgroundColor)
+    expect(color0).not.toBe(color1)
   })
 })

@@ -5,7 +5,7 @@ import {
   datasetLabel, varLabel, modelLabel, datasetFolder, COASTAL_STATES, stateNorthSouthIndex,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
-import { loadParquet, queryFilteredPixels, type FilterCriteria, type FilteredAggregates } from '../lib/pixelQuery'
+import { loadParquet, queryFilteredPixels, hasRealDistanceData, type FilterCriteria, type FilteredAggregates } from '../lib/pixelQuery'
 import {
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, BATHY_ZONE_OPTIONS,
   DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS, PLOT_CONFIG, CHART_FONT, HOVER_LABEL_STYLE,
@@ -193,8 +193,12 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
         <div className="gpe-checkbox-col">
           <p className="dv-pair-picker-title">{t('geoparquet_explorer.filters.distance_title')}</p>
           {DISTANCE_ZONE_OPTIONS.map(d => (
-            <label key={d.val} className="dv-pair-checkbox">
-              <input type="checkbox" checked={distanceZones.includes(d.val)} onChange={() => toggleDistanceZone(d.val)} />
+            <label
+              key={d.val}
+              className="dv-pair-checkbox dv-pair-checkbox--disabled"
+              title={t('geoparquet_explorer.filters.distance_disabled_hint')}
+            >
+              <input type="checkbox" checked={distanceZones.includes(d.val)} onChange={() => toggleDistanceZone(d.val)} disabled />
               <span>{d.label}</span>
             </label>
           ))}
@@ -316,43 +320,49 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
               <div className="chart-card chart-empty">{t('geoparquet_explorer.charts.boxplot_bathy_hidden')}</div>
             )}
 
-            <div className="chart-card">
-              <Plot
-                data={[
-                  {
-                    x: result.distances, y: result.values, type: 'scatter' as const, mode: 'markers' as const,
-                    name: 'Pixels', marker: { color: CHART_COLORS[0], size: 5, opacity: 0.6 },
-                    hovertemplate: '%{x:.1f} nm, %{y:.2f}<extra></extra>',
-                  },
-                  ...(regression ? [{
-                    x: [appliedDistanceMin, appliedDistanceMax],
-                    y: [
-                      regression.intercept + regression.slope * appliedDistanceMin,
-                      regression.intercept + regression.slope * appliedDistanceMax,
-                    ],
-                    type: 'scatter' as const, mode: 'lines' as const, name: 'Tendência (linear)',
-                    line: { color: CHART_COLORS[1], width: 2, dash: 'dash' as const },
-                    hovertemplate: '%{y:.2f}<extra></extra>',
-                  }] : []),
-                ]}
-                layout={{
-                  title: { text: t('geoparquet_explorer.charts.scatter_title') },
-                  xaxis: { title: { text: 'Distância da Costa (nm)', standoff: 10 }, range: [appliedDistanceMin, appliedDistanceMax], zeroline: false, hoverformat: '.1f' },
-                  yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
-                  height: 260,
-                  margin: { t: 40, b: 40, l: 55, r: 20 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: CHART_FONT,
-                  showlegend: true,
-                  legend: { x: 1, xanchor: 'right', y: 1 },
-                  hoverlabel: HOVER_LABEL_STYLE,
-                }}
-                config={PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
-            </div>
+            {hasRealDistanceData(result) ? (
+              <div className="chart-card">
+                <Plot
+                  data={[
+                    {
+                      x: result.distances, y: result.values, type: 'scatter' as const, mode: 'markers' as const,
+                      name: 'Pixels', marker: { color: CHART_COLORS[0], size: 5, opacity: 0.6 },
+                      hovertemplate: '%{x:.1f} nm, %{y:.2f}<extra></extra>',
+                    },
+                    ...(regression ? [{
+                      x: [appliedDistanceMin, appliedDistanceMax],
+                      y: [
+                        regression.intercept + regression.slope * appliedDistanceMin,
+                        regression.intercept + regression.slope * appliedDistanceMax,
+                      ],
+                      type: 'scatter' as const, mode: 'lines' as const, name: 'Tendência (linear)',
+                      line: { color: CHART_COLORS[1], width: 2, dash: 'dash' as const },
+                      hovertemplate: '%{y:.2f}<extra></extra>',
+                    }] : []),
+                  ]}
+                  layout={{
+                    title: { text: t('geoparquet_explorer.charts.scatter_title') },
+                    xaxis: { title: { text: 'Distância da Costa (nm)', standoff: 10 }, range: [appliedDistanceMin, appliedDistanceMax], zeroline: false, hoverformat: '.1f' },
+                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                    height: 260,
+                    margin: { t: 40, b: 40, l: 55, r: 20 },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: CHART_FONT,
+                    showlegend: true,
+                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    hoverlabel: HOVER_LABEL_STYLE,
+                  }}
+                  config={PLOT_CONFIG}
+                  style={{ width: '100%' }}
+                  useResizeHandler
+                />
+              </div>
+            ) : (
+              <div className="chart-card chart-empty" data-testid="scatter-distance-hidden">
+                {t('geoparquet_explorer.charts.scatter_hidden')}
+              </div>
+            )}
 
             <div className="chart-card">
               <Plot

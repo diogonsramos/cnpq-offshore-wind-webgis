@@ -48,7 +48,10 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     await expect(p.locator('.gpe-stats-bar .gpe-stat-chip')).toHaveCount(6)
     await expect(p.locator('.chart-card')).toHaveCount(5)
     // Sem filtro de Estado/Batimetria ativo, os dois boxplots devem renderizar (não ficam ocultos).
-    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(0)
+    // O scatter "Distância vs. Média" fica com placeholder: distance_nm ainda não é publicado
+    // no GeoParquet real (todo pixel cairia em x=0) — ver docs/TOFIX.md.
+    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(1)
+    await expect(p.locator('.chart-card.chart-empty', { hasText: 'distância da costa' })).toHaveCount(1)
 
     expect(errors).toEqual([])
   })
@@ -59,8 +62,9 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     await p.locator('.dv-add-btn').click()
 
     await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('588 pixels encontrados')
-    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(1)
-    await expect(p.locator('.chart-card.chart-empty')).toContainText('desmarque o filtro de Estado')
+    // 2 placeholders agora: boxplot por Estado (1 estado selecionado) + scatter de distância (dado indisponível).
+    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(2)
+    await expect(p.locator('.chart-card.chart-empty', { hasText: 'desmarque o filtro de Estado' })).toHaveCount(1)
   })
 
   test('T52 — trocar um filtro sem clicar em Aplicar Filtros não altera o resultado exibido', async ({ page }) => {
@@ -98,8 +102,10 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     await p.locator('.dv-add-btn').click()
     await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toBeVisible()
 
-    // Com 2 estados, o boxplot por Estado renderiza (nenhum card fica oculto).
-    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(0)
+    // Com 2 estados, o boxplot por Estado renderiza. Só o scatter de distância
+    // permanece com placeholder (distance_nm ainda não publicado no pipeline).
+    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(1)
+    await expect(p.locator('.chart-card.chart-empty', { hasText: 'Estado' })).toHaveCount(0)
   })
 
   test('T63 — Boxplot por Estado ordenado Norte→Sul (A2)', async ({ page }) => {
@@ -134,5 +140,33 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     await expect(firstChart.locator('.modebar-btn[data-title="Download plot as a PNG"]')).toHaveCount(1)
     await expect(firstChart.locator('.modebar-btn[data-title="Box Select"]')).toHaveCount(0)
     await expect(firstChart.locator('.modebar-btn[data-title="Lasso Select"]')).toHaveCount(0)
+  })
+
+  test('T69 — checkboxes de "Distância da Costa" aparecem desabilitados com aviso de dado indisponível', async ({ page }) => {
+    // A coluna distance_nm não existe nos GeoParquet publicados (ver docs/TOFIX.md) —
+    // até o pipeline gerá-la, o filtro fica desabilitado em vez de silenciosamente inerte.
+    const p = panel(page)
+    const distanceCol = p.locator('.gpe-checkbox-col', { hasText: 'Distância da Costa' })
+    const checkboxLabels = distanceCol.locator('.dv-pair-checkbox')
+    const checkboxInputs = checkboxLabels.locator('input')
+
+    await expect(checkboxInputs).toHaveCount(3)
+    for (let i = 0; i < 3; i++) {
+      await expect(checkboxInputs.nth(i)).toBeDisabled()
+      await expect(checkboxLabels.nth(i)).toHaveAttribute('title', /ainda não publicado/)
+    }
+  })
+
+  test('T70 — scatter "Distância vs. Média" mostra placeholder em vez de pontos empilhados em X=0', async ({ page }) => {
+    const p = panel(page)
+    await p.locator('.dv-add-btn').click()
+    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('30773 pixels encontrados')
+
+    // Ordem sem filtro de Estado/Batimetria: histograma(0), boxplot-Estado(1),
+    // boxplot-Batimetria(2), scatter-distância(3), perfil(4).
+    const scatterCard = p.locator('.chart-card').nth(3)
+    await expect(scatterCard).toHaveClass(/chart-empty/)
+    await expect(scatterCard).toContainText('distância da costa')
+    await expect(scatterCard.locator('.js-plotly-plot')).toHaveCount(0)
   })
 })
