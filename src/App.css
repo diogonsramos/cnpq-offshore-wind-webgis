@@ -113,9 +113,44 @@ html.landing-mode #root {
 .dashboard-view {
   flex: 1;
   display: flex;
+  flex-direction: column;
   background: #f0f2f5;
   overflow: hidden;
 }
+
+/* Internal tabs: Simple View / Compare Experiments / Compare Models */
+.dv-inner-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  flex-shrink: 0;
+}
+.dv-inner-tab-btn {
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.dv-inner-tab-btn:hover {
+  color: #555;
+}
+.dv-inner-tab-btn.active {
+  color: #1a1a2e;
+  border-bottom-color: #4a90d9;
+}
+
+.dv-tab-panel {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .dv-body {
   flex: 1;
   display: flex;
@@ -228,19 +263,6 @@ html.landing-mode #root {
   background: #e74c3c;
   color: #fff;
 }
-.dv-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-left: 3px solid #4a90d9;
-  border-radius: 6px;
-  font-size: 11px;
-  color: #555;
-}
-
 /* Main area: chart grid + mini-map sidebar */
 .dv-main {
   display: flex;
@@ -270,6 +292,13 @@ html.landing-mode #root {
   .dv-sidebar {
     width: 100%;
   }
+  /* Visão Simples nests .dv-body + .dv-sidebar directly under .dv-tab-panel
+     (not under .dv-main like the comparison views) — without this, .dv-sidebar's
+     width:100% above still applies while the row stays row-direction, squeezing
+     .dv-body down to a sliver next to a full-width map. */
+  .dv-tab-panel {
+    flex-direction: column;
+  }
 }
 @media (max-width: 700px) {
   .dv-chart-grid {
@@ -296,6 +325,159 @@ html.landing-mode #root {
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
+}
+
+/* ── Dashboard comparison view (Compare Experiments / Compare Models) ── */
+.dv-compare {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 12px 16px;
+  gap: 10px;
+}
+
+.dv-pair-picker {
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+.dv-pair-picker-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 8px;
+}
+.dv-pair-grid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.dv-pair-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4a90d9;
+  margin-bottom: 4px;
+}
+.dv-pair-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.dv-pair-checkbox input:disabled {
+  cursor: not-allowed;
+}
+.dv-pair-checkbox--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dv-legend-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-left: 3px solid #4a90d9;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #555;
+}
+.dv-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dv-legend-swatch--dash {
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(45deg, currentColor 0 2px, transparent 2px 4px);
+}
+.dv-legend-state {
+  color: #999;
+  font-style: italic;
+}
+
+.dv-diff-stat {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-left: 3px solid #d55e00;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ── GeoParquet Explorer tab ─────────────────────────── */
+.gpe {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 12px 16px;
+  gap: 10px;
+}
+.gpe-checkbox-panel {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+.gpe-checkbox-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+}
+.gpe-checkbox-col--states {
+  flex: 1;
+}
+.gpe-state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 2px 8px;
+}
+.gpe-apply-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gpe-stats-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gpe-stat-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  min-width: 80px;
+}
+.gpe-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+.gpe-stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
 }
 
 /* ── Side Panel ─────────────────────────── */
@@ -404,6 +586,19 @@ html.landing-mode #root {
 }
 .select-field select:focus {
   border-color: #4a90d9;
+}
+
+/* ── Range slider ───────────────────────── */
+.range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.range-field input[type="range"] {
+  width: 100%;
+  accent-color: #4a90d9;
+  cursor: pointer;
 }
 
 /* ── Combobox (searchable) ─────────────── */
@@ -734,12 +929,6 @@ html.landing-mode #root {
   font-weight: 600;
 }
 
-/* ── Dashboard Modal (dead, kept for reference) ── */
-.chip-state {
-  font-weight: 600;
-  color: #4a90d9;
-  font-size: 10px;
-}
 .chip-remove {
   background: none;
   border: none;

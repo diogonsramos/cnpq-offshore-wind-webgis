@@ -30,3 +30,32 @@ test('T08b — em mobile (375 px) os CTAs são exibidos em coluna', async ({ pag
   // Em coluna, o CTA secundário deve estar abaixo do primário
   expect(secondary!.y).toBeGreaterThan(primary!.y + primary!.height - 10)
 })
+
+for (const vp of VIEWPORTS) {
+  test(`T60 — Dashboard sem scroll horizontal em ${vp.name} (${vp.width}px), em todas as 4 abas`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.width, height: vp.height })
+    await page.goto('/')
+    await page.click('.lp-cta-secondary')
+    await expect(page.locator('.dashboard-view')).toBeVisible()
+
+    for (const tabName of ['Visão Simples', 'Comparar Experimentos', 'Comparar Modelos', 'Explorador GeoParquet']) {
+      await page.click(`.dv-inner-tab-btn:has-text("${tabName}")`)
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+      expect(overflow, `overflow em "${tabName}"`).toBeLessThanOrEqual(1)
+    }
+  })
+}
+
+test('T61 — Visão Simples: filtros e "+ Add Location" não ficam espremidos em mobile/tablet (regressão)', async ({ page }) => {
+  // Regressão: .dv-sidebar (mini-mapa) ganha width:100% em ≤900px, mas só
+  // .dv-main (usado por Comparar Experimentos/Modelos) also virava column nesse
+  // breakpoint — .dv-tab-panel (usado pela Visão Simples) ficava row, então o
+  // mini-mapa (100% de largura) espremia .dv-body para uma fatia de ~30px.
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/')
+  await page.click('.lp-cta-secondary')
+  await expect(page.locator('.dashboard-view')).toBeVisible()
+
+  const addBtn = await page.locator('.dv-tab-panel').nth(0).locator('.dv-add-btn').boundingBox()
+  expect(addBtn!.width).toBeGreaterThan(80)
+})

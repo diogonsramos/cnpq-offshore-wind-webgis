@@ -1,27 +1,28 @@
 import { useState, useMemo, memo } from 'react'
 import {
-  DATASETS, VARIABLES, HEIGHTS,
+  MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
-import { type DashboardLocationData, queryPixelStat, isLoaded } from '../lib/pixelQuery'
+import { type DashboardLocationData, queryPixelStat } from '../lib/pixelQuery'
+import {
+  SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG, WINDROSE_PLOT_CONFIG,
+  CHART_FONT, HOVER_LABEL_STYLE,
+} from '../lib/dashboardChartConstants'
 import MiniMap from './MiniMap'
+import DashboardComparisonView from './DashboardComparisonView'
+import GeoParquetExplorer from './GeoParquetExplorer'
 import Plot from 'react-plotly.js'
+import { t } from '../i18n/t'
 
-const SEASON_ORDER = ['ANNUAL', 'DJF', 'MAM', 'JJA', 'SON']
-const COLORS = ['#0072B2', '#D55E00', '#009E73']
-const SECTOR_LABELS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']
-const HEIGHT_TICKVALS = [10, 50, 100, 150, 200]
-const HEIGHT_TICKTEXT = ['10m', '50m', '100m', '150m', '200m']
-
-const SEASON_LABELS: Record<string, string> = {
-  ANNUAL: 'Anual', DJF: 'DJF (Verão)',
-  MAM: 'MAM (Outono)', JJA: 'JJA (Inverno)', SON: 'SON (Primavera)',
-}
+type DashboardTab = 'simple' | 'compare_exp' | 'compare_model' | 'geoparquet'
 
 interface DashboardViewProps {
   model: Model
+  setModel: (v: Model) => void
   dataset: Dataset
+  setDataset: (v: Dataset) => void
   pinnedLocations: DashboardLocationData[]
   onAddLocation: (lat: number, lon: number) => void
   onRemoveLocation: (idx: number) => void
@@ -29,11 +30,14 @@ interface DashboardViewProps {
 
 function DashboardViewInner({
   model,
+  setModel,
   dataset,
+  setDataset,
   pinnedLocations,
   onAddLocation,
   onRemoveLocation,
 }: DashboardViewProps) {
+  const [dvTab, setDvTab] = useState<DashboardTab>('simple')
   const [dashboardVar, setDashboardVar] = useState<Variable>('ws')
   const [dashboardHeight, setDashboardHeight] = useState<Height>(100)
   const [latInput, setLatInput] = useState('')
@@ -50,10 +54,6 @@ function DashboardViewInner({
       setLocError('Enter valid numeric lat/lon.')
       return
     }
-    if (!isLoaded()) {
-      setLocError('Parquet data not loaded yet. Click the map first.')
-      return
-    }
     if (pinnedLocations.length >= 3) {
       setLocError('Maximum 3 locations allowed.')
       return
@@ -64,8 +64,10 @@ function DashboardViewInner({
     setLocError('')
   }
 
-  const locLabel = (loc: DashboardLocationData, i: number): string =>
-    `${modelLabelStr} — ${datasetLabelStr} (Loc ${i + 1})`
+  // Model/experiment/variable/height are already explicit in the filter bar above,
+  // so the legend only needs to disambiguate which pinned point each trace is.
+  const locLabel = (_loc: DashboardLocationData, i: number): string =>
+    `Loc ${i + 1}`
 
   const varUnit = dashboardVar === 'ws' ? 'm/s' : 'W/m²'
 
@@ -92,18 +94,6 @@ function DashboardViewInner({
     }
   }, [pinnedLocations, modelLabelStr, datasetLabelStr])
 
-  const wpdProfileData = useMemo(() => {
-    if (pinnedLocations.length === 0) return { heights: [] as number[], datasets: [] as { label: string; data: number[]; borderColor: string }[] }
-    return {
-      heights: pinnedLocations[0].profile_heights,
-      datasets: pinnedLocations.map((loc, i) => ({
-        label: locLabel(loc, i),
-        data: loc.wpd_profile_means.length > 0 ? loc.wpd_profile_means : [],
-        borderColor: COLORS[i],
-      })),
-    }
-  }, [pinnedLocations, modelLabelStr, datasetLabelStr])
-
   const emptyMsg = pinnedLocations.length === 0
     ? 'Click the map or enter coordinates to add locations.'
     : null
@@ -118,18 +108,54 @@ function DashboardViewInner({
 
   return (
     <div className="dashboard-view">
+      <div className="dv-inner-tabs">
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'simple' ? 'active' : ''}`}
+          onClick={() => setDvTab('simple')}
+        >
+          {t('dashboard.tab.simple')}
+        </button>
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'compare_exp' ? 'active' : ''}`}
+          onClick={() => setDvTab('compare_exp')}
+        >
+          {t('dashboard.tab.compare_exp')}
+        </button>
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'compare_model' ? 'active' : ''}`}
+          onClick={() => setDvTab('compare_model')}
+        >
+          {t('dashboard.tab.compare_model')}
+        </button>
+        <button
+          className={`dv-inner-tab-btn ${dvTab === 'geoparquet' ? 'active' : ''}`}
+          onClick={() => setDvTab('geoparquet')}
+        >
+          {t('dashboard.tab.geoparquet')}
+        </button>
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'simple' ? 'flex' : 'none' }}>
       <div className="dv-body">
         <div className="dv-filter-bar">
           <div className="dv-filter-group">
-            <label className="dv-label">Experiment</label>
-            <select value={dataset} disabled className="dv-select">
+            <label className="dv-label">{t('dashboard.filters.model_label')}</label>
+            <select value={model} onChange={e => setModel(e.target.value as Model)} className="dv-select">
+              {MODELS.map(m => (
+                <option key={m} value={m}>{modelLabel(m)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="dv-filter-group">
+            <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
+            <select value={dataset} onChange={e => setDataset(e.target.value as Dataset)} className="dv-select">
               {DATASETS.map(d => (
                 <option key={d} value={d}>{datasetLabel(d)}</option>
               ))}
             </select>
           </div>
           <div className="dv-filter-group">
-            <label className="dv-label">Variable</label>
+            <label className="dv-label">{t('dashboard.filters.variable_label')}</label>
             <select value={dashboardVar} onChange={e => setDashboardVar(e.target.value as Variable)} className="dv-select">
               {VARIABLES.map(v => (
                 <option key={v} value={v}>{varLabel(v).label}</option>
@@ -137,7 +163,7 @@ function DashboardViewInner({
             </select>
           </div>
           <div className="dv-filter-group">
-            <label className="dv-label">Height</label>
+            <label className="dv-label">{t('dashboard.filters.height_label')}</label>
             <select value={dashboardHeight} onChange={e => setDashboardHeight(Number(e.target.value) as Height)} className="dv-select">
               {HEIGHTS.map(h => (
                 <option key={h} value={h}>{h}m</option>
@@ -156,13 +182,23 @@ function DashboardViewInner({
 
         <div className="dv-chips">
           {pinnedLocations.map((loc, i) => (
-            <span key={i} className="chip-state" style={{ borderColor: COLORS[i] }}>
-              {modelLabelStr} ({loc.lat.toFixed(2)}, {loc.lon.toFixed(2)})
+            <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
+              <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
+              {locLabel(loc, i)} — {modelLabelStr} ({loc.lat.toFixed(2)}, {loc.lon.toFixed(2)})
               <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
             </span>
           ))}
           {pinnedLocations.length > 0 && (
-            <button className="dv-remove-all" onClick={() => pinnedLocations.forEach((_, i) => onRemoveLocation(i))}>
+            <button
+              className="dv-remove-all"
+              onClick={() => {
+                // Removing ascending indices while onRemoveLocation splices the array
+                // (idx: number) => void shifts every later index down, so removing
+                // 0,1,2 in order only ever removes 0 and what becomes the new 1 —
+                // descending order removes each item before the shift can affect it.
+                for (let i = pinnedLocations.length - 1; i >= 0; i--) onRemoveLocation(i)
+              }}
+            >
               Remove All
             </button>
           )}
@@ -173,7 +209,7 @@ function DashboardViewInner({
         ) : (
           <div className="dv-main">
             <div className="dv-chart-grid">
-              <div className="chart-card">
+              <div className="chart-card" data-testid="chart-seasonal">
                 <Plot
                   data={seasonChartData.datasets.map((ds, i) => ({
                     x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
@@ -181,30 +217,33 @@ function DashboardViewInner({
                     type: 'bar',
                     name: ds.label,
                     marker: { color: COLORS[i % COLORS.length] },
+                    hovertemplate: '%{y:.2f}<extra></extra>',
                   }))}
                   layout={{
-                    title: `Média Sazonal — ${varLabel(dashboardVar).label} ${dashboardHeight}m`,
+                    title: { text: `Média Sazonal — ${varLabel(dashboardVar).label} ${dashboardHeight}m` },
                     xaxis: { title: { text: 'Sazonalidade', standoff: 10 } },
                     yaxis: {
-                      title: { text: `Velocidade do Vento (${varUnit})`, standoff: 10 },
+                      title: { text: `${varLabel(dashboardVar).label} (${varUnit})`, standoff: 10 },
                       range: dashboardVar === 'ws' ? [0, 25] : [0, 1500],
                       zeroline: false,
+                      hoverformat: '.2f',
                     },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hovermode: 'x unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
               </div>
 
-              <div className="chart-card">
+              <div className="chart-card" data-testid="chart-weibull">
                 <Plot
                   data={pinnedLocations.map((loc, i) => {
                     const w = loc.weibull?.[dashboardHeight]
@@ -223,35 +262,40 @@ function DashboardViewInner({
                       line: { color: COLORS[i], width: 2 },
                       fill: 'tozeroy',
                       fillcolor: COLORS[i] + '22',
+                      hovertemplate: '%{y:.4f}<extra></extra>',
                     }
                   })}
                   layout={{
-                    title: `Distribuição Weibull — ${dashboardHeight}m`,
+                    title: { text: `Distribuição Weibull — ${dashboardHeight}m` },
                     xaxis: {
                       title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
                       range: [0, 30],
                       zeroline: false,
+                      hoverformat: '.2f',
                     },
                     yaxis: {
                       title: { text: 'Densidade de Probabilidade f(v)', standoff: 10 },
                       range: [0, 0.3],
                       zeroline: false,
+                      hoverformat: '.4f',
                     },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
+                    font: CHART_FONT,
                     showlegend: true,
                     legend: { x: 1, xanchor: 'right', y: 1 },
+                    hovermode: 'x unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
               </div>
 
-              <div className="chart-card">
+              <div className="chart-card" data-testid="chart-windrose">
                 <Plot
                   data={pinnedLocations.map((loc, i) => {
                     const wr = loc.wind_rose?.[dashboardHeight]
@@ -263,17 +307,19 @@ function DashboardViewInner({
                       fill: 'toself',
                       name: locLabel(loc, i),
                       marker: { color: COLORS[i] },
+                      hovertemplate: '%{theta}: %{r:.1f}%<extra></extra>',
+                      hoverlabel: { bgcolor: COLORS[i] },
                     }
                   })}
                   layout={{
-                    title: `Rosa dos Ventos — ${dashboardHeight}m`,
+                    title: { text: `Rosa dos Ventos — ${dashboardHeight}m` },
                     height: 260,
                     margin: { t: 40, b: 30, l: 50, r: 50 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hoverlabel: { font: { size: 12, color: '#fff' } },
                     polar: {
                       angularaxis: {
                         direction: 'clockwise',
@@ -282,7 +328,7 @@ function DashboardViewInner({
                       radialaxis: { visible: true, title: { text: 'Frequência (%)' }, ticksuffix: '%' },
                     },
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={WINDROSE_PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -298,57 +344,27 @@ function DashboardViewInner({
                     name: ds.label,
                     line: { color: COLORS[i], width: 2 },
                     marker: { color: COLORS[i], size: 6 },
+                    hovertemplate: '%{x:.2f}<extra></extra>',
                   }))}
                   layout={{
-                    title: 'Perfil Vertical — Velocidade do Vento',
+                    title: { text: 'Perfil Vertical — Velocidade do Vento' },
                     xaxis: {
                       title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
                       range: [0, 25],
                       zeroline: false,
+                      hoverformat: '.2f',
                     },
                     yaxis: profileYAxis,
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hovermode: 'y unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
                   }}
-                  config={{ displayModeBar: false, responsive: true }}
-                  style={{ width: '100%' }}
-                  useResizeHandler
-                />
-              </div>
-
-              <div className="chart-card">
-                <Plot
-                  data={wpdProfileData.datasets.map((ds, i) => ({
-                    x: ds.data,
-                    y: wpdProfileData.heights,
-                    type: 'scatter' as const,
-                    mode: 'lines+markers' as const,
-                    name: ds.label,
-                    line: { color: COLORS[i], width: 2 },
-                    marker: { color: COLORS[i], size: 6 },
-                  }))}
-                  layout={{
-                    title: 'Perfil Vertical — Densidade de Potência',
-                    xaxis: {
-                      title: { text: 'Densidade de Potência (W/m²)', standoff: 10 },
-                      range: [0, 1500],
-                      zeroline: false,
-                    },
-                    yaxis: profileYAxis,
-                    height: 260,
-                    margin: { t: 40, b: 40, l: 55, r: 20 },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: { size: 11 },
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
-                  }}
-                  config={{ displayModeBar: false, responsive: true }}
+                  config={PLOT_CONFIG}
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
@@ -362,6 +378,19 @@ function DashboardViewInner({
         <div className="minimap">
           <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} />
         </div>
+      </div>
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'compare_exp' ? 'flex' : 'none' }}>
+        <DashboardComparisonView mode="experiments" currentModel={model} currentDataset={dataset} />
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'compare_model' ? 'flex' : 'none' }}>
+        <DashboardComparisonView mode="models" currentModel={model} currentDataset={dataset} />
+      </div>
+
+      <div className="dv-tab-panel" style={{ display: dvTab === 'geoparquet' ? 'flex' : 'none' }}>
+        <GeoParquetExplorer currentModel={model} currentDataset={dataset} />
       </div>
     </div>
   )

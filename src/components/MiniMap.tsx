@@ -1,10 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { DashboardLocationData } from '../lib/pixelQuery'
 
 interface MiniMapProps {
-  pinnedLocations: DashboardLocationData[]
+  pinnedLocations: { lat: number; lon: number }[]
   onPinClick: (lat: number, lon: number) => void
 }
 
@@ -13,6 +12,7 @@ const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     if (!container.current || map.current) return
@@ -32,6 +32,7 @@ function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
       attributionControl: false,
     })
     m.addControl(new maplibregl.NavigationControl({ showZoom: true, showCompass: false }), 'bottom-right')
+    m.on('load', () => setReady(true))
     m.on('click', (e: maplibregl.MapMouseEvent) => {
       onPinClick(e.lngLat.lat, e.lngLat.lng)
     })
@@ -42,7 +43,7 @@ function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
   // Update pin markers when pinnedLocations changes
   useEffect(() => {
     const m = map.current
-    if (!m) return
+    if (!m || !ready) return
 
     const srcId = 'pins-src'
     const lyrId = 'pins-lyr'
@@ -73,7 +74,7 @@ function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
         'circle-stroke-color': '#fff',
       },
     })
-  }, [pinnedLocations])
+  }, [pinnedLocations, ready])
 
   return <div ref={container} className="minimap" />
 }

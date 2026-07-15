@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, memo, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { renderCog } from '../lib/cogTileRenderer'
-import { buildCogUrl, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
+import { buildCogUrl, datasetFolder, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
 import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '../lib/pixelQuery'
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
 import BasemapSwitcher from './BasemapSwitcher'
@@ -15,6 +15,7 @@ interface MapViewProps {
   season: Season
   showBathymetry: boolean
   bathyLayer: string
+  opacity: number
   basemap: string
   onBasemapChange: (id: string) => void
   onPixelClick: (data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => void
@@ -29,13 +30,15 @@ const BS = 'bathy-src'
 const BF = 'bathy-fill'
 const BL = 'bathy-line'
 
+// mn_zee_nacional/mn_zee_estadual have no published file yet (no ZEE boundary
+// data delivered so far) — same "not published" class as MPAS in pixelQuery.ts.
 const BATHY_FILES: Record<string, string> = {
   mn_zee_nacional: '/data/shp/mn_zee_nacional.geojson',
   mn_zee_estadual: '/data/shp/mn_zee_estadual.geojson',
-  bathy_0_100_nacional: '/data/shp/bathy_0_100_nacional.geojson',
-  bathy_0_100_estadual: '/data/shp/bathy_0_100_estadual.geojson',
-  bathy_0_20_50_75_100_nacional: '/data/shp/bathy_0_20_50_75_100_nacional.geojson',
-  bathy_0_20_50_75_100_estadual: '/data/shp/bathy_0_20_50_75_100_estadual.geojson',
+  bathy_0_100_nacional: '/data/bathymetry/batimetria_0_100m_cured.geojson',
+  bathy_0_100_estadual: '/data/bathymetry/batimetria_0_100m_estadual_cured.geojson',
+  bathy_0_20_50_75_100_nacional: '/data/bathymetry/batimetria_0_20_50_75_100m_cured.geojson',
+  bathy_0_20_50_75_100_estadual: '/data/bathymetry/batimetria_subfaixas_estadual_cured.geojson',
 }
 
 const BASEMAP_TILES: Record<string, { tiles: string[]; attribution: string }> = {
@@ -60,13 +63,15 @@ const PIN_OUTLINE_LYR = 'pin-outline-lyr'
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MapViewInner(props: MapViewProps) {
-  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, basemap, onBasemapChange, onPixelClick, pinnedLocations, onAddPin, onRemovePin } = props
+  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap, onBasemapChange, onPixelClick, pinnedLocations, onAddPin, onRemovePin } = props
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const datasetRef = useRef(dataset)
   datasetRef.current = dataset
   const modelRef = useRef(model)
   modelRef.current = model
+  const opacityRef = useRef(opacity)
+  opacityRef.current = opacity
   const [ready, setReady] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const cache = useRef<Map<string, any>>(new Map())
@@ -102,7 +107,7 @@ function MapViewInner(props: MapViewProps) {
       const mdl = modelRef.current
       if (!isLoaded()) {
         onPixelClick(null, true, false, 0)
-        loadParquet(exp, mdl).then(() => {
+        loadParquet(datasetFolder(exp), mdl).then(() => {
           const p = queryNearest(lat, lng)
           onPixelClick(p, false, true, getRecordCount())
         })
@@ -126,6 +131,25 @@ function MapViewInner(props: MapViewProps) {
       }
     }
   }, [basemap, ready])
+
+  // Live opacity update on the already-rendered COG layer, no tile refetch
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+    if (m.getLayer(LR)) m.setPaintProperty(LR, 'raster-opacity', opacity)
+  }, [opacity, ready])
+
+  // Keep the pixel-query parquet in sync with the selected experiment/model.
+  // Compares against the last-synced value (captured at mount) instead of a
+  // boolean "first run" flag: a flag flips permanently on its first call, so
+  // React StrictMode's dev-only double-invoke of mount effects would treat the
+  // replay as a genuine change and fire a spurious fetch of the initial dataset.
+  const lastSyncedRef = useRef({ dataset, model })
+  useEffect(() => {
+    if (lastSyncedRef.current.dataset === dataset && lastSyncedRef.current.model === model) return
+    lastSyncedRef.current = { dataset, model }
+    loadParquet(datasetFolder(dataset), model)
+  }, [dataset, model])
 
   const drawCog = useCallback(async () => {
     const m = map.current
@@ -171,7 +195,7 @@ function MapViewInner(props: MapViewProps) {
         [west, south],
       ],
     })
-    m.addLayer({ id: LR, type: 'raster', source: SR, paint: { 'raster-opacity': 0.7, 'raster-fade-duration': 0 } })
+    m.addLayer({ id: LR, type: 'raster', source: SR, paint: { 'raster-opacity': opacityRef.current, 'raster-fade-duration': 0 } })
     if (m.getLayer(PIN_OUTLINE_LYR)) m.moveLayer(PIN_OUTLINE_LYR)
     if (m.getLayer(PIN_LYR)) m.moveLayer(PIN_LYR)
   }, [dataset, variable, height, season, model, ready])
@@ -194,12 +218,23 @@ function MapViewInner(props: MapViewProps) {
       m.addLayer({ id: BL, type: 'line', source: BS, paint: { 'line-color': '#1a5a9e', 'line-width': 0.8, 'line-opacity': 0.5 } })
       return
     }
-    fetch(file).then(r => r.json()).then(gj => {
+    fetch(file).then(r => {
+      // A dev-server SPA fallback (or a layer with no published file yet, e.g.
+      // mn_zee_*) returns 200+HTML instead of 404 — treat both as "unavailable"
+      // instead of feeding HTML to r.json() (which throws an unhandled rejection).
+      const contentType = r.headers.get('content-type') ?? ''
+      if (!r.ok || contentType.includes('text/html')) {
+        throw new Error(`Bathymetry layer not available at ${file} (status ${r.status})`)
+      }
+      return r.json()
+    }).then(gj => {
       cache.current.set(bathyLayer, gj)
       if (!map.current) return
       map.current.addSource(BS, { type: 'geojson', data: gj })
       map.current.addLayer({ id: BF, type: 'fill', source: BS, paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.15 } })
       map.current.addLayer({ id: BL, type: 'line', source: BS, paint: { 'line-color': '#1a5a9e', 'line-width': 0.8, 'line-opacity': 0.5 } })
+    }).catch(e => {
+      console.warn('MapView: bathymetry layer unavailable:', e)
     })
   }, [showBathymetry, bathyLayer, ready])
 

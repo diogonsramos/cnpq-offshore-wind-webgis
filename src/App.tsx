@@ -8,7 +8,8 @@ import TabBar, { type TabId } from './components/TabBar'
 import FAQPanel from './components/FAQPanel'
 import ProjectInfoPanel from './components/ProjectInfoPanel'
 import LandingPage from './components/LandingPage'
-import { queryDashboardLocation, isLoaded, type DashboardLocationData } from './lib/pixelQuery'
+import { queryDashboardLocation, loadParquet, type DashboardLocationData } from './lib/pixelQuery'
+import { datasetFolder } from './lib/cogCatalog'
 import type { Model, Dataset, Variable, Height, Season } from './lib/cogCatalog'
 import type { PixelDataSummary } from './lib/pixelQuery'
 import './App.css'
@@ -21,12 +22,13 @@ export default function App() {
   const [height, setHeight] = useState<Height>(100)
   const [season, setSeason] = useState<Season>('annual')
   const [showBathymetry, setShowBathymetry] = useState(true)
-  const [bathyLayer, setBathyLayer] = useState('mn_zee_nacional')
+  const [bathyLayer, setBathyLayer] = useState('bathy_0_100_nacional')
   const [pixelData, setPixelData] = useState<PixelDataSummary | null>(null)
   const [parquetLoaded, setParquetLoaded] = useState(false)
   const [parquetLoading, setParquetLoading] = useState(false)
   const [parquetCount, setParquetCount] = useState(0)
   const [basemap, setBasemap] = useState<string>('street')
+  const [cogOpacity, setCogOpacity] = useState<number>(0.7)
   const [pinnedLocations, setPinnedLocations] = useState<DashboardLocationData[]>([])
   const [showFAQ, setShowFAQ] = useState(false)
   const [showProject, setShowProject] = useState(false)
@@ -42,6 +44,35 @@ export default function App() {
     return () => document.documentElement.classList.remove('landing-mode')
   }, [tab])
 
+  // Auto-load the pixel-query parquet for the selected pair as soon as the user
+  // enters the Map or Dashboard, so "+ Add Location" works without a prior map
+  // click. loadParquet is idempotent — it no-ops when the pair is already loaded.
+  useEffect(() => {
+    if (tab === 'map' || tab === 'dashboard') {
+      loadParquet(datasetFolder(dataset), model)
+    }
+  }, [tab, dataset, model])
+
+  // A1 — pinned locations carry a snapshot of whichever pair was loaded when the
+  // point was added; when the user switches experiment/model, re-query each point
+  // against the new pair so every chart reflects the current selection.
+  useEffect(() => {
+    const current = pinnedRef.current
+    if (current.length === 0) return
+    let cancelled = false
+    ;(async () => {
+      const refreshed: DashboardLocationData[] = []
+      for (const loc of current) {
+        const data = await queryDashboardLocation(loc.lat, loc.lon, model, datasetFolder(dataset))
+        // Keep the previous snapshot when the new pair has no data (e.g. MPAS),
+        // so switching model/experiment never wipes the pinned coordinates.
+        refreshed.push(data ?? loc)
+      }
+      if (!cancelled) setPinnedLocations(refreshed)
+    })()
+    return () => { cancelled = true }
+  }, [model, dataset])
+
   const handlePixelClick = useCallback((data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => {
     setPixelData(data)
     setParquetLoading(loading)
@@ -54,17 +85,17 @@ export default function App() {
   }, [])
 
   const handleAddLocation = useCallback(async (lat: number, lon: number) => {
-    if (!isLoaded()) return
-    const current = pinnedRef.current
-    if (current.length >= 3) return
+    if (pinnedRef.current.length >= 3) return
     try {
-      const data = await queryDashboardLocation(lat, lon)
+      // Pass the current pair so queryDashboardLocation loads the parquet on demand
+      // if it isn't loaded yet — the Dashboard no longer requires a prior map click.
+      const data = await queryDashboardLocation(lat, lon, model, datasetFolder(dataset))
       if (!data) return
-      setPinnedLocations(prev => [...prev, data])
+      setPinnedLocations(prev => prev.length >= 3 ? prev : [...prev, data])
     } catch (e) {
       console.error('Failed to query dashboard location:', e)
     }
-  }, [])
+  }, [model, dataset])
 
   const handleRemoveLocation = useCallback((idx: number) => {
     setPinnedLocations(prev => prev.filter((_, i) => i !== idx))
@@ -95,6 +126,7 @@ export default function App() {
               onOpenDashboard={switchToDashboard}
               showFAQ={showFAQ} setShowFAQ={setShowFAQ}
               showProject={showProject} setShowProject={setShowProject}
+              opacity={cogOpacity} setOpacity={setCogOpacity}
             />
             <div className="map-area">
               <MapView
@@ -102,6 +134,7 @@ export default function App() {
                 season={season}
                 showBathymetry={showBathymetry} bathyLayer={bathyLayer}
                 basemap={basemap} onBasemapChange={setBasemap}
+                opacity={cogOpacity}
                 onPixelClick={handlePixelClick}
                 pinnedLocations={pinnedLocations}
                 onAddPin={handleAddLocation}
@@ -123,8 +156,8 @@ export default function App() {
           </div>
           <div className="tab-panel" style={{ display: tab === 'dashboard' ? 'flex' : 'none' }}>
             <DashboardView
-              model={model}
-              dataset={dataset}
+              model={model} setModel={setModel}
+              dataset={dataset} setDataset={setDataset}
               pinnedLocations={pinnedLocations}
               onAddLocation={handleAddLocation}
               onRemoveLocation={handleRemoveLocation}
