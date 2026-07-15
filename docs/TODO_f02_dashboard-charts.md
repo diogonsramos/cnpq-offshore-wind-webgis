@@ -1,90 +1,167 @@
-# f02 — dashboard-charts
+# f02 — dashboard-charts (Revisado)
+
+## Pré-requisito — Leitura obrigatória
+
+Antes de implementar qualquer item, leia `docs/TODO.md`:
+
+- **Fases 1 a 3.5** — já implementaram: eixos fixos nos gráficos Plotly (DashboardView, DashboardComparisonView, GeoParquetExplorer), `showlegend` condicional, padrão `chart-empty`, stub `t()` em `src/i18n/t.ts`, `hasRealDistanceData()` em `pixelQuery.ts`. **Não refazer**.
+- **Limitações de dados (linhas 124–132)** — as colunas `wpd_*` e `*_heatmap` **não existem** em nenhum GeoParquet publicado (confirmado via pyarrow nas 5 estações × 4 experimentos). Itens que dependem dessas colunas foram **removidos** deste escopo.
+- **Item C9 (linha 629)** — SSP2-4.5 e SSP5-8.5 Presente/Futuro colapsam para a mesma pasta em disco (pendente de pipeline). Não criar variações "Presente"/"Futuro" nos gráficos enquanto não houver dado distinto.
 
 ## Goal
 
-Improve the existing chart components: enlarge the Weibull chart in PixelInfoPanel, add Wind Power Density (WPD) vertical profile to both PixelInfoPanel and Dashboard, and display the heatmap data that is already returned by `pixelQuery.ts` but never rendered.
+Corrigir os gráficos Chart.js do PixelInfoPanel que ainda não foram atualizados pelo f01: ampliar Weibull, fixar ranges dos eixos, migrar textos para i18n, e remover non-null assertions inseguras.
 
 ## Files to modify
 
 - `src/components/PixelInfoPanel.tsx`
-- `src/components/DashboardView.tsx`
-- `src/components/ProfileChart.tsx` (or create `src/components/ProfileChartDual.tsx`)
 - `src/components/WeibullChart.tsx`
-- `src/App.css`
+- `src/components/ProfileChart.tsx`
+- `src/i18n/pt-BR.ts`
+- `tests/e2e/06-dashboard-controls.spec.ts`
+- `docs/TODO.md`
 
 ## Acceptance criteria
 
-- [ ] **Weibull chart enlarged** — minimum height increased from `120px` to `200px`; chart remains responsive
-- [ ] **WPD profile in PixelInfoPanel** — new section "Vertical Profile — Power Density" using `data.wpd_profile_means` shown below the existing wind speed profile
-- [ ] **WPD profile in Dashboard** — the `wpdProfileData` useMemo already exists in DashboardView; ensure it renders correctly (currently may be hidden or broken)
-- [ ] **Heatmap visualization** — create a new small component `<DirectionalHeatmap>` that renders the heatmap grid (wind speed × direction bins) as a styled HTML table or lightweight canvas; data comes from `loc.heatmap` (already populated by `queryDashboardLocation`)
-- [ ] **PixelInfoPanel shows heatmap** — when heatmap data is available, render it inside a section titled "Directional Distribution"
+- [ ] **Weibull chart enlarged** — height de `120px` para `200px`; chart permanece responsivo
+- [ ] **Weibull eixos fixos** — X `[0, 30]` m/s, Y `[0, 0.3]` (validado: c máx=11.03 → PDF em x=30 é ~0; max PDF=0.21)
+- [ ] **ProfileChart eixo X fixo** — `[0, 20]` m/s (validado: ws máx=10.25)
+- [ ] **Non-null assertion removida** — `data.weibull[10]!.k` → `data.weibull[10]?.k` em PixelInfoPanel
+- [ ] **i18n nos 3 componentes** — todos os textos usam `t('chave')` do stub já existente em `src/i18n/t.ts`
+- [ ] **5 testes E2E novos** (T73–T77) em `06-dashboard-controls.spec.ts`
+
+### Excluídos do escopo (dado inexistente)
+
+| Item original | Motivo |
+|---------------|--------|
+| WPD profile no PixelInfoPanel | `wpd_profile_means` não existe em nenhum Parquet (0 colunas) |
+| WPD profile no Dashboard | Já removido na Fase 3.4 pelo mesmo motivo |
+| DirectionalHeatmap | Colunas `*_heatmap` não existem em nenhum Parquet |
+
+Reavaliar quando o pipeline de dados publicar essas colunas (ver `docs/TODO.md` limitações).
 
 ## Behavior details
 
-- Weibull chart: keep Chart.js (already used), just increase height. Ensure tooltips and labels remain readable.
-- WPD profile: reuse the same Chart.js approach as the wind speed profile, but with different colors (`#D55E00` orange) and axis unit "W/m²"
-- Heatmap: the data structure is `Record<string, number[] | null>` where keys are like `ws10_heatmap`, `ws100_heatmap`, etc. Render as a grid: rows = direction sectors (N, NNE, ..., NNW), columns = wind speed bins. Show one heatmap per height selected.
-- All charts must handle empty/missing data gracefully (show `<div className="chart-empty">`)
+### Weibull chart
 
-### Self-explanatory charts (mandatory for ALL charts in this feature)
+- Manter Chart.js (já usado), apenas aumentar height e fixar ranges.
+- **Eixo X**: `min: 0, max: 30` (remover o `c * 3` dinâmico que viola eixo fixo).
+- **Eixo Y**: `min: 0, max: 0.3, beginAtZero: true`.
+- Tooltips e labels devem permanecer legíveis com o height maior.
 
-Every chart must be fully self-explanatory. This means:
+### Profile chart
 
-- **Main title** — descriptive, centered at the top (e.g. "Distribuição Weibull — 100m")
-- **X-axis label** — clear text on every X axis (e.g. "Velocidade do Vento (m/s)")
-- **Y-axis label** — clear text on every Y axis (e.g. "Densidade de Probabilidade f(v)")
-- **Legend** — shown whenever there are multiple datasets/traces; hidden when only one trace
-- **Fixed axis ranges** — do NOT auto-scale per location. Use consistent bounds so users can visually compare across different locations without the scale jumping:
-  - Weibull PDF: X fixed [0, 30] m/s, Y fixed [0, 0.3]
-  - Wind speed profile: X fixed [0, 20] m/s, Y [0, 210] m with tick labels at 10, 50, 100, 150, 200
-  - Power density profile: X fixed [0, 1500] W/m², Y [0, 210] m with same tick labels
-  - Seasonal bars: Y fixed [0, 20] m/s for ws, [0, 1200] W/m² for wpd
-- **Tooltips** — show exact values on hover with units
-- **Empty state** — if data is missing for a chart, show `<div className="chart-empty">` with a descriptive message (e.g. "Wind rose data not available for current selection")
+- **Eixo X**: `min: 0, max: 20`.
+- Manter `indexAxis: 'y'` (perfil horizontal).
+
+### Non-null assertion
+
+- `PixelInfoPanel.tsx:74-75`: `data.weibull[10]!.k` → `data.weibull[10]?.k`, `data.weibull[10]!.c` → `data.weibull[10]?.c`.
+- A condicional na linha 74 já protege com `?.` — o `!` é redundante e inseguro.
+
+### Self-explanatory charts (mandatory)
+
+Todo gráfico deve ser autoexplicativo:
+
+- **Título principal** — descritivo, centralizado no topo
+- **Label do eixo X** — texto claro (ex: "Velocidade do Vento (m/s)")
+- **Label do eixo Y** — texto claro (ex: "Densidade de Probabilidade f(v)")
+- **Ranges fixos** — NÃO auto-escalar. Usar bounds consistentes:
+  - Weibull PDF: X `[0, 30]` m/s, Y `[0, 0.3]`
+  - Perfil vento: X `[0, 20]` m/s, Y `[0, 210]` m com ticks em 10, 50, 100, 150, 200
+- **Tooltips** — valores exatos no hover com unidades
+- **Empty state** — se não há dado, mostrar `<div className="chart-empty">`
 
 ### i18n compliance
 
-All text rendered in charts — titles, axis labels, legend entries, tooltips, empty-state messages — must use i18n keys from f06 (`t('dashboard.chart.xxx')`). Even during f02 implementation (before f06 is merged), use the `t('key')` pattern with a comment placeholder so that when f06 is implemented, the keys are already wired.
+Usar a função `t()` já existente em `src/i18n/t.ts`:
 
-```ts
-// Example: use a simple t() stub during f02
-const t = (key: string) => {
-  const fallback: Record<string, string> = {
-    'dashboard.chart.weibull_title': 'Distribuição Weibull — {height}m',
-    'dashboard.chart.wind_speed_axis': 'Velocidade do Vento (m/s)',
-    // ... all keys needed
-  }
-  return fallback[key] || key
-}
+```typescript
+import { t } from '../i18n/t'
 ```
 
-When f06 is merged, this stub is replaced by the real `useLocale()` hook.
+A assinatura é `t(key: string, vars?: Record<string, string | number>)` e usa `{{var}}` (chaves duplas).
+
+Exemplo:
+```typescript
+t('pixel_info.button.pin', { count: String(pinnedCount) })
+// → "Fixar Local (2/3)"
+```
+
+TODOS os textos — títulos, labels de eixo, tooltips, estados vazios, legendas — devem usar `t()`.
+
+### Chaves a adicionar em `src/i18n/pt-BR.ts`
+
+```typescript
+'pixel_info.title': 'Informações do Pixel',
+'pixel_info.status.click_map': 'Clique no mapa para consultar',
+'pixel_info.status.loading': 'Carregando dados...',
+'pixel_info.status.loaded': 'Clique no mapa para ver estatísticas ({{count}} pontos carregados)',
+'pixel_info.status.no_data': 'Nenhum dado carregado',
+'pixel_info.section.location': 'Localização',
+'pixel_info.section.wind_100m': 'Velocidade do Vento — 100m',
+'pixel_info.section.wind_10m': 'Velocidade do Vento — 10m',
+'pixel_info.section.profile': 'Perfil Vertical',
+'pixel_info.section.weibull': 'Parâmetros de Weibull',
+'pixel_info.label.latitude': 'Latitude',
+'pixel_info.label.longitude': 'Longitude',
+'pixel_info.label.pixel_id': 'Pixel ID',
+'pixel_info.label.state': 'Estado',
+'pixel_info.label.bathymetry': 'Batimetria',
+'pixel_info.label.dist_coast': 'Dist. Costa',
+'pixel_info.label.mean': 'Média',
+'pixel_info.label.min': 'Mín',
+'pixel_info.label.max': 'Máx',
+'pixel_info.label.std': 'Desv. Padrão',
+'pixel_info.label.k': 'k',
+'pixel_info.label.c': 'c (m/s)',
+'pixel_info.button.pin': 'Fixar Local ({{count}}/3)',
+'pixel_info.button.max_pins': 'Máx 3 Fixados',
+'pixel_info.button.dashboard': 'Abrir Dashboard Completo',
+'chart.weibull.title': 'Distribuição Weibull — {{height}}m',
+'chart.weibull.x_axis': 'Velocidade do Vento (m/s)',
+'chart.weibull.y_axis': 'Densidade de Probabilidade f(v)',
+'chart.profile.title': 'Perfil Vertical do Vento',
+'chart.profile.x_axis': 'Velocidade (m/s)',
+'chart.profile.y_axis': 'Altura (m)',
+```
 
 ## Data flow
 
 ```
-pixelQuery.queryDashboardLocation()
-  → returns DashboardLocationData.heatmap (already implemented)
-  → DashboardView passes it to <DirectionalHeatmap>
-  → PixelInfoPanel receives via PixelDataSummary (extend if needed)
+PixelInfoPanel ← PixelDataSummary (já implementado)
+  → WeibullChart (k, c, label)
+  → ProfileChart (heights, means)
+
+Sem mudanças no pixelQuery.ts — os dados já existem.
 ```
 
 ## Test expectations
 
-- [ ] Add note in `docs/TODO.md`: f02 completed
-- [ ] Manual check: pixel info panel shows both profiles (ws + wpd)
-- [ ] Manual check: Weibull chart is visibly larger
-- [ ] Manual check: heatmap grid renders with correct dimensions
-- [ ] Manual check: all axes have fixed ranges (zoom into a low-wind location → axis still shows 0–30 m/s)
-- [ ] Manual check: chart titles and axis labels display correctly in Portuguese
-- [ ] Manual check: empty-state messages appear when data is unavailable
+- [ ] Adicionar nota em `docs/TODO.md`: f02 concluído, contagem de testes atualizada
+- [ ] T73 — Weibull chart height ≥ 200px
+- [ ] T74 — Eixo X Weibull fixo [0, 30] (último tick ≥ 25)
+- [ ] T75 — ProfileChart eixo X fixo (range visível até ~20)
+- [ ] T76 — PixelInfoPanel exibe labels em pt-BR via `t()`
+- [ ] T77 — Non-null assertion removida: Weibull 10m não quebra
 
 ## Claude Code constraints
 
 - No `any`, no `// @ts-ignore`
-- Prefer Chart.js over Plotly for the new heatmap to keep bundle size low
-- Handle null/undefined heatmap data without breaking the panel
-- Remove the non-null assertion `data.weibull[10]!.k` in PixelInfoPanel — use optional chaining
-- **Fixed axis ranges are NOT optional** — auto-scaling is explicitly forbidden for all dashboard charts
-- All chart text must be compatible with i18n (use the `t('key')` stub pattern if f06 is not yet merged)
+- Usar `t()` do stub existente — não recriar
+- **Eixos fixos NÃO são opcionais** — auto-scaling é proibido
+- NÃO implementar WPD profile nem heatmap (dado inexistente)
+- Validar com `pnpm test` (alvo: 78 + 5 = **83 passed**)
+
+## Checklist de entrega
+
+- [ ] `WeibullChart.tsx`: height 120→200, eixos fixos [0,30]×[0,0.3], textos via `t()`
+- [ ] `ProfileChart.tsx`: eixo X fixo [0,20], textos via `t()`
+- [ ] `PixelInfoPanel.tsx`: non-null `!` removido, textos via `t()`
+- [ ] `src/i18n/pt-BR.ts`: +30 chaves adicionadas
+- [ ] `tests/e2e/06-dashboard-controls.spec.ts`: +5 testes (T73–T77)
+- [ ] `docs/TODO.md`: marcar f02 concluído
+- [ ] `pnpm test:types` — 0 erros
+- [ ] `pnpm test` — 83 passed, 0 falhas
+- [ ] Nenhum `console.error` ou `pageerror` novo
+- [ ] Nenhum item de dado inexistente incluído
