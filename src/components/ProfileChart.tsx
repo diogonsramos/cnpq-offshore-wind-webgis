@@ -5,28 +5,54 @@ import {
   CategoryScale, LinearScale, PointElement, LineElement,
   Title, Tooltip, Filler,
 } from 'chart.js'
+import { t } from '../i18n/t'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler)
 
 interface ProfileChartProps {
   heights: number[]
   means: number[]
+  variant?: 'ws' | 'wpd'
 }
 
-function ProfileChartInner({ heights, means }: ProfileChartProps) {
-  if (!heights || heights.length === 0) return null
+const VARIANT_CONFIG = {
+  ws: {
+    color: '#4a90d9',
+    background: 'rgba(74,144,217,0.1)',
+    xMax: 20,
+    titleKey: 'dashboard.chart.ws_profile_title',
+    axisKey: 'dashboard.chart.wind_speed_axis',
+    unitKey: 'dashboard.chart.ws_unit',
+  },
+  wpd: {
+    color: '#D55E00',
+    background: 'rgba(213,94,0,0.12)',
+    xMax: 1500,
+    titleKey: 'dashboard.chart.wpd_profile_title',
+    axisKey: 'dashboard.chart.wpd_axis',
+    unitKey: 'dashboard.chart.wpd_unit',
+  },
+} as const
+
+function ProfileChartInner({ heights, means, variant = 'ws' }: ProfileChartProps) {
+  const cfg = VARIANT_CONFIG[variant]
+  const hasData = heights.length > 0 && means.some(v => v != null && isFinite(v))
+
+  if (!hasData) {
+    return <div className="chart-empty">{t('dashboard.chart.profile_empty')}</div>
+  }
 
   const data = {
     labels: heights.map(h => `${h}m`),
     datasets: [{
-      label: 'Vel. Vento (m/s)',
+      label: t(cfg.axisKey),
       data: means,
-      borderColor: '#4a90d9',
-      backgroundColor: 'rgba(74,144,217,0.1)',
+      borderColor: cfg.color,
+      backgroundColor: cfg.background,
       fill: true,
       tension: 0.3,
       pointRadius: 4,
-      pointBackgroundColor: '#4a90d9',
+      pointBackgroundColor: cfg.color,
     }],
   }
 
@@ -35,22 +61,25 @@ function ProfileChartInner({ heights, means }: ProfileChartProps) {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      title: { display: true, text: 'Perfil Vertical do Vento', font: { size: 11 }, color: '#555', padding: { bottom: 8 } },
+      title: { display: true, text: t(cfg.titleKey), font: { size: 11 }, color: '#555', padding: { bottom: 8 } },
+      legend: { display: false },
       tooltip: {
         callbacks: {
-          title: (items: any) => `${items[0].raw.toFixed(2)} m/s`,
+          title: (items: any) => `${items[0].raw.toFixed(2)} ${t(cfg.unitKey)}`,
           label: (item: any) => `${heights[item.dataIndex]}m`,
         },
       },
     },
     scales: {
       x: {
-        title: { display: true, text: 'Velocidade (m/s)', font: { size: 10 } },
+        title: { display: true, text: t(cfg.axisKey), font: { size: 10 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
+        min: 0,
+        max: cfg.xMax,
       },
       y: {
         reverse: true,
-        title: { display: true, text: 'Altura (m)', font: { size: 10 } },
+        title: { display: true, text: t('dashboard.chart.height_axis'), font: { size: 10 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
       },
     },

@@ -88,6 +88,7 @@ export interface PixelDataSummary {
   profile_means: number[]
   wpd_profile_means: number[]
   weibull: Record<number, { k: number; c: number } | null>
+  heatmap: Record<string, number[] | null>
 }
 
 interface RawWeibull { k: number; c: number }
@@ -351,6 +352,16 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
     }
   }
 
+  const heatmap: Record<string, number[] | null> = {}
+  if (annualRow) {
+    for (const h of HEIGHTS) {
+      for (const prefix of ['ws', 'wpd']) {
+        const hmKey = `${prefix}${h}_heatmap`
+        heatmap[hmKey] = safeArray(annualRow[hmKey])
+      }
+    }
+  }
+
   return {
     pixel_id: best.pixel_id,
     lat: best.lat,
@@ -364,6 +375,7 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
     profile_means: safeArray(best.profile_means),
     wpd_profile_means: safeArray(best.wpd_profile_means),
     weibull: buildWeibullRecord(best),
+    heatmap,
   }
 }
 

@@ -2,6 +2,7 @@ import { memo } from 'react'
 import type { PixelDataSummary } from '../lib/pixelQuery'
 import ProfileChart from './ProfileChart'
 import WeibullChart from './WeibullChart'
+import DirectionalHeatmap from './DirectionalHeatmap'
 
 interface PixelInfoPanelProps {
   data: PixelDataSummary | null
@@ -60,9 +61,13 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
 
             {data.profile_heights.length > 0 && (
               <Section title="Vertical Profile">
-                <ProfileChart heights={data.profile_heights} means={data.profile_means} />
+                <ProfileChart heights={data.profile_heights} means={data.profile_means} variant="ws" />
               </Section>
             )}
+
+            <Section title="Vertical Profile — Power Density">
+              <ProfileChart heights={data.profile_heights} means={data.wpd_profile_means} variant="wpd" />
+            </Section>
 
             {data.weibull[100] && (
               <Section title="Weibull Parameters">
@@ -72,10 +77,17 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
                 <Row label="WS100 c" value={fmt(data.weibull[100]?.c, ' m/s')} />
                 <WeibullChart k={data.weibull[100]?.k ?? null} c={data.weibull[100]?.c ?? null} label="100m" />
                 {data.weibull[10]?.k != null && data.weibull[10]?.c != null && (
-                  <WeibullChart k={data.weibull[10]!.k} c={data.weibull[10]!.c} label="10m" />
+                  <WeibullChart k={data.weibull[10]?.k ?? null} c={data.weibull[10]?.c ?? null} label="10m" />
                 )}
               </Section>
             )}
+
+            <Section title="Directional Distribution">
+              <DirectionalHeatmap data={data.heatmap['ws100_heatmap']} variable="ws" height={100} />
+              {data.heatmap['ws10_heatmap'] && data.heatmap['ws10_heatmap'].length > 0 && (
+                <DirectionalHeatmap data={data.heatmap['ws10_heatmap']} variable="ws" height={10} />
+              )}
+            </Section>
 
             <div className="pixel-panel-actions">
               <button className="pin-button" onClick={() => onAddPin(data.lat, data.lon)} disabled={pinnedCount >= 3}>

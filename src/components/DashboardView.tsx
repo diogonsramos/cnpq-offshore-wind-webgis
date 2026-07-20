@@ -13,6 +13,7 @@ import {
 import MiniMap from './MiniMap'
 import DashboardComparisonView from './DashboardComparisonView'
 import GeoParquetExplorer from './GeoParquetExplorer'
+import DirectionalHeatmap from './DirectionalHeatmap'
 import Plot from 'react-plotly.js'
 import { t } from '../i18n/t'
 
@@ -93,6 +94,20 @@ function DashboardViewInner({
       })),
     }
   }, [pinnedLocations, modelLabelStr, datasetLabelStr])
+
+  const wpdProfileData = useMemo(() => {
+    if (pinnedLocations.length === 0) return { heights: [] as number[], datasets: [] as { label: string; data: number[]; borderColor: string }[] }
+    return {
+      heights: pinnedLocations[0].profile_heights,
+      datasets: pinnedLocations.map((loc, i) => ({
+        label: locLabel(loc, i),
+        data: loc.wpd_profile_means.length > 0 ? loc.wpd_profile_means : [],
+        borderColor: COLORS[i],
+      })),
+    }
+  }, [pinnedLocations, modelLabelStr, datasetLabelStr])
+
+  const hasWpdProfileData = wpdProfileData.datasets.some(ds => ds.data.some(v => v != null && isFinite(v)))
 
   const emptyMsg = pinnedLocations.length === 0
     ? 'Click the map or enter coordinates to add locations.'
@@ -224,7 +239,7 @@ function DashboardViewInner({
                     xaxis: { title: { text: 'Sazonalidade', standoff: 10 } },
                     yaxis: {
                       title: { text: `${varLabel(dashboardVar).label} (${varUnit})`, standoff: 10 },
-                      range: dashboardVar === 'ws' ? [0, 25] : [0, 1500],
+                      range: dashboardVar === 'ws' ? [0, 20] : [0, 1200],
                       zeroline: false,
                       hoverformat: '.2f',
                     },
@@ -347,10 +362,10 @@ function DashboardViewInner({
                     hovertemplate: '%{x:.2f}<extra></extra>',
                   }))}
                   layout={{
-                    title: { text: 'Perfil Vertical — Velocidade do Vento' },
+                    title: { text: t('dashboard.chart.ws_profile_title') },
                     xaxis: {
-                      title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
-                      range: [0, 25],
+                      title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 },
+                      range: [0, 20],
                       zeroline: false,
                       hoverformat: '.2f',
                     },
@@ -369,6 +384,57 @@ function DashboardViewInner({
                   useResizeHandler
                 />
               </div>
+
+              <div className="chart-card" data-testid="chart-wpd-profile">
+                {hasWpdProfileData ? (
+                  <Plot
+                    data={wpdProfileData.datasets.map((ds, i) => ({
+                      x: ds.data,
+                      y: wpdProfileData.heights,
+                      type: 'scatter' as const,
+                      mode: 'lines+markers' as const,
+                      name: ds.label,
+                      line: { color: COLORS[i], width: 2 },
+                      marker: { color: COLORS[i], size: 6 },
+                      hovertemplate: `%{x:.1f} ${t('dashboard.chart.wpd_unit')}<extra></extra>`,
+                    }))}
+                    layout={{
+                      title: { text: t('dashboard.chart.wpd_profile_title') },
+                      xaxis: {
+                        title: { text: t('dashboard.chart.wpd_axis'), standoff: 10 },
+                        range: [0, 1500],
+                        zeroline: false,
+                        hoverformat: '.1f',
+                      },
+                      yaxis: profileYAxis,
+                      height: 260,
+                      margin: { t: 40, b: 40, l: 55, r: 20 },
+                      paper_bgcolor: 'transparent',
+                      plot_bgcolor: 'transparent',
+                      font: CHART_FONT,
+                      showlegend: false,
+                      hovermode: 'y unified',
+                      hoverlabel: HOVER_LABEL_STYLE,
+                    }}
+                    config={PLOT_CONFIG}
+                    style={{ width: '100%' }}
+                    useResizeHandler
+                  />
+                ) : (
+                  <div className="chart-empty">{t('dashboard.chart.profile_empty')}</div>
+                )}
+              </div>
+
+              {pinnedLocations.map((loc, i) => (
+                <div key={i} className="chart-card chart-card--wide" data-testid="chart-heatmap">
+                  <div className="heatmap-loc-label" style={{ borderLeftColor: COLORS[i] }}>{locLabel(loc, i)}</div>
+                  <DirectionalHeatmap
+                    data={loc.heatmap[`${dashboardVar}${dashboardHeight}_heatmap`]}
+                    variable={dashboardVar}
+                    height={dashboardHeight}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}

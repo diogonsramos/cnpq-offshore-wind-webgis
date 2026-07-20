@@ -343,6 +343,43 @@ A mesma função `datasetFolder()` também colapsa `SSP2-4.5_presente`/`SSP2-4.5
 
 ---
 
+## ✅ f02 — Gráficos do Dashboard: Weibull maior, Perfil WPD e Heatmap Direcional — 2026-07-20
+
+> **Status:** Implementado e validado (`pnpm test` — 83 passed, `pnpm test:types` — 0 erros). Escopo completo no `TODO.md` (raiz do projeto, ticket `f02 — dashboard-charts`).
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| **Weibull chart maior no Pixel Info** | `WeibullChart.tsx` (Chart.js, usado no `PixelInfoPanel`): altura do canvas `120` → `200`. Eixo X passou a gerar sempre o range fixo `[0, 30]` m/s (antes ia até `c*3`, variável por localização); eixo Y fixo em `[0, 0.3]`. Legenda escondida (`legend: { display: false }`) — só há 1 traço por instância do componente, o `k=`/`c=` já aparece no título e nas linhas acima do gráfico. |
+| **Perfil Vertical — Densidade de Potência (WPD)** | Novo `variant?: 'ws' \| 'wpd'` em `ProfileChart.tsx` (mesmo componente Chart.js do perfil de velocidade, parametrizado por cor/eixo/range — evita duplicar o componente). Renderizado no `PixelInfoPanel.tsx` logo abaixo do perfil de velocidade, e como novo `chart-card` (`data-testid="chart-wpd-profile"`) na Visão Simples do `DashboardView.tsx`, com o mesmo `wsProfileData`→`wpdProfileData` (`useMemo` análogo, lendo `loc.wpd_profile_means`). **Este gráfico já existiu e foi removido na Fase 3.4** por renderizar sempre vazio (`wpd_profile_means` não é publicado em nenhum GeoParquet real, categoria B do TOFIX/Fase 3.3) — desta vez ele volta acoplado a uma checagem de dado real (`hasWpdProfileData`) que mostra `chart-empty` com mensagem em vez do gráfico degenerado, então não repete o bug: hoje mostra corretamente o estado vazio; assim que o pipeline publicar a coluna, passa a mostrar o gráfico sem nenhuma mudança de código. |
+| **Distribuição Direcional (heatmap ws/wpd × setor)** | Novo componente `DirectionalHeatmap.tsx` — tabela HTML estilizada (não Plotly/Chart.js, para não pesar o bundle) com 16 linhas (setores de `SECTOR_LABELS`) × N colunas (bins de velocidade/potência, inferidos dividindo o tamanho do array plano por 16 — a única forma possível já que o array não carrega metadado de nº de bins) e coloração de célula proporcional ao valor (paleta Okabe-Ito azul→vermelho). Usa `loc.heatmap['{variável}{altura}_heatmap']` (já populado por `queryDashboardLocation`) — extraído também para `queryNearest()`/`PixelDataSummary` (não existia lá antes) para alimentar a seção "Directional Distribution" do `PixelInfoPanel`. Um card por localização fixada na Visão Simples (`data-testid="chart-heatmap"`, `chart-card--wide` ocupando as 2 colunas do grid). Mesma limitação de dado do item anterior: nenhum GeoParquet real publica colunas `*_heatmap` hoje, então o estado vazio é o que aparece na prática — confirmado visualmente via dev server. |
+| **Ranges fixos de eixo (não autoescalam por localização)** | Alinhados aos valores do ticket: Weibull `x[0,30]`/`y[0,0.3]` (acima), Perfil WS `x[0,20]` (era `[0,25]` no Plotly da Visão Simples e no Chart.js do Pixel Info), Perfil WPD `x[0,1500]`, Média Sazonal `y[0,20]` para `ws` / `y[0,1200]` para `wpd` (eram `[0,25]`/`[0,1500]`). Eixo Y dos perfis (altura) continua com os ticks fixos `10/50/100/150/200` já existentes (`HEIGHT_TICKVALS`/`profileYAxis`), que já eram fixos antes do f02. |
+| **i18n dos textos novos** | Novas chaves `dashboard.chart.*` em `pt-BR.ts` (títulos, eixos, unidades, mensagens de estado vazio) — usadas via `t()` real (já mergeado desde `f06`) em `WeibullChart.tsx`, `ProfileChart.tsx`, `DirectionalHeatmap.tsx` e nos 2 novos cards Plotly do `DashboardView.tsx`. Os cards Plotly pré-existentes (Média Sazonal, Weibull, Rosa dos Ventos) mantiveram os textos hardcoded em pt-BR já registrados como limitação nas Fases 1/2 (fora do escopo do `f02`, que listava só os arquivos acima). |
+| **Remoção da non-null assertion** | `PixelInfoPanel.tsx`: `data.weibull[10]!.k`/`!.c` → `data.weibull[10]?.k ?? null`/`?.c ?? null`, igual ao padrão já usado para `weibull[100]` na mesma seção. |
+
+### Testes novos — T73–T77
+
+| Teste | Arquivo | O que valida |
+|---|---|---|
+| T73 | `09-dashboard-charts.spec.ts` | Card de Perfil WPD aparece na Visão Simples com estado vazio (dado não publicado) |
+| T74 | `09-dashboard-charts.spec.ts` | Card de heatmap aparece 1x por local fixado (rótulo "Loc N"), com estado vazio |
+| T75 | `09-dashboard-charts.spec.ts` | Média Sazonal: eixo Y fixo em `[0, 20]` m/s |
+| T76 | `09-dashboard-charts.spec.ts` | Perfil Vertical (Velocidade): eixo X fixo em `[0, 20]` m/s |
+| T77 | `09-dashboard-charts.spec.ts` | Nenhum erro de console ao renderizar os 2 novos cards e trocar variável/altura |
+
+**Validação manual (checklist do ticket):** verificado via dev server + clique real no mapa (screenshot) — Pixel Info mostra o perfil WS, a seção "Vertical Profile — Power Density" (estado vazio em pt-BR) e "Directional Distribution" (estado vazio em pt-BR) abaixo do Weibull, agora visivelmente maior (2 instâncias, 100m e 10m); nenhum erro de console. Lógica de divisão do heatmap (16 setores × N bins) verificada isoladamente para vários tamanhos de array (16/32/48/160 → ok; 17/0 → estado vazio, como esperado).
+
+### Observação — mesma limitação de pipeline das fases anteriores
+
+Os dois recursos novos mais visíveis (Perfil WPD e Heatmap Direcional) dependem de colunas que a categoria B do TOFIX (Fase 3.3) já registra como ausentes em todo GeoParquet publicado hoje (`wpd_profile_means`, e agora também `*_heatmap`, que nem chegou a ser listada por ainda não ter sido um requisito). Não é um bug desta entrega — os componentes foram construídos para mostrar o estado vazio corretamente enquanto isso, e passam a exibir dado real automaticamente assim que o pipeline publicar essas colunas, sem qualquer mudança de código adicional.
+
+### Arquivos modificados
+
+`src/lib/pixelQuery.ts`, `src/components/WeibullChart.tsx`, `src/components/ProfileChart.tsx`, `src/components/DirectionalHeatmap.tsx` (novo), `src/components/PixelInfoPanel.tsx`, `src/components/DashboardView.tsx`, `src/i18n/pt-BR.ts`, `src/App.css`, `tests/e2e/09-dashboard-charts.spec.ts` (novo)
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.
