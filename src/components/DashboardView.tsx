@@ -1,14 +1,14 @@
-import { useState, useMemo, memo } from 'react'
+import { useState, useMemo, useEffect, memo, type ReactNode } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
-import { type DashboardLocationData, queryPixelStat } from '../lib/pixelQuery'
+import { type DashboardLocationData, queryPixelStat, seasonStat } from '../lib/pixelQuery'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG, WINDROSE_PLOT_CONFIG,
-  CHART_FONT, HOVER_LABEL_STYLE,
+  CHART_FONT, HOVER_LABEL_STYLE, windSpeedColor, WS_LEGEND_GRADIENT,
 } from '../lib/dashboardChartConstants'
 import MiniMap from './MiniMap'
 import DashboardComparisonView from './DashboardComparisonView'
@@ -18,6 +18,42 @@ import Plot from 'react-plotly.js'
 import { t } from '../i18n/t'
 
 type DashboardTab = 'simple' | 'compare_exp' | 'compare_model' | 'geoparquet'
+
+function fmtCsvValue(v: number | null): string {
+  return v == null || !isFinite(v) ? '' : String(v)
+}
+
+// Shared fullscreen toggle chrome for every `.chart-card` — extracted because the
+// same button/backdrop/class logic would otherwise repeat across 6+ chart cards.
+function ChartCard({
+  id, wide, testId, fullscreenId, onToggleFullscreen, children,
+}: {
+  id: string
+  wide?: boolean
+  testId?: string
+  fullscreenId: string | null
+  onToggleFullscreen: (id: string) => void
+  children: ReactNode
+}) {
+  const isFullscreen = fullscreenId === id
+  const cls = `chart-card${wide ? ' chart-card--wide' : ''}${isFullscreen ? ' chart-card--fullscreen' : ''}`
+  return (
+    <>
+      {isFullscreen && <div className="chart-fullscreen-backdrop" onClick={() => onToggleFullscreen(id)} />}
+      <div className={cls} data-testid={testId}>
+        <button
+          className="chart-fullscreen-btn"
+          onClick={() => onToggleFullscreen(id)}
+          title={isFullscreen ? 'Restaurar' : 'Tela cheia'}
+          aria-label={isFullscreen ? 'Restaurar gráfico' : 'Expandir gráfico'}
+        >
+          {isFullscreen ? '✕' : '⛶'}
+        </button>
+        {children}
+      </div>
+    </>
+  )
+}
 
 interface DashboardViewProps {
   model: Model
@@ -44,6 +80,57 @@ function DashboardViewInner({
   const [latInput, setLatInput] = useState('')
   const [lonInput, setLonInput] = useState('')
   const [locError, setLocError] = useState('')
+  const [fullscreenChart, setFullscreenChart] = useState<string | null>(null)
+
+  const toggleFullscreen = (id: string) => {
+    setFullscreenChart(prev => (prev === id ? null : id))
+    // react-plotly.js's useResizeHandler only recomputes on a window 'resize'
+    // event — the chart-card growing to viewport size doesn't fire one itself.
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
+  }
+
+  // Plotly layout.height is a fixed pixel number, not CSS — grow it explicitly
+  // when its card is fullscreen so the chart actually fills the extra space.
+  const plotHeight = (id: string): number =>
+    fullscreenChart === id ? Math.max(400, window.innerHeight - 160) : 260
+
+  useEffect(() => {
+    if (!fullscreenChart) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFullscreenChart(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [fullscreenChart])
+
+  const handleDownloadCsv = () => {
+    const header = ['location', 'variable', 'height', 'season', 'mean', 'min', 'max', 'std']
+    const rows: string[] = [header.join(',')]
+    pinnedLocations.forEach((loc, i) => {
+      const label = locLabel(loc, i)
+      SEASON_ORDER.forEach(season => {
+        ;(['ws', 'wpd'] as const).forEach(v => {
+          HEIGHTS.forEach(h => {
+            const mean = seasonStat(loc, v, h, season, 'mean')
+            const min = seasonStat(loc, v, h, season, 'min')
+            const max = seasonStat(loc, v, h, season, 'max')
+            const std = seasonStat(loc, v, h, season, 'std')
+            rows.push([label, v, String(h), season, fmtCsvValue(mean), fmtCsvValue(min), fmtCsvValue(max), fmtCsvValue(std)].join(','))
+          })
+        })
+      })
+    })
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const dateStr = new Date().toISOString().slice(0, 10)
+    a.href = url
+    a.download = `webgis-dashboard-${dateStr}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   const modelLabelStr = modelLabel(model)
   const datasetLabelStr = datasetLabel(dataset)
@@ -108,6 +195,21 @@ function DashboardViewInner({
   }, [pinnedLocations, modelLabelStr, datasetLabelStr])
 
   const hasWpdProfileData = wpdProfileData.datasets.some(ds => ds.data.some(v => v != null && isFinite(v)))
+
+  // Shared across every pinned location's wind rose trace so sector fill color
+  // is comparable between locations instead of each being scaled to its own max.
+  const windRoseMaxSpeed = useMemo(() => {
+    let max = 0
+    for (const loc of pinnedLocations) {
+      const wr = loc.wind_rose?.[dashboardHeight]
+      if (!wr) continue
+      for (const s of SECTOR_LABELS) {
+        const v = wr[s]?.mean_ws ?? 0
+        if (v > max) max = v
+      }
+    }
+    return max
+  }, [pinnedLocations, dashboardHeight])
 
   const emptyMsg = pinnedLocations.length === 0
     ? 'Click the map or enter coordinates to add locations.'
@@ -185,6 +287,14 @@ function DashboardViewInner({
               ))}
             </select>
           </div>
+          <button
+            className="dv-export-btn"
+            onClick={handleDownloadCsv}
+            disabled={pinnedLocations.length === 0}
+            title="Exportar dados de todos os pontos e sazonalidades em CSV"
+          >
+            ⬇ Download CSV
+          </button>
         </div>
 
         <div className="dv-location-bar">
@@ -224,7 +334,7 @@ function DashboardViewInner({
         ) : (
           <div className="dv-main">
             <div className="dv-chart-grid">
-              <div className="chart-card" data-testid="chart-seasonal">
+              <ChartCard id="seasonal" testId="chart-seasonal" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                 <Plot
                   data={seasonChartData.datasets.map((ds, i) => ({
                     x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
@@ -243,7 +353,7 @@ function DashboardViewInner({
                       zeroline: false,
                       hoverformat: '.2f',
                     },
-                    height: 260,
+                    height: plotHeight('seasonal'),
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
@@ -256,9 +366,9 @@ function DashboardViewInner({
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
-              </div>
+              </ChartCard>
 
-              <div className="chart-card" data-testid="chart-weibull">
+              <ChartCard id="weibull" testId="chart-weibull" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                 <Plot
                   data={pinnedLocations.map((loc, i) => {
                     const w = loc.weibull?.[dashboardHeight]
@@ -294,7 +404,7 @@ function DashboardViewInner({
                       zeroline: false,
                       hoverformat: '.4f',
                     },
-                    height: 260,
+                    height: plotHeight('weibull'),
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
@@ -308,32 +418,37 @@ function DashboardViewInner({
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
-              </div>
+              </ChartCard>
 
-              <div className="chart-card" data-testid="chart-windrose">
+              <ChartCard id="windrose" testId="chart-windrose" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                 <Plot
                   data={pinnedLocations.map((loc, i) => {
                     const wr = loc.wind_rose?.[dashboardHeight]
-                    if (!wr) return { r: [], theta: [], type: 'scatterpolar', name: locLabel(loc, i) }
+                    if (!wr) return { r: [], theta: [], type: 'barpolar', name: locLabel(loc, i) }
+                    const speeds = SECTOR_LABELS.map(s => wr[s]?.mean_ws ?? 0)
                     return {
                       r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
                       theta: SECTOR_LABELS,
-                      type: 'scatterpolar' as const,
-                      fill: 'toself',
+                      type: 'barpolar' as const,
                       name: locLabel(loc, i),
-                      marker: { color: COLORS[i] },
-                      hovertemplate: '%{theta}: %{r:.1f}%<extra></extra>',
-                      hoverlabel: { bgcolor: COLORS[i] },
+                      marker: {
+                        color: speeds.map(v => windSpeedColor(v, windRoseMaxSpeed)),
+                        line: { color: COLORS[i], width: 1.5 },
+                      },
+                      opacity: 0.85,
+                      customdata: speeds,
+                      hovertemplate: '%{theta}: %{r:.1f}%<br>Vel. média: %{customdata:.2f} m/s<extra></extra>',
                     }
                   })}
                   layout={{
                     title: { text: `Rosa dos Ventos — ${dashboardHeight}m` },
-                    height: 260,
+                    height: plotHeight('windrose'),
                     margin: { t: 40, b: 30, l: 50, r: 50 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
                     font: CHART_FONT,
                     showlegend: false,
+                    barmode: 'overlay',
                     hoverlabel: { font: { size: 12, color: '#fff' } },
                     polar: {
                       angularaxis: {
@@ -347,9 +462,16 @@ function DashboardViewInner({
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
-              </div>
+                {windRoseMaxSpeed > 0 && (
+                  <div className="windrose-legend">
+                    <span className="windrose-legend-label">0 m/s</span>
+                    <div className="windrose-legend-bar" style={{ background: WS_LEGEND_GRADIENT }} />
+                    <span className="windrose-legend-label">{windRoseMaxSpeed.toFixed(1)} m/s</span>
+                  </div>
+                )}
+              </ChartCard>
 
-              <div className="chart-card">
+              <ChartCard id="ws-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                 <Plot
                   data={wsProfileData.datasets.map((ds, i) => ({
                     x: ds.data,
@@ -370,7 +492,7 @@ function DashboardViewInner({
                       hoverformat: '.2f',
                     },
                     yaxis: profileYAxis,
-                    height: 260,
+                    height: plotHeight('ws-profile'),
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
@@ -383,9 +505,9 @@ function DashboardViewInner({
                   style={{ width: '100%' }}
                   useResizeHandler
                 />
-              </div>
+              </ChartCard>
 
-              <div className="chart-card" data-testid="chart-wpd-profile">
+              <ChartCard id="wpd-profile" testId="chart-wpd-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                 {hasWpdProfileData ? (
                   <Plot
                     data={wpdProfileData.datasets.map((ds, i) => ({
@@ -407,7 +529,7 @@ function DashboardViewInner({
                         hoverformat: '.1f',
                       },
                       yaxis: profileYAxis,
-                      height: 260,
+                      height: plotHeight('wpd-profile'),
                       margin: { t: 40, b: 40, l: 55, r: 20 },
                       paper_bgcolor: 'transparent',
                       plot_bgcolor: 'transparent',
@@ -423,17 +545,17 @@ function DashboardViewInner({
                 ) : (
                   <div className="chart-empty">{t('dashboard.chart.profile_empty')}</div>
                 )}
-              </div>
+              </ChartCard>
 
               {pinnedLocations.map((loc, i) => (
-                <div key={i} className="chart-card chart-card--wide" data-testid="chart-heatmap">
+                <ChartCard key={i} id={`heatmap-${i}`} wide testId="chart-heatmap" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                   <div className="heatmap-loc-label" style={{ borderLeftColor: COLORS[i] }}>{locLabel(loc, i)}</div>
                   <DirectionalHeatmap
                     data={loc.heatmap[`${dashboardVar}${dashboardHeight}_heatmap`]}
                     variable={dashboardVar}
                     height={dashboardHeight}
                   />
-                </div>
+                </ChartCard>
               ))}
             </div>
           </div>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, memo, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { renderCog } from '../lib/cogTileRenderer'
-import { buildCogUrl, datasetFolder, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
+import { buildCogUrl, datasetFolder, datasetLabel, modelLabel, varLabel, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
 import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '../lib/pixelQuery'
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
 import BasemapSwitcher from './BasemapSwitcher'
@@ -54,9 +54,25 @@ const BASEMAP_TILES: Record<string, { tiles: string[]; attribution: string }> = 
     tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
     attribution: '&copy; CARTO',
   },
+  terrain: {
+    tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+    attribution: 'Terrain tiles &copy; Mapzen, AWS Open Data Terrain Tiles',
+  },
+  night: {
+    tiles: ['https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_CityLights_2012/default/2012-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg'],
+    attribution: '&copy; NASA EOSDIS GIBS / Black Marble',
+  },
+  topo: {
+    tiles: [
+      'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
+      'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
+      'https://c.tile.opentopomap.org/{z}/{x}/{y}.png',
+    ],
+    attribution: '&copy; OpenTopoMap (CC-BY-SA)',
+  },
 }
 
-const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-dark']
+const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-dark', 'basemap-terrain', 'basemap-night', 'basemap-topo']
 const PIN_SRC = 'pin-src'
 const PIN_LYR = 'pin-lyr'
 const PIN_OUTLINE_LYR = 'pin-outline-lyr'
@@ -73,6 +89,7 @@ function MapViewInner(props: MapViewProps) {
   const opacityRef = useRef(opacity)
   opacityRef.current = opacity
   const [ready, setReady] = useState(false)
+  const [cogLoading, setCogLoading] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const cache = useRef<Map<string, any>>(new Map())
   const cogAbort = useRef<AbortController | null>(null)
@@ -81,17 +98,27 @@ function MapViewInner(props: MapViewProps) {
     if (!container.current || map.current) return
     const m = new maplibregl.Map({
       container: container.current,
+      // Required so map.getCanvas() still holds pixel data after the WebGL
+      // context's frame buffer would otherwise be cleared — the map-screenshot
+      // feature reads this canvas via toDataURL() outside the render loop.
+      preserveDrawingBuffer: true,
       style: {
         version: 8,
         sources: {
           'basemap-street': { type: 'raster', tiles: BASEMAP_TILES.street.tiles, tileSize: 256, attribution: BASEMAP_TILES.street.attribution },
           'basemap-satellite': { type: 'raster', tiles: BASEMAP_TILES.satellite.tiles, tileSize: 256, attribution: BASEMAP_TILES.satellite.attribution },
           'basemap-dark': { type: 'raster', tiles: BASEMAP_TILES.dark.tiles, tileSize: 256, attribution: BASEMAP_TILES.dark.attribution },
+          'basemap-terrain': { type: 'raster-dem', tiles: BASEMAP_TILES.terrain.tiles, tileSize: 256, encoding: 'terrarium', attribution: BASEMAP_TILES.terrain.attribution },
+          'basemap-night': { type: 'raster', tiles: BASEMAP_TILES.night.tiles, tileSize: 256, maxzoom: 8, attribution: BASEMAP_TILES.night.attribution },
+          'basemap-topo': { type: 'raster', tiles: BASEMAP_TILES.topo.tiles, tileSize: 256, attribution: BASEMAP_TILES.topo.attribution },
         },
         layers: [
           { id: 'basemap-street-lyr', type: 'raster', source: 'basemap-street' },
           { id: 'basemap-satellite-lyr', type: 'raster', source: 'basemap-satellite', layout: { visibility: 'none' } },
           { id: 'basemap-dark-lyr', type: 'raster', source: 'basemap-dark', layout: { visibility: 'none' } },
+          { id: 'basemap-terrain-lyr', type: 'hillshade', source: 'basemap-terrain', layout: { visibility: 'none' }, paint: { 'hillshade-exaggeration': 0.6 } },
+          { id: 'basemap-night-lyr', type: 'raster', source: 'basemap-night', layout: { visibility: 'none' } },
+          { id: 'basemap-topo-lyr', type: 'raster', source: 'basemap-topo', layout: { visibility: 'none' } },
         ],
       },
       center: [-38, -13],
@@ -159,45 +186,52 @@ function MapViewInner(props: MapViewProps) {
     const ac = new AbortController()
     cogAbort.current = ac
     const signal = ac.signal
+    setCogLoading(true)
 
-    const url = buildCogUrl(dataset, variable, height, season, model)
+    try {
+      const url = buildCogUrl(dataset, variable, height, season, model)
 
-    if (m.getLayer(LR)) m.removeLayer(LR)
-    if (m.getSource(SR)) m.removeSource(SR)
+      if (m.getLayer(LR)) m.removeLayer(LR)
+      if (m.getSource(SR)) m.removeSource(SR)
 
-    const mb = m.getBounds()
-    const zoom = m.getZoom()
-    const vb = {
-      west: Math.max(mb.getWest(), -55),
-      south: Math.max(mb.getSouth(), -35),
-      east: Math.min(mb.getEast(), -25),
-      north: Math.min(mb.getNorth(), 6),
+      const mb = m.getBounds()
+      const zoom = m.getZoom()
+      const vb = {
+        west: Math.max(mb.getWest(), -55),
+        south: Math.max(mb.getSouth(), -35),
+        east: Math.min(mb.getEast(), -25),
+        north: Math.min(mb.getNorth(), 6),
+      }
+      if (vb.north <= vb.south || vb.east <= vb.west) return
+
+      const result = await renderCog(url, vb, zoom, variable, signal)
+      if (signal.aborted || !result || !map.current) return
+
+      const { dataUrl, coords } = result
+      const [west, south, east, north] = coords
+      if (!isFinite(west) || !isFinite(south) || !isFinite(east) || !isFinite(north)) return
+
+      if (m.getSource(SR)) m.removeSource(SR)
+      if (m.getLayer(LR)) m.removeLayer(LR)
+
+      m.addSource(SR, {
+        type: 'image',
+        url: dataUrl,
+        coordinates: [
+          [west, north],
+          [east, north],
+          [east, south],
+          [west, south],
+        ],
+      })
+      m.addLayer({ id: LR, type: 'raster', source: SR, paint: { 'raster-opacity': opacityRef.current, 'raster-fade-duration': 0 } })
+      if (m.getLayer(PIN_OUTLINE_LYR)) m.moveLayer(PIN_OUTLINE_LYR)
+      if (m.getLayer(PIN_LYR)) m.moveLayer(PIN_LYR)
+    } finally {
+      // A newer drawCog call already aborted this one and set loading back to
+      // true for itself — clearing it here would hide the spinner mid-fetch.
+      if (!signal.aborted) setCogLoading(false)
     }
-    if (vb.north <= vb.south || vb.east <= vb.west) return
-
-    const result = await renderCog(url, vb, zoom, variable, signal)
-    if (signal.aborted || !result || !map.current) return
-
-    const { dataUrl, coords } = result
-    const [west, south, east, north] = coords
-    if (!isFinite(west) || !isFinite(south) || !isFinite(east) || !isFinite(north)) return
-
-    if (m.getSource(SR)) m.removeSource(SR)
-    if (m.getLayer(LR)) m.removeLayer(LR)
-
-    m.addSource(SR, {
-      type: 'image',
-      url: dataUrl,
-      coordinates: [
-        [west, north],
-        [east, north],
-        [east, south],
-        [west, south],
-      ],
-    })
-    m.addLayer({ id: LR, type: 'raster', source: SR, paint: { 'raster-opacity': opacityRef.current, 'raster-fade-duration': 0 } })
-    if (m.getLayer(PIN_OUTLINE_LYR)) m.moveLayer(PIN_OUTLINE_LYR)
-    if (m.getLayer(PIN_LYR)) m.moveLayer(PIN_LYR)
   }, [dataset, variable, height, season, model, ready])
 
   useEffect(() => {
@@ -346,7 +380,56 @@ function MapViewInner(props: MapViewProps) {
     return () => ro.disconnect()
   }, [ready])
 
-  return <div ref={container} className="map-container" />
+  const handleScreenshot = useCallback(() => {
+    const m = map.current
+    if (!m) return
+    const src = m.getCanvas()
+    const dataUrl = src.toDataURL('image/png')
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0)
+
+      const label = `CNPq WebGIS — ${modelLabel(modelRef.current)} ${datasetLabel(datasetRef.current)} ${varLabel(variable).label} ${height}m`
+      ctx.font = '14px sans-serif'
+      const textWidth = ctx.measureText(label).width
+      const padX = 8
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'
+      ctx.fillRect(10, canvas.height - 34, textWidth + padX * 2, 24)
+      ctx.fillStyle = '#fff'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(label, 10 + padX, canvas.height - 22)
+
+      const a = document.createElement('a')
+      const dateStr = new Date().toISOString().slice(0, 10)
+      a.href = canvas.toDataURL('image/png')
+      a.download = `webgis-map-${dateStr}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+    img.src = dataUrl
+  }, [variable, height])
+
+  return (
+    <>
+      <div ref={container} className="map-container" />
+      <BasemapSwitcher basemap={basemap} onChange={onBasemapChange} />
+      {cogLoading && (
+        <div className="cog-loading">
+          <div className="cog-spinner" />
+          <span>Carregando...</span>
+        </div>
+      )}
+      <button className="map-screenshot-btn" onClick={handleScreenshot} title="Baixar screenshot do mapa">
+        📷 Screenshot
+      </button>
+    </>
+  )
 }
 
 export default memo(MapViewInner)

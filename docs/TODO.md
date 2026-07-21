@@ -380,6 +380,48 @@ Os dois recursos novos mais visíveis (Perfil WPD e Heatmap Direcional) dependem
 
 ---
 
+## ✅ f03 — UI Enhancements: loading do COG, export CSV/PNG, tela cheia, rosa dos ventos colorida, novos basemaps — 2026-07-20
+
+> **Status:** Implementado e validado (`pnpm test` — 91 passed, `pnpm test:types` — 0 erros novos). Escopo completo no `TODO.md` (raiz do projeto, ticket `f03 — ui-enhancements`).
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| **Loading state do COG** | Novo estado `cogLoading` em `MapView.tsx` (`true` durante `drawCog`, em `try/finally` guardado por `!signal.aborted` para não esconder o spinner de uma chamada mais nova que já abortou a anterior). Renderizado como `.cog-loading` — badge pequeno e centralizado no topo do mapa, `pointer-events: none` (não bloqueia pan/zoom/clique), com spinner CSS puro (`@keyframes cog-spin`, sem GIF/SVG externo). |
+| **Remoção do `console.log` de debug** | `pixelQuery.ts:267` (`"PixelQuery: loaded..."`) trocado para `console.debug`, igual ao padrão já usado nos demais logs de diagnóstico do módulo. |
+| **Export CSV do Dashboard** | Botão "⬇ Download CSV" em `.dv-filter-bar` (Visão Simples), desabilitado sem locais fixados. Gera 1 linha por combinação `local × sazonalidade (5) × variável (ws/wpd) × altura (5)` = 50 linhas por local fixado, usando `seasonStat()` (já existente em `pixelQuery.ts`, lê do snapshot `DashboardLocationData` — não do singleton global) para não misturar dado de pares diferentes. Valores ausentes/nulos gravados como string vazia (não `"null"`/`"NaN"`). `Blob` + `URL.createObjectURL` + `<a>` oculto — sem dependência nova. Nome do arquivo: `webgis-dashboard-{YYYY-MM-DD}.csv`. |
+| **Fullscreen dos gráficos** | Novo componente local `ChartCard` (em `DashboardView.tsx`) encapsula o botão de expandir/restaurar (⛶/✕) e a classe `chart-card--fullscreen` (position fixed + backdrop `.chart-fullscreen-backdrop` com `z-index` acima do resto da UI) — usado pelos 6 `chart-card` da Visão Simples (Sazonal, Weibull, Rosa dos Ventos, Perfil WS, Perfil WPD, Heatmap × N locais). Segundo clique no mesmo botão, clique no backdrop ou tecla `Escape` (listener condicional em `useEffect`) restauram o layout. A altura do `<Plot>` do card expandido passa a ser calculada a partir de `window.innerHeight` (Plotly não aceita altura em `vh`) e um `resize` sintético é disparado (`requestAnimationFrame`) para o `useResizeHandler` do `react-plotly.js` recalcular a largura. |
+| **Rosa dos Ventos colorida por velocidade** | Trace trocado de `scatterpolar`/`fill:'toself'` (só permite 1 cor de preenchimento por trace, incompatível com "cor por setor") para `barpolar` — cada setor é uma barra individual, com `marker.color` por setor calculado por `windSpeedColor()` (novo, em `dashboardChartConstants.ts`, mesmo gradiente azul→vermelhão Okabe-Ito já usado em `DirectionalHeatmap.tsx`) a partir de `wr[s]?.mean_ws`, normalizado por um máximo **compartilhado** entre os locais fixados (`windRoseMaxSpeed`, `useMemo`) — para as cores serem comparáveis entre locais, não escaladas individualmente. O contorno de cada barra (`marker.line.color`) mantém a cor do local (`COLORS[i]`), preservando a distinção visual entre locais fixados. Nova legenda `.windrose-legend` (gradiente CSS + rótulos `0 m/s`/`{max} m/s`) abaixo do gráfico. |
+| **Novos basemaps: Terrain, Night, Topo** | `BasemapSwitcher.tsx` ganhou 3 novas opções (6 no total); `.basemap-switcher` ganhou `overflow-x: auto` (linha rolável em vez de crescer indefinidamente). Em `MapView.tsx`: `terrain` usa fonte `raster-dem` (AWS Open Data Terrain Tiles, encoding `terrarium`, sem chave de API) + camada `hillshade`; `night` usa o mosaico público NASA GIBS `VIIRS_CityLights_2012` (Black Marble, `maxzoom: 8`); `topo` usa OpenTopoMap (3 subdomínios `a/b/c`, CC-BY-SA). **Achado durante a implementação:** `BasemapSwitcher` já existia e já era importado em `MapView.tsx`, mas nunca era de fato renderizado no JSX (dead import) — `onBasemapChange` também nunca era consumido; o seletor de basemap simplesmente não existia na UI antes desta entrega, apesar dos 3 basemaps originais (Street/Satellite/Dark) já estarem funcionais no estilo do MapLibre. Corrigido junto com a expansão para 6 opções. |
+| **Screenshot do mapa** | Novo botão "📷 Screenshot" (`.map-screenshot-btn`, canto superior direito, abaixo do `BasemapSwitcher`). Usa `map.getCanvas().toDataURL()` (conforme pedido no ticket) — exige `preserveDrawingBuffer: true` no construtor do `maplibregl.Map` (adicionado), sem o qual o canvas WebGL pode voltar vazio/preto fora do ciclo de render. A imagem é redesenhada em um `<canvas>` offscreen com uma marca de água (`"CNPq WebGIS — {modelo} {experimento} {variável} {altura}m"`, usando os labels legíveis de `cogCatalog.ts`) antes do download. Nome do arquivo: `webgis-map-{YYYY-MM-DD}.png`. Funciona 100% offline (nenhuma chamada de rede). |
+| **Export de gráfico como PNG (Plotly toolbar)** | `PLOT_CONFIG` (`dashboardChartConstants.ts`) já tinha `displayModeBar: true` com o botão de download PNG nativo do Plotly — só precisava remover o excesso de botões de zoom/pan/hover-mode que os critérios de aceite chamam de "clutter". `modeBarButtonsToRemove` ampliado para `zoom2d`, `pan2d`, `zoomIn2d`, `zoomOut2d`, `autoScale2d`, `resetScale2d`, `hoverClosestCartesian`, `hoverCompareCartesian` (mantendo apenas o botão de download PNG). Nenhum botão customizado foi necessário — a opção "Alternativa" do ticket (`Plotly.downloadImage` customizado) não se aplicou. |
+
+### Limitação conhecida — basemaps extras dependem de rede (fora do controle da app)
+
+Diferente do export de mapa/gráfico (ambos 100% offline, conforme exigido), os 3 novos basemaps (Terrain/Night/Topo) buscam tiles de provedores públicos externos (AWS Open Data, NASA GIBS, OpenTopoMap) — mesma natureza dos 3 basemaps já existentes (OSM/Esri/CARTO). Validado visualmente com rede disponível (screenshot do hillshade do Terrain sobre a costa NE/SE renderizando relevo submarino real); sem rede, o comportamento é o mesmo já existente para Street/Satellite/Dark (tiles não carregam, sem erro de console).
+
+### Testes novos — `tests/e2e/10-ui-enhancements.spec.ts` (T78–T85)
+
+| Teste | O que valida |
+|---|---|
+| T78 | `BasemapSwitcher` exibe as 6 opções (incl. Terrain/Night/Topo); alternar entre elas não gera erro de console |
+| T79 | Botão "Screenshot" do mapa dispara o download de um `.png` com nome datado |
+| T80 | `.cog-loading` aparece durante o fetch do `.tif` (atraso determinístico via `page.route`) e some ao terminar |
+| T81 | "Download CSV" fica desabilitado sem locais fixados e habilita após adicionar um |
+| T82 | Clique em "Download CSV" gera um `.csv` com nome datado, cabeçalho e contagem de linhas esperados (50 linhas de dado para 1 local) |
+| T83 | Toggle de tela cheia aplica/remove `chart-card--fullscreen`; `Escape` restaura o layout |
+| T84 | Segundo clique no botão de tela cheia (sem `Escape`) também restaura o layout |
+| T85 | Rosa dos Ventos usa `type: 'barpolar'` com mais de 1 cor de setor (`marker.color`) e exibe `.windrose-legend` |
+
+**Validação manual (checklist do ticket):** dev server local — spinner aparece brevemente ao arrastar o mapa; CSV baixado abre com as colunas certas; tela cheia funciona nos 6 cards e o `<Plot>` interno redimensiona; Rosa dos Ventos mostra setores em tons diferentes (azul→laranja) com a legenda de velocidade; os 6 basemaps carregam sem erro de console (Terrain renderizando hillshade real sobre a costa); screenshot do mapa baixa um PNG com a marca de água legível.
+
+### Arquivos modificados
+
+`src/components/MapView.tsx`, `src/components/DashboardView.tsx`, `src/components/BasemapSwitcher.tsx`, `src/lib/pixelQuery.ts`, `src/lib/dashboardChartConstants.ts`, `src/App.css`, `tests/e2e/10-ui-enhancements.spec.ts` (novo)
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.

@@ -26,12 +26,21 @@ Visualizador geográfico interativo para dados de vento e densidade de potência
 
 ### Sistema de análise
 
-- **Mapa Interativo (WebGIS)** — COGs de velocidade do vento e densidade de potência sobre 3 basemaps (Street, Satellite, Dark)
-- **Filtros** — Experimento × Variável × Altura × Estação × Estado × Faixa batimétrica
-- **Perfil Vertical** — velocidade do vento em 10, 50, 100, 150 e 200 m para um ponto clicado
+- **Mapa Interativo (WebGIS)** — COGs de velocidade do vento e densidade de potência sobre **6 basemaps** (Street, Satellite, Dark, Terrain, Night, Topo — seletor em linha rolável), com opacidade ajustável e overlays de batimetria/ZEE
+- **Indicador de carregamento do COG** — spinner sutil (`.cog-loading`, não bloqueia pan/zoom) durante o fetch/render de cada tile
+- **Screenshot do mapa** — captura o canvas com marca de água (modelo/experimento/variável/altura) e baixa um PNG, 100% offline
+- **Filtros** — Modelo (WRF/MPAS) × Experimento × Variável × Altura × Estação × Estado × Faixa batimétrica
+- **Perfil Vertical** — velocidade do vento e densidade de potência (WPD) em 10, 50, 100, 150 e 200 m para um ponto clicado
 - **Distribuição de Weibull** — curva PDF com parâmetros k (forma) e c (escala)
-- **Painel Analítico (Dashboard)** — comparação de até 3 localizações com 4 gráficos sobrepostos (média sazonal, Weibull, rosa dos ventos, perfil vertical)
-- **Marcadores de Pin** — até 3 pontos fixados; persistem entre abas
+- **Distribuição Direcional** — heatmap setor × faixa de velocidade/potência
+- **Painel Analítico (Dashboard)** — 4 abas internas:
+  - **Visão Simples** — até 3 localizações comparadas em 6 gráficos Plotly (média sazonal, Weibull, rosa dos ventos, perfil vertical WS/WPD, heatmap direcional), cada um com toggle de tela cheia
+  - **Comparar Experimentos** / **Comparar Modelos** — até 3 pares modelo+experimento sobrepostos nos mesmos tipos de gráfico
+  - **Explorador GeoParquet** — filtros por estado/batimetria/distância da costa, com histograma, boxplot, scatter e perfil agregado sobre ~140 mil pixels
+- **Rosa dos Ventos colorida** — setores em `barpolar` coloridos pela velocidade média do vento (gradiente azul→vermelho), com legenda de escala
+- **Exportação CSV** — baixa todas as localizações/sazonalidades/variáveis/alturas fixadas em um único arquivo (`Blob` + `URL.createObjectURL`, sem dependência nova)
+- **Exportação de gráficos** — botão nativo do Plotly (toolbar reduzida, mantendo só o download PNG)
+- **Marcadores de Pin** — até 3 pontos fixados; persistem entre abas e são re-consultados automaticamente ao trocar modelo/experimento
 - **Navegação sem react-router** — estado gerenciado por `useState<TabId>` em `App.tsx`; botão `← Home` no TabBar retorna à landing sem recarregar
 
 ---
@@ -91,7 +100,7 @@ pnpm test:e2e:ui   # modo visual para depuração
 ### Saída esperada
 
 ```
-41 passed (~17 s)
+91 passed (~1.2 min)
 ```
 
 ### Cobertura de testes
@@ -100,9 +109,16 @@ pnpm test:e2e:ui   # modo visual para depuração
 |---|---|---|
 | `01-landing-page.spec.ts` | 12 | Seções, contagens de elementos, logos |
 | `02-navigation.spec.ts` | 9 | CTAs, navbar, botão `← Home`, persistência de aba |
-| `03-responsiveness.spec.ts` | 4 | Scroll horizontal nos 3 breakpoints (1280/768/375 px) |
+| `03-responsiveness.spec.ts` | 8 | Scroll horizontal nos 3 breakpoints (1280/768/375 px), landing + Dashboard |
 | `04-scroll-and-inpage-nav.spec.ts` | 6 | Scroll vertical, âncoras, botão "Voltar ao topo" |
 | `05-team-and-faq.spec.ts` | 10 | Avatares, links Lattes, FAQ accordion |
+| `06-dashboard-controls.spec.ts` | 17 | Seletores Modelo/Experimento, opacidade do COG, camadas de batimetria, conteúdo real de Weibull/Rosa dos Ventos |
+| `07-dashboard-comparison.spec.ts` | 6 | Abas "Comparar Experimentos"/"Comparar Modelos", limite de 3 pares, persistência de seleção |
+| `08-geoparquet-explorer.spec.ts` | 10 | Filtros, "Aplicar Filtros", boxplots por Estado/Batimetria, modebar do Plotly, scatter de distância |
+| `09-dashboard-charts.spec.ts` | 5 | Perfil WPD, heatmap direcional, ranges fixos de eixo |
+| `10-ui-enhancements.spec.ts` | 8 | Spinner do COG, export CSV, tela cheia dos gráficos, rosa dos ventos colorida, basemaps extras, screenshot do mapa |
+
+> Os arquivos `06`–`10` cobrem o sistema (mapa + dashboard) e evoluíram ao longo de várias fases (`f01`–`f03`); o detalhamento teste-a-teste de cada fase (IDs `T38`–`T85`) fica em [`docs/TODO.md`](docs/TODO.md), que é a fonte de verdade para o histórico de entregas. As tabelas abaixo mantêm o detalhamento por teste apenas para os 5 arquivos originais da landing page.
 
 #### Detalhamento por arquivo
 
@@ -120,6 +136,8 @@ pnpm test:e2e:ui   # modo visual para depuração
 | PublicationsSection | Exatamente 9 `.lp-pub-card` |
 | FooterSection | `.lp-footer-disclaimer` contém "preliminares" |
 | T09 | 3 logos carregam com status HTTP < 400 |
+| T26 | Botão de toggle da equipe visível e colapsado por padrão |
+| T27 | Clique no toggle expande todos os membros da equipe |
 
 **`02-navigation.spec.ts`**
 
@@ -128,6 +146,8 @@ pnpm test:e2e:ui   # modo visual para depuração
 | T04 | CTA primário abre o mapa |
 | T05 | CTA secundário abre o dashboard |
 | T06 | "Entrar no Sistema" abre o mapa |
+| T12 | Gallery card "WebGIS Map" abre o mapa |
+| T13 | Gallery card "Dashboard" abre o dashboard |
 | T10 | Botão `← Home` visível no TabBar |
 | T11 | `← Home` retorna à landing |
 | T11b | `← Home` funciona vindo do dashboard |
@@ -137,10 +157,12 @@ pnpm test:e2e:ui   # modo visual para depuração
 
 | Teste | O que valida |
 |---|---|
-| T08 desktop (1280 px) | `scrollWidth` ≤ `clientWidth` |
-| T08 tablet (768 px) | `scrollWidth` ≤ `clientWidth` |
-| T08 mobile (375 px) | `scrollWidth` ≤ `clientWidth` |
+| T08 desktop (1280 px) | `scrollWidth` ≤ `clientWidth` (landing page) |
+| T08 tablet (768 px) | `scrollWidth` ≤ `clientWidth` (landing page) |
+| T08 mobile (375 px) | `scrollWidth` ≤ `clientWidth` (landing page) |
 | T08b | CTAs empilhados verticalmente em mobile |
+| T60 (× 3 breakpoints) | Dashboard sem scroll horizontal nas 4 abas internas, em 1280/768/375 px |
+| T61 | Visão Simples: filtros e "+ Add Location" não ficam espremidos em mobile/tablet |
 
 **`04-scroll-and-inpage-nav.spec.ts`**
 
@@ -176,14 +198,13 @@ pnpm test:e2e:ui   # modo visual para depuração
 cnpq-offshore-wind-webgis/
 ├── public/
 │   ├── data/
-│   │   ├── bathymetry/           # Shapefiles de batimetria (GeoJSON)
-│   │   ├── cogs/wrf/             # Cloud Optimized GeoTIFFs (~42 MB)
-│   │   │   ├── ERA5_atlas/
-│   │   │   ├── HIST/
-│   │   │   ├── SSP2-4.5/
-│   │   │   └── SSP5-8.5/
-│   │   └── geoparquet/wrf/       # GeoParquet de consultas analíticas (~228 MB)
-│   │       └── {experimento}/all_seasons.parquet
+│   │   ├── bathymetry/           # Shapefiles de batimetria (GeoJSON) — camadas de ZEE (`/data/shp/*`) ainda não publicadas
+│   │   ├── cogs/                 # Cloud Optimized GeoTIFFs (~42 MB)
+│   │   │   ├── wrf/{ERA5_atlas,HIST,SSP2-4.5,SSP5-8.5}/
+│   │   │   └── mpas/              # ainda sem dado publicado
+│   │   └── geoparquet/            # GeoParquet de consultas analíticas (~227 MB)
+│   │       ├── wrf/{era5_atlas,hist,ssp2-4.5,ssp5-8.5}/season={annual,djf,mam,jja,son}/data.parquet
+│   │       └── mpas/               # ainda sem dado publicado
 │   ├── images/logos/             # Logomarcas (CNPq, PEOB, SENAI CIMATEC)
 │   └── images/team/              # Fotos dos pesquisadores (avatares)
 │   └── parquet_wasm_bg.wasm      # Runtime WebAssembly para leitura de Parquet
@@ -191,35 +212,47 @@ cnpq-offshore-wind-webgis/
 │   ├── components/
 │   │   ├── LandingPage.tsx       # Página inicial institucional
 │   │   ├── LandingPage.css       # Estilos isolados da landing page
-│   │   ├── MapView.tsx           # Mapa principal (MapLibre GL + COG + pins)
-│   │   ├── DashboardView.tsx     # Painel analítico
-│   │   ├── SidePanel.tsx         # Filtros laterais
+│   │   ├── MapView.tsx           # Mapa principal (MapLibre GL + COG + pins + basemaps + screenshot)
+│   │   ├── DashboardView.tsx     # Painel analítico — aba "Visão Simples" + export CSV + fullscreen
+│   │   ├── DashboardComparisonView.tsx  # Abas "Comparar Experimentos"/"Comparar Modelos"
+│   │   ├── GeoParquetExplorer.tsx # 4ª aba do Dashboard — filtros + histograma/boxplot/scatter
+│   │   ├── DirectionalHeatmap.tsx # Heatmap direcional (setor × faixa de velocidade/potência)
+│   │   ├── SidePanel.tsx         # Filtros laterais do mapa
 │   │   ├── TabBar.tsx            # Barra de abas + botão ← Home
 │   │   ├── PixelInfoPanel.tsx    # Painel de informações do pixel
-│   │   ├── ProfileChart.tsx      # Perfil vertical (Chart.js)
+│   │   ├── ProfileChart.tsx      # Perfil vertical WS/WPD (Chart.js)
 │   │   ├── WeibullChart.tsx      # Distribuição de Weibull (Chart.js)
 │   │   ├── MiniMap.tsx           # Mini-mapa no dashboard
-│   │   ├── BasemapSwitcher.tsx   # Seletor de mapa base
+│   │   ├── BasemapSwitcher.tsx   # Seletor de mapa base (6 opções)
 │   │   ├── FAQPanel.tsx          # Painel FAQ (accordion)
 │   │   ├── ProjectInfoPanel.tsx  # Painel de informações do projeto
 │   │   └── ErrorBoundary.tsx     # Captura de erros React
 │   ├── lib/
-│   │   ├── cogCatalog.ts         # Catálogo de experimentos, variáveis, alturas
-│   │   ├── cogTileRenderer.ts    # Renderizador de tiles COG (GeoTIFF.js)
-│   │   ├── metadata.ts           # Conteúdo do FAQ e Project Info
-│   │   └── pixelQuery.ts         # Engine de consulta GeoParquet via WebAssembly
+│   │   ├── cogCatalog.ts             # Catálogo de experimentos, variáveis, alturas, caminhos de COG
+│   │   ├── cogTileRenderer.ts        # Renderizador de tiles COG (GeoTIFF.js)
+│   │   ├── pixelQuery.ts             # Engine de consulta GeoParquet via WebAssembly
+│   │   ├── dashboardChartConstants.ts # Paleta Okabe-Ito, config do Plotly, gradiente da rosa dos ventos
+│   │   └── metadata.ts               # Conteúdo do FAQ e Project Info
+│   ├── i18n/
+│   │   ├── t.ts                  # Stub de tradução (lê de um único dicionário)
+│   │   └── pt-BR.ts               # Dicionário pt-BR (único idioma ativo hoje)
 │   ├── App.tsx                   # Componente raiz com estado global
 │   ├── App.css                   # Estilos do sistema (mapa, dashboard, drawers)
 │   └── main.tsx                  # Ponto de entrada React
-├── tests/e2e/
-│   ├── 01-landing-page.spec.ts   # 9 testes — conteúdo da landing page
-│   ├── 02-navigation.spec.ts     # 7 testes — navegação landing ↔ sistema
-│   ├── 03-responsiveness.spec.ts # 4 testes — layout responsivo (3 breakpoints)
-│   ├── 04-scroll-and-inpage-nav.spec.ts  # 6 testes — scroll e âncoras
-│   └── 05-team-and-faq.spec.ts          # 10 testes — avatares, Lattes, FAQ accordion
+├── tests/e2e/                     # 91 testes — ver "Testes de Regressão E2E"
+│   ├── 01-landing-page.spec.ts
+│   ├── 02-navigation.spec.ts
+│   ├── 03-responsiveness.spec.ts
+│   ├── 04-scroll-and-inpage-nav.spec.ts
+│   ├── 05-team-and-faq.spec.ts
+│   ├── 06-dashboard-controls.spec.ts
+│   ├── 07-dashboard-comparison.spec.ts
+│   ├── 08-geoparquet-explorer.spec.ts
+│   ├── 09-dashboard-charts.spec.ts
+│   └── 10-ui-enhancements.spec.ts
 ├── docs/
 │   ├── INFO_PROJECT.md           # Fonte oficial de metadados (equipe, parâmetros, citação)
-│   ├── TODO.md                   # Roadmap por fases
+│   ├── TODO.md                   # Roadmap por fases — histórico detalhado de cada entrega
 │   └── TOFIX.md                  # Pontos de melhoria identificados na revisão
 ├── CLAUDE.md                     # Instruções de desenvolvimento para IA e humanos
 ├── playwright.config.ts          # Configuração E2E (base URL: localhost:3000)
@@ -237,6 +270,8 @@ cnpq-offshore-wind-webgis/
 | **HIST** | WRF Histórico (treinamento para bias correction) | 2004–2014 | Histórico simulado |
 | **SSP2-4.5** | Projeção CMIP6 (18 modelos) — mitigação moderada | 2015–2023 + 2030–2050 | ~4,5 W/m² |
 | **SSP5-8.5** | Projeção CMIP6 (18 modelos) — emissões elevadas | 2015–2023 + 2030–2050 | ~8,5 W/m² |
+
+> **Modelo MPAS:** já selecionável na UI (Modelo × Experimento), mas `public/data/cogs/mpas/` e `public/data/geoparquet/mpas/` ainda não têm nenhum arquivo publicado — a seleção mostra "sem dados disponíveis" sem erro de console. Ver `docs/TODO.md` para o roadmap de publicação.
 
 ### Variáveis disponíveis no frontend
 
@@ -266,11 +301,12 @@ Grade regular de 534 × 263 pontos (~140 mil células), originada do domínio D0
 | React | 18.x | Framework frontend |
 | TypeScript | 5.x | Tipagem estática (sem `any`) |
 | Vite | 6.x | Bundler e dev server (porta 3000) |
-| MapLibre GL JS | — | Renderização do mapa (WebGL) |
-| Chart.js + react-chartjs-2 | — | Gráficos analíticos |
+| MapLibre GL JS | ^4.7.1 | Renderização do mapa (WebGL), incl. hillshade do basemap Terrain |
+| Plotly.js + react-plotly.js | ^3.7.0 / ^2.6.0 | Gráficos do Dashboard (sazonal, Weibull, rosa dos ventos, perfis, GeoParquet Explorer) |
+| Chart.js + react-chartjs-2 | ^4.5.1 | Gráficos do Pixel Info Panel (perfil vertical, Weibull) |
 | parquet-wasm + Apache Arrow | — | Leitura de GeoParquet via WebAssembly |
 | GeoTIFF.js | — | Decodificação de COGs client-side |
-| Playwright | ^1.52.0 | Testes de regressão E2E |
+| Playwright | ^1.61.0 | Testes de regressão E2E |
 
 ---
 
@@ -293,9 +329,20 @@ click no mapa → queryNearest(lat, lon) → busca euclidiana ~140k pixels
 ### Fluxo de dashboard
 
 ```
-queryDashboardLocation(lat, lon) → agrega por estação via allSeasonMap
-                                 → pinnedLocations[] → gráficos reativos
+queryDashboardLocation(lat, lon, model, experiment) → agrega por estação via allSeasonMap
+                                                     → pinnedLocations[] → gráficos Plotly reativos
 ```
+
+O Dashboard tem 4 abas internas montadas simultaneamente (alternância via CSS `display`, preservando estado/seleção ao trocar): **Visão Simples**, **Comparar Experimentos**, **Comparar Modelos** e **Explorador GeoParquet**. Trocar Modelo/Experimento global re-consulta automaticamente cada localização fixada (`useEffect([model, dataset])` em `App.tsx`), sem perder os pinos já colocados.
+
+### Export CSV e screenshot (sem dependência nova)
+
+```
+Dashboard "Download CSV"  → Blob(csv) → URL.createObjectURL → <a download> oculto → clique programático
+MapView "📷 Screenshot"   → map.getCanvas().toDataURL() → <canvas> offscreen + marca de água → download PNG
+```
+
+Ambos os exports funcionam 100% offline. O screenshot do mapa exige `preserveDrawingBuffer: true` no `maplibregl.Map` para que o canvas WebGL não volte vazio fora do ciclo de render.
 
 ### Navegação (sem react-router)
 
