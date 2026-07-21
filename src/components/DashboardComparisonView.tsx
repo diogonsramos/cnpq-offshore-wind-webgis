@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState, memo } from 'react'
-import Plot from 'react-plotly.js'
+import { useEffect, useMemo, useRef, useState, memo, lazy, Suspense } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel, datasetFolder,
@@ -8,11 +7,15 @@ import {
 import { queryDashboardLocation, loadParquet, seasonStat, type DashboardLocationData } from '../lib/pixelQuery'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
-  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, PLOT_CONFIG, WINDROSE_PLOT_CONFIG,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, PLOT_CONFIG,
   CHART_FONT, HOVER_LABEL_STYLE,
 } from '../lib/dashboardChartConstants'
+import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
 import MiniMap from './MiniMap'
+import DashboardSkeleton from './DashboardSkeleton'
 import { t } from '../i18n/t'
+
+const Plot = lazy(() => import('react-plotly.js'))
 
 type ComparisonMode = 'experiments' | 'models'
 
@@ -237,6 +240,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
         <div className="dv-empty">{t('dashboard.compare.waiting_data')}</div>
       ) : (
         <div className="dv-main">
+          <Suspense fallback={<DashboardSkeleton />}>
           <div className="dv-chart-grid">
             <div className="chart-card" data-testid="chart-seasonal">
               <Plot
@@ -380,6 +384,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
               />
             </div>
           </div>
+          </Suspense>
 
           <div className="dv-sidebar">
             <div className="minimap">

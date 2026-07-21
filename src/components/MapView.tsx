@@ -93,6 +93,12 @@ function MapViewInner(props: MapViewProps) {
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const cache = useRef<Map<string, any>>(new Map())
   const cogAbort = useRef<AbortController | null>(null)
+  // Fingerprint of the last COG actually rendered (filters + viewport). MapLibre's
+  // resize() (fired by the ResizeObserver below when switching back to this tab)
+  // internally emits movestart/move/moveend even though nothing panned or zoomed —
+  // without this guard that spuriously re-triggers the 300ms moveend debounce and
+  // re-fetches/re-renders the exact same tile.
+  const lastCogParamsRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!container.current || map.current) return
@@ -182,6 +188,22 @@ function MapViewInner(props: MapViewProps) {
     const m = map.current
     if (!m || !ready) return
 
+    const mb = m.getBounds()
+    const zoom = m.getZoom()
+    const vb = {
+      west: Math.max(mb.getWest(), -55),
+      south: Math.max(mb.getSouth(), -35),
+      east: Math.min(mb.getEast(), -25),
+      north: Math.min(mb.getNorth(), 6),
+    }
+    if (vb.north <= vb.south || vb.east <= vb.west) return
+
+    const cogKey = [
+      dataset, variable, height, season, model,
+      vb.west.toFixed(4), vb.south.toFixed(4), vb.east.toFixed(4), vb.north.toFixed(4), zoom.toFixed(2),
+    ].join('|')
+    if (cogKey === lastCogParamsRef.current) return
+
     if (cogAbort.current) cogAbort.current.abort()
     const ac = new AbortController()
     cogAbort.current = ac
@@ -194,22 +216,17 @@ function MapViewInner(props: MapViewProps) {
       if (m.getLayer(LR)) m.removeLayer(LR)
       if (m.getSource(SR)) m.removeSource(SR)
 
-      const mb = m.getBounds()
-      const zoom = m.getZoom()
-      const vb = {
-        west: Math.max(mb.getWest(), -55),
-        south: Math.max(mb.getSouth(), -35),
-        east: Math.min(mb.getEast(), -25),
-        north: Math.min(mb.getNorth(), 6),
-      }
-      if (vb.north <= vb.south || vb.east <= vb.west) return
-
       const result = await renderCog(url, vb, zoom, variable, signal)
       if (signal.aborted || !result || !map.current) return
 
       const { dataUrl, coords } = result
       const [west, south, east, north] = coords
       if (!isFinite(west) || !isFinite(south) || !isFinite(east) || !isFinite(north)) return
+
+      // Only mark this fingerprint "rendered" on success — a failed/aborted fetch
+      // must stay retriable (e.g. a transient network error shouldn't permanently
+      // suppress redraws for the same viewport+filters).
+      lastCogParamsRef.current = cogKey
 
       if (m.getSource(SR)) m.removeSource(SR)
       if (m.getLayer(LR)) m.removeLayer(LR)

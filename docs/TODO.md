@@ -422,6 +422,45 @@ Diferente do export de mapa/gráfico (ambos 100% offline, conforme exigido), os 
 
 ---
 
+## ✅ f04 — Performance (lazy-load do Plotly, cache IndexedDB com LRU, redraw do COG) — 2026-07-21
+
+> **Status:** Implementado e validado (`pnpm test` — 94 passed, `pnpm test:types` — 0 erros). Escopo definido em `TODO.md` (raiz, removido após esta entrega — mesmo padrão já usado para `docs/TOFIX.md` na Fase 3.1).
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| Plotly (~1 MB) carregado mesmo em quem só usa o mapa | `DashboardView` agora é `React.lazy(() => import('./components/DashboardView'))` em `App.tsx`, com o painel do Dashboard só efetivamente montado (gate `dashboardVisited`) na primeira visita à aba — antes o componente ficava sempre montado atrás da aba Map (padrão `display:none` documentado desde a Fase 3.1/3.2). Dentro de `DashboardView.tsx`, `DashboardComparisonView.tsx` e `GeoParquetExplorer.tsx`, `Plot` também virou `lazy(() => import('react-plotly.js'))`, envolto em `<Suspense fallback={<DashboardSkeleton />}>` ao redor de cada `.dv-chart-grid` |
+| Nenhum esqueleto de carregamento para o grid de gráficos | Novo `DashboardSkeleton.tsx`/`.css` — 4 retângulos cinza com shimmer, no mesmo layout de grid 2 colunas do `.dv-chart-grid`, usado como `fallback` dos 3 `Suspense` acima e do `Suspense` externo em `App.tsx` (enquanto o chunk do próprio `DashboardView` carrega) |
+| Cache IndexedDB do parquet crescia sem limite e nunca purgava versões antigas | `pixelQuery.ts`: nova store `meta` (bump `DB_VERSION` 1→2) grava `{ size, lastAccessed }` por chave, ao lado da store `parquet` já existente (schema original preservado, só uma store nova). `cacheSet` estima o total somando os `size` da store `meta` e, acima de 50 MB (`MAX_CACHE_BYTES`), evict por LRU (`evictLru`, ordenado por `lastAccessed` ascendente) até voltar ao limite. `cacheGet` atualiza `lastAccessed` de forma fire-and-forget (não atrasa o cache hit) |
+| Nenhuma invalidação real ao mudar `CACHE_VERSION` | `evictStaleVersionIfNeeded()` compara o `CACHE_VERSION` atual com o último salvo em `localStorage`; se mudou, `indexedDB.deleteDatabase()` inteiro antes de reabrir — reexecuta uma única vez por sessão (`versionCheckPromise`), antes de qualquer `openDB()` |
+| Estatísticas de cache poluindo o console em produção | `console.debug` de tamanho total/evicções só roda atrás de `import.meta.env.DEV` |
+| Alternar Map → Dashboard → Map disparava um redraw do COG idêntico ao anterior | `MapView.tsx`: novo `lastCogParamsRef` guarda uma fingerprint (`dataset\|variable\|height\|season\|model\|bounds\|zoom`) do último COG efetivamente renderizado; `drawCog` retorna cedo se a fingerprint não mudou. Causa raiz: `map.resize()` (disparado pelo `ResizeObserver` já existente, ao voltar de `display:none` para `flex`) emite `movestart`/`move`/`moveend` internamente no MapLibre mesmo sem pan/zoom real, o que reacionava o debounce de 300ms do `moveend` e re-buscava/redesenhava o mesmo tile. A fingerprint só é gravada após uma renderização bem-sucedida (não antes do fetch), para que uma falha de rede transiente continue reexecutável no próximo `moveend`/`idle` real |
+| `onPixelClick` instável (item do escopo) | Já estava correto — `handlePixelClick` em `App.tsx` já era `useCallback` sem dependências desde antes desta fase; nenhuma mudança necessária |
+
+### Bug pré-existente corrigido — Plotly (plotly.js completo) carregava mesmo na aba Map, nunca chegando perto do Dashboard
+
+Investigando por que a aba Map continuava disparando uma requisição para `plotly__js_dist_plotly.js` mesmo com `DashboardView` e todo `<Plot>` lazy, um trace de rede (`Network.requestWillBeSent` via CDP, com `initiator`/`Referer`) mostrou a cadeia real: `App.tsx` → `PixelInfoPanel.tsx` (montado sempre na aba Map, para mostrar os dados do pixel clicado) → `DirectionalHeatmap.tsx` (import estático, usado também no popup do mapa) → `dashboardChartConstants.ts` — que carregava `import Plotly from 'plotly.js/dist/plotly'` no topo do arquivo só para o botão customizado "Resetar zoom" da rosa dos ventos (`WINDROSE_PLOT_CONFIG`/`Plotly.relayout`), mesmo `DirectionalHeatmap.tsx` usando só `SECTOR_LABELS` (um array de strings) desse módulo — nenhuma renderização Plotly de fato. Esse vazamento é anterior a esta fase (existia mesmo com `Plot` estático) e só ficou visível ao escrever o teste `T86` (interceptação de rede). **Correção:** `WINDROSE_PLOT_CONFIG` e o import de `Plotly` foram extraídos para um novo `src/lib/windroseConfig.ts`, consumido só por `DashboardView.tsx`/`DashboardComparisonView.tsx` (ambos já dentro da subárvore lazy do Dashboard); `dashboardChartConstants.ts` ficou livre de qualquer import de `plotly.js`, então `DirectionalHeatmap.tsx` (e por consequência `PixelInfoPanel.tsx`/aba Map) não puxa mais o pacote inteiro.
+
+### O que não foi implementado nesta fase (limitações do ambiente, não de escopo)
+
+1. **Análise de bundle de produção (`npx vite-bundle-visualizer`, redução de ~300 KB documentada) não foi executada.** `pnpm build` (`tsc -b && vite build`) falha neste ambiente por duas causas **pré-existentes, não relacionadas a esta fase**: (a) `vite build` tenta copiar `public/data/geoparquet/mpas` para `dist/` e o processo aborta com `ENOENT` — o caminho é montado via `DATA_ROOT = '/mnt/e/cnpq_webgis/data'` em `vite.config.ts` (ambiente original em WSL/Windows), inexistente neste ambiente macOS; (b) `tsc -b` (build real, com project references) acusa erros de tipo já presentes antes desta fase — `react-plotly.js`/`plotly.js` sem `@types` (`declare module` nunca foi criado) e um cast inválido em `pixelQuery.ts:161` (`ArrayBuffer.isView` → `ArrayLike<number>`), entre outros. **Achado colateral relevante:** `pnpm test:types` (`tsc --noEmit`) não detecta nenhum desses erros porque o `tsconfig.json` raiz é "solution-style" (`files: []`, só `references`) — `tsc --noEmit` nesse modo não segue as referências, então o comando roda "limpo" sem checar nada de fato. Os erros só aparecem via `tsc -b` (usado por `pnpm build`, nunca por `pnpm test`). Nenhuma mudança de código foi feita para corrigir isso — é pré-existente e fora do escopo desta fase — mas fica registrado aqui para não passar despercebido: o `pnpm test` "verde" do checklist de entrega não garante que `pnpm build` funcione.
+2. **Validação de "memória estável em 5+ trocas de aba" foi via lógica (fingerprint do COG + `dashboardVisited`), não via profiling de heap real** (`performance.memory`/DevTools). O `lastCogParamsRef` elimina o redraw redundante que causaria o crescimento, mas nenhum teste automatizado mede footprint de heap em bytes (fora do escopo de E2E via Playwright puro, ver `CLAUDE.md` → "O que NÃO testar via E2E").
+
+### Testes novos — `tests/e2e/11-performance.spec.ts`
+
+| Teste | O que valida |
+|---|---|
+| T86 | A aba Map (sem nunca visitar o Dashboard) não dispara nenhuma requisição de rede cujo URL contenha "plotly" — regressão do vazamento `PixelInfoPanel → DirectionalHeatmap → dashboardChartConstants → plotly.js` corrigido nesta fase |
+| T87 | Clicar em "Analytical Dashboard" dispara a requisição de rede do módulo Plotly sob demanda (prova de que o lazy-loading realmente adia o carregamento, em vez de só reorganizar imports sem efeito) |
+| T88 | Alternar Dashboard → Map → Dashboard preserva a Altura selecionada na Visão Simples — regressão do novo gate `dashboardVisited` em `App.tsx` (antes `DashboardView` ficava sempre montado; agora o primeiro mount é condicional, então a preservação de estado local após esse ponto precisa continuar garantida) |
+
+### Arquivos modificados
+
+`src/App.tsx`, `src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/GeoParquetExplorer.tsx`, `src/components/DashboardSkeleton.tsx` (novo), `src/components/DashboardSkeleton.css` (novo), `src/components/MapView.tsx`, `src/lib/pixelQuery.ts`, `src/lib/dashboardChartConstants.ts`, `src/lib/windroseConfig.ts` (novo), `tests/e2e/11-performance.spec.ts` (novo), `TODO.md` (raiz, removido após esta entrega)
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.

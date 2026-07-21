@@ -3,46 +3,149 @@ import { tableFromIPC, type Table } from 'apache-arrow'
 
 const WASM_URL = '/parquet_wasm_bg.wasm'
 const DB_NAME = 'webgis-cache'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const CACHE_PREFIX = 'parquet-'
 const CACHE_VERSION = 2
 const SEASONS = ['ANNUAL', 'DJF', 'MAM', 'JJA', 'SON']
+const VERSION_STORAGE_KEY = 'webgis-cache-version'
+const MAX_CACHE_BYTES = 50 * 1024 * 1024
+
+interface CacheMeta { size: number; lastAccessed: number }
+
+// Runs once per session, before the first IDB connection: if the cache-key scheme
+// (CACHE_VERSION) changed since the last visit, old-versioned entries would just
+// sit orphaned (their keys no longer match anything) instead of freeing space —
+// deleteDatabase reclaims that space instead of leaking it release over release.
+let versionCheckPromise: Promise<void> | null = null
+
+async function evictStaleVersionIfNeeded(): Promise<void> {
+  const stored = localStorage.getItem(VERSION_STORAGE_KEY)
+  if (stored === String(CACHE_VERSION)) return
+  if (stored !== null) {
+    await new Promise<void>((resolve) => {
+      const req = indexedDB.deleteDatabase(DB_NAME)
+      req.onsuccess = () => resolve()
+      req.onerror = () => resolve()
+      req.onblocked = () => resolve()
+    })
+    if (import.meta.env.DEV) {
+      console.debug(`PixelQuery cache: version changed (${stored} -> ${CACHE_VERSION}), cleared IndexedDB`)
+    }
+  }
+  localStorage.setItem(VERSION_STORAGE_KEY, String(CACHE_VERSION))
+}
 
 function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (!versionCheckPromise) versionCheckPromise = evictStaleVersionIfNeeded()
+  return versionCheckPromise.then(() => new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
-      if (!db.objectStoreNames.contains('parquet')) {
-        db.createObjectStore('parquet')
-      }
+      if (!db.objectStoreNames.contains('parquet')) db.createObjectStore('parquet')
+      if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta')
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
-  })
+  }))
 }
 
 async function cacheGet(key: string): Promise<Uint8Array | null> {
   try {
     const db = await openDB()
-    return new Promise((resolve, reject) => {
+    const result = await new Promise<Uint8Array | null>((resolve, reject) => {
       const tx = db.transaction('parquet', 'readonly')
       const req = tx.objectStore('parquet').get(key)
-      req.onsuccess = () => { resolve(req.result || null); db.close() }
-      req.onerror = () => { db.close(); reject(null) }
+      req.onsuccess = () => resolve(req.result || null)
+      req.onerror = () => reject(null)
+      tx.oncomplete = () => db.close()
     })
+    if (result) touchLastAccessed(key).catch(() => {})
+    return result
   } catch { return null }
+}
+
+// Fire-and-forget — the caller already has its data; refreshing the LRU
+// timestamp must not add latency to a cache hit.
+async function touchLastAccessed(key: string): Promise<void> {
+  const db = await openDB()
+  await new Promise<void>((resolve) => {
+    const tx = db.transaction('meta', 'readwrite')
+    const store = tx.objectStore('meta')
+    const getReq = store.get(key)
+    getReq.onsuccess = () => {
+      const prev = getReq.result as CacheMeta | undefined
+      store.put({ size: prev?.size ?? 0, lastAccessed: Date.now() } satisfies CacheMeta, key)
+    }
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); resolve() }
+  })
+}
+
+async function getAllMeta(db: IDBDatabase): Promise<{ key: string; meta: CacheMeta }[]> {
+  return new Promise((resolve) => {
+    const tx = db.transaction('meta', 'readonly')
+    const entries: { key: string; meta: CacheMeta }[] = []
+    const req = tx.objectStore('meta').openCursor()
+    req.onsuccess = () => {
+      const cursor = req.result
+      if (cursor) {
+        entries.push({ key: String(cursor.key), meta: cursor.value as CacheMeta })
+        cursor.continue()
+      }
+    }
+    tx.oncomplete = () => resolve(entries)
+    tx.onerror = () => resolve(entries)
+  })
+}
+
+// LRU eviction: deletes the oldest-accessed entries (from both stores) until
+// enough bytes are freed to get back under MAX_CACHE_BYTES.
+async function evictLru(db: IDBDatabase, entries: { key: string; meta: CacheMeta }[], overBy: number): Promise<void> {
+  const sorted = [...entries].sort((a, b) => a.meta.lastAccessed - b.meta.lastAccessed)
+  let freed = 0
+  let evicted = 0
+  for (const e of sorted) {
+    if (freed >= overBy) break
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction(['parquet', 'meta'], 'readwrite')
+      tx.objectStore('parquet').delete(e.key)
+      tx.objectStore('meta').delete(e.key)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => resolve()
+    })
+    freed += e.meta.size
+    evicted++
+  }
+  if (import.meta.env.DEV) {
+    console.debug(`PixelQuery cache: evicted ${evicted} entries, freed ~${(freed / (1024 * 1024)).toFixed(1)} MB`)
+  }
 }
 
 async function cacheSet(key: string, data: Uint8Array): Promise<void> {
   try {
     const db = await openDB()
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction('parquet', 'readwrite')
       tx.objectStore('parquet').put(data, key)
-      tx.oncomplete = () => { db.close(); resolve() }
-      tx.onerror = () => { db.close(); reject() }
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject()
     })
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction('meta', 'readwrite')
+      tx.objectStore('meta').put({ size: data.byteLength, lastAccessed: Date.now() } satisfies CacheMeta, key)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => resolve()
+    })
+
+    const entries = await getAllMeta(db)
+    const total = entries.reduce((sum, e) => sum + e.meta.size, 0)
+    if (import.meta.env.DEV) {
+      console.debug(`PixelQuery cache: ${entries.length} entries, ~${(total / (1024 * 1024)).toFixed(1)} MB stored`)
+    }
+    if (total > MAX_CACHE_BYTES) {
+      await evictLru(db, entries.filter(e => e.key !== key), total - MAX_CACHE_BYTES)
+    }
+    db.close()
   } catch { /* ignore */ }
 }
 

@@ -1,0 +1,25 @@
+.dashboard-skeleton {
+  flex: 1;
+  padding: 12px;
+}
+.dv-skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.dv-skeleton-card {
+  height: 260px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+  background-size: 400% 100%;
+  animation: dv-skeleton-shimmer 1.4s ease infinite;
+}
+@keyframes dv-skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+@media (max-width: 700px) {
+  .dv-skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+}

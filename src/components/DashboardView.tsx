@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, memo, type ReactNode } from 'react'
+import { useState, useMemo, useEffect, memo, lazy, Suspense, type ReactNode } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel,
@@ -7,15 +7,20 @@ import {
 import { type DashboardLocationData, queryPixelStat, seasonStat } from '../lib/pixelQuery'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
-  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG, WINDROSE_PLOT_CONFIG,
+  HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG,
   CHART_FONT, HOVER_LABEL_STYLE, windSpeedColor, WS_LEGEND_GRADIENT,
 } from '../lib/dashboardChartConstants'
+import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
 import MiniMap from './MiniMap'
 import DashboardComparisonView from './DashboardComparisonView'
 import GeoParquetExplorer from './GeoParquetExplorer'
 import DirectionalHeatmap from './DirectionalHeatmap'
-import Plot from 'react-plotly.js'
+import DashboardSkeleton from './DashboardSkeleton'
 import { t } from '../i18n/t'
+
+// Deferred so the ~1MB plotly.js payload only downloads once a chart actually
+// renders, instead of the moment DashboardView's own chunk loads.
+const Plot = lazy(() => import('react-plotly.js'))
 
 type DashboardTab = 'simple' | 'compare_exp' | 'compare_model' | 'geoparquet'
 
@@ -333,6 +338,7 @@ function DashboardViewInner({
           <div className="dv-empty">{emptyMsg}</div>
         ) : (
           <div className="dv-main">
+            <Suspense fallback={<DashboardSkeleton />}>
             <div className="dv-chart-grid">
               <ChartCard id="seasonal" testId="chart-seasonal" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                 <Plot
@@ -558,6 +564,7 @@ function DashboardViewInner({
                 </ChartCard>
               ))}
             </div>
+            </Suspense>
           </div>
         )}
       </div>
