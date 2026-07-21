@@ -5,6 +5,7 @@ import {
   CategoryScale, LinearScale, PointElement, LineElement,
   Title, Tooltip, Filler,
 } from 'chart.js'
+import { t } from '../i18n/t'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler)
 
@@ -14,6 +15,9 @@ interface WeibullChartProps {
   label?: string
 }
 
+const X_MAX = 30
+const X_STEP = X_MAX / 60
+
 function weibullPdf(x: number, k: number, c: number): number {
   if (k <= 0 || c <= 0 || x < 0) return 0
   return (k / c) * Math.pow(x / c, k - 1) * Math.exp(-Math.pow(x / c, k))
@@ -22,16 +26,16 @@ function weibullPdf(x: number, k: number, c: number): number {
 function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
   const points = useMemo(() => {
     if (k == null || c == null || !isFinite(k) || !isFinite(c)) return []
-    const maxX = c * 3
-    const step = maxX / 60
     const pts: { x: number; y: number }[] = []
-    for (let x = 0; x <= maxX; x += step) {
+    for (let x = 0; x <= X_MAX; x += X_STEP) {
       pts.push({ x, y: weibullPdf(x, k, c) })
     }
     return pts
   }, [k, c])
 
-  if (points.length === 0) return null
+  if (points.length === 0) {
+    return <div className="chart-empty">{t('dashboard.chart.weibull_empty')}</div>
+  }
 
   const data = {
     labels: points.map(p => p.x.toFixed(1)),
@@ -51,31 +55,33 @@ function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      title: { display: true, text: `Distribuição Weibull — ${label}`, font: { size: 11 }, color: '#555', padding: { bottom: 8 } },
+      title: { display: true, text: t('dashboard.chart.weibull_title', { height: label }), font: { size: 11 }, color: '#555', padding: { bottom: 8 } },
+      legend: { display: false },
       tooltip: {
         callbacks: {
-          title: (items: any) => `${items[0].label} m/s`,
+          title: (items: any) => `${items[0].label} ${t('dashboard.chart.ws_unit')}`,
           label: (item: any) => `f(v) = ${item.raw.toFixed(4)}`,
         },
       },
     },
     scales: {
       x: {
-        title: { display: true, text: 'Velocidade (m/s)', font: { size: 10 } },
+        title: { display: true, text: t('dashboard.chart.wind_speed_axis'), font: { size: 10 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
         ticks: { maxTicksLimit: 8 },
       },
       y: {
-        title: { display: true, text: 'Densidade f(v)', font: { size: 10 } },
+        title: { display: true, text: t('dashboard.chart.pdf_axis'), font: { size: 10 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
-        beginAtZero: true,
+        min: 0,
+        max: 0.3,
       },
     },
   }
 
   return (
     <div className="chart-container">
-      <Line data={data} options={options} height={120} />
+      <Line data={data} options={options} height={200} />
     </div>
   )
 }
