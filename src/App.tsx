@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import SidePanel from './components/SidePanel'
 import MapView from './components/MapView'
 import PixelInfoPanel from './components/PixelInfoPanel'
-import DashboardView from './components/DashboardView'
+import DashboardSkeleton from './components/DashboardSkeleton'
 import ErrorBoundary from './components/ErrorBoundary'
 import TabBar, { type TabId } from './components/TabBar'
 import FAQPanel from './components/FAQPanel'
@@ -13,6 +13,10 @@ import { datasetFolder } from './lib/cogCatalog'
 import type { Model, Dataset, Variable, Height, Season } from './lib/cogCatalog'
 import type { PixelDataSummary } from './lib/pixelQuery'
 import './App.css'
+
+// Plotly (react-plotly.js + plotly.js) only lives inside this subtree — lazy-loading
+// the whole DashboardView keeps its code (and Plotly's) out of the Map tab's bundle.
+const DashboardView = lazy(() => import('./components/DashboardView'))
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('home')
@@ -32,8 +36,16 @@ export default function App() {
   const [pinnedLocations, setPinnedLocations] = useState<DashboardLocationData[]>([])
   const [showFAQ, setShowFAQ] = useState(false)
   const [showProject, setShowProject] = useState(false)
+  // Gates the first mount of DashboardView (and its Plotly-carrying subtree) to an
+  // actual visit — once true it stays true, so switching back to Map (display:none)
+  // keeps the Dashboard's local UI state (filters, fullscreen, inner tab) intact.
+  const [dashboardVisited, setDashboardVisited] = useState(false)
   const pinnedRef = useRef(pinnedLocations)
   pinnedRef.current = pinnedLocations
+
+  useEffect(() => {
+    if (tab === 'dashboard') setDashboardVisited(true)
+  }, [tab])
 
   useEffect(() => {
     if (tab === 'home') {
@@ -155,13 +167,17 @@ export default function App() {
             </div>
           </div>
           <div className="tab-panel" style={{ display: tab === 'dashboard' ? 'flex' : 'none' }}>
-            <DashboardView
-              model={model} setModel={setModel}
-              dataset={dataset} setDataset={setDataset}
-              pinnedLocations={pinnedLocations}
-              onAddLocation={handleAddLocation}
-              onRemoveLocation={handleRemoveLocation}
-            />
+            {dashboardVisited && (
+              <Suspense fallback={<DashboardSkeleton />}>
+                <DashboardView
+                  model={model} setModel={setModel}
+                  dataset={dataset} setDataset={setDataset}
+                  pinnedLocations={pinnedLocations}
+                  onAddLocation={handleAddLocation}
+                  onRemoveLocation={handleRemoveLocation}
+                />
+              </Suspense>
+            )}
           </div>
         </>
       )}

@@ -1,5 +1,4 @@
-import { useMemo, useRef, useState, memo } from 'react'
-import Plot from 'react-plotly.js'
+import { useMemo, useRef, useState, memo, lazy, Suspense } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel, datasetFolder, COASTAL_STATES, stateNorthSouthIndex,
@@ -10,7 +9,10 @@ import {
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS, BATHY_ZONE_OPTIONS,
   DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS, PLOT_CONFIG, CHART_FONT, HOVER_LABEL_STYLE,
 } from '../lib/dashboardChartConstants'
+import DashboardSkeleton from './DashboardSkeleton'
 import { t } from '../i18n/t'
+
+const Plot = lazy(() => import('react-plotly.js'))
 
 interface GeoParquetExplorerProps {
   currentModel: Model
@@ -242,6 +244,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
             <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.cv')}</span><span className="gpe-stat-value">{result.cv?.toFixed(1)}%</span></div>
           </div>
 
+          <Suspense fallback={<DashboardSkeleton />}>
           <div className="dv-chart-grid">
             <div className="chart-card">
               <Plot
@@ -393,6 +396,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
               />
             </div>
           </div>
+          </Suspense>
         </>
       )}
     </div>
