@@ -15,6 +15,22 @@ export const HEIGHT_TICKTEXT = ['10m', '50m', '100m', '150m', '200m']
 // Okabe-Ito colorblind-safe palette (ColorBrewer/Tableau-equivalent accessibility)
 export const CHART_COLORS = ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9', '#E69F00', '#000000']
 
+// Same low/high gradient endpoints as DirectionalHeatmap.tsx, reused for the wind
+// rose's sector fill so "warmer = faster" reads consistently across the dashboard.
+const WS_LOW_COLOR: [number, number, number] = [0, 114, 178] // Okabe-Ito blue
+const WS_HIGH_COLOR: [number, number, number] = [213, 94, 0] // Okabe-Ito vermillion
+
+export function windSpeedColor(value: number, max: number): string {
+  if (max <= 0 || !isFinite(value)) return 'rgba(150,150,150,0.5)'
+  const ratio = Math.max(0, Math.min(1, value / max))
+  const r = Math.round(WS_LOW_COLOR[0] + (WS_HIGH_COLOR[0] - WS_LOW_COLOR[0]) * ratio)
+  const g = Math.round(WS_LOW_COLOR[1] + (WS_HIGH_COLOR[1] - WS_LOW_COLOR[1]) * ratio)
+  const b = Math.round(WS_LOW_COLOR[2] + (WS_HIGH_COLOR[2] - WS_LOW_COLOR[2]) * ratio)
+  return `rgb(${r},${g},${b})`
+}
+
+export const WS_LEGEND_GRADIENT = `linear-gradient(to right, rgb(${WS_LOW_COLOR.join(',')}), rgb(${WS_HIGH_COLOR.join(',')}))`
+
 // Matches the bathy_zone categories actually present in the per-pixel GeoParquet
 // data (not the COG raster's BathyBand crop regions, which include '0_100').
 export const BATHY_ZONE_OPTIONS: { val: string; label: string }[] = [
@@ -46,13 +62,18 @@ export const HOVER_LABEL_STYLE = {
   font: { size: 12 },
 }
 
-// Shared Plotly config for every dashboard chart: enables the modebar (zoom, pan,
-// reset, PNG export) while dropping the lasso/box-select tools that only clutter
-// read-only analytical charts. displaylogo:false removes the Plotly watermark.
+// Shared Plotly config for every dashboard chart: enables the modebar but keeps
+// only the PNG-export button — zoom/pan/lasso/select/hover-mode tools are dropped
+// since these are read-only analytical charts where that cluster is just clutter.
+// displaylogo:false removes the Plotly watermark.
 export const PLOT_CONFIG = {
   displayModeBar: true,
   displaylogo: false,
-  modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+  modeBarButtonsToRemove: [
+    'lasso2d', 'select2d', 'zoom2d', 'pan2d',
+    'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d',
+    'hoverClosestCartesian', 'hoverCompareCartesian',
+  ],
   responsive: true,
   toImageButtonOptions: {
     format: 'png',

@@ -264,7 +264,7 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
     loadedSeasons = new Set(['ANNUAL'])
     currentExperiment = experiment
     currentModel = model
-    console.log(`PixelQuery: loaded ${records.length} pixels (ANNUAL) for ${experiment} (${model})`)
+    console.debug(`PixelQuery: loaded ${records.length} pixels (ANNUAL) for ${experiment} (${model})`)
   })()
     .then(() => { loading = null })
     .catch((e: unknown) => {
