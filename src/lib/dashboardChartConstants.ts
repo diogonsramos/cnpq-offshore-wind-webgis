@@ -1,3 +1,5 @@
+import type { Config } from 'plotly.js'
+
 export const SEASON_ORDER = ['ANNUAL', 'DJF', 'MAM', 'JJA', 'SON']
 
 export const SEASON_LABELS: Record<string, string> = {
@@ -64,7 +66,7 @@ export const HOVER_LABEL_STYLE = {
 // only the PNG-export button — zoom/pan/lasso/select/hover-mode tools are dropped
 // since these are read-only analytical charts where that cluster is just clutter.
 // displaylogo:false removes the Plotly watermark.
-export const PLOT_CONFIG = {
+export const PLOT_CONFIG: Partial<Config> = {
   displayModeBar: true,
   displaylogo: false,
   modeBarButtonsToRemove: [

@@ -4,6 +4,7 @@ import {
   Chart as ChartJS,
   CategoryScale, LinearScale, PointElement, LineElement,
   Title, Tooltip, Filler,
+  type TooltipItem,
 } from 'chart.js'
 import { t } from '../i18n/t'
 
@@ -59,8 +60,8 @@ function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          title: (items: any) => `${items[0].label} ${t('dashboard.chart.ws_unit')}`,
-          label: (item: any) => `f(v) = ${item.raw.toFixed(4)}`,
+          title: (items: TooltipItem<'line'>[]) => `${items[0].label} ${t('dashboard.chart.ws_unit')}`,
+          label: (item: TooltipItem<'line'>) => `f(v) = ${Number(item.raw).toFixed(4)}`,
         },
       },
     },

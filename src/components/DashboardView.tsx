@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect, memo, lazy, Suspense, type ReactNode } from 'react'
+import { useState, useMemo, useEffect, memo, lazy, Suspense, type ReactNode, type Dispatch } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
 import { type DashboardLocationData, queryPixelStat, seasonStat } from '../lib/pixelQuery'
+import type { AppAction } from '../reducer'
 import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG,
@@ -17,6 +18,7 @@ import GeoParquetExplorer from './GeoParquetExplorer'
 import DirectionalHeatmap from './DirectionalHeatmap'
 import DashboardSkeleton from './DashboardSkeleton'
 import { t } from '../i18n/t'
+import './DashboardView.css'
 
 // Deferred so the ~1MB plotly.js payload only downloads once a chart actually
 // renders, instead of the moment DashboardView's own chunk loads.
@@ -62,22 +64,20 @@ function ChartCard({
 
 interface DashboardViewProps {
   model: Model
-  setModel: (v: Model) => void
   dataset: Dataset
-  setDataset: (v: Dataset) => void
   pinnedLocations: DashboardLocationData[]
   onAddLocation: (lat: number, lon: number) => void
   onRemoveLocation: (idx: number) => void
+  dispatch: Dispatch<AppAction>
 }
 
 function DashboardViewInner({
   model,
-  setModel,
   dataset,
-  setDataset,
   pinnedLocations,
   onAddLocation,
   onRemoveLocation,
+  dispatch,
 }: DashboardViewProps) {
   const [dvTab, setDvTab] = useState<DashboardTab>('simple')
   const [dashboardVar, setDashboardVar] = useState<Variable>('ws')
@@ -262,7 +262,7 @@ function DashboardViewInner({
         <div className="dv-filter-bar">
           <div className="dv-filter-group">
             <label className="dv-label">{t('dashboard.filters.model_label')}</label>
-            <select value={model} onChange={e => setModel(e.target.value as Model)} className="dv-select">
+            <select value={model} onChange={e => dispatch({ type: 'SET_MODEL', model: e.target.value as Model })} className="dv-select">
               {MODELS.map(m => (
                 <option key={m} value={m}>{modelLabel(m)}</option>
               ))}
@@ -270,7 +270,7 @@ function DashboardViewInner({
           </div>
           <div className="dv-filter-group">
             <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
-            <select value={dataset} onChange={e => setDataset(e.target.value as Dataset)} className="dv-select">
+            <select value={dataset} onChange={e => dispatch({ type: 'SET_DATASET', dataset: e.target.value as Dataset })} className="dv-select">
               {DATASETS.map(d => (
                 <option key={d} value={d}>{datasetLabel(d)}</option>
               ))}

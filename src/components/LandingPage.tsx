@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { TabId } from './TabBar'
+import type { TabId } from '../types'
 import { FAQS } from '../lib/metadata'
 import './LandingPage.css'
 

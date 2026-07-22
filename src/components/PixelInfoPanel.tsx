@@ -3,6 +3,7 @@ import type { PixelDataSummary } from '../lib/pixelQuery'
 import ProfileChart from './ProfileChart'
 import WeibullChart from './WeibullChart'
 import DirectionalHeatmap from './DirectionalHeatmap'
+import './PixelInfoPanel.css'
 
 interface PixelInfoPanelProps {
   data: PixelDataSummary | null

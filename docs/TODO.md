@@ -461,6 +461,47 @@ Investigando por que a aba Map continuava disparando uma requisição para `plot
 
 ---
 
+## ✅ f05 — Qualidade de Código (types compartilhados, remoção de `any`, CSS modular, `useReducer`, non-null assertions) — 2026-07-22
+
+> **Status:** Implementado e validado (`pnpm test` — 94 passed, `pnpm test:types` — 0 erros reais). Escopo definido em `TODO.md` (raiz, removido após esta entrega). Refatoração pura — nenhuma mudança de comportamento observável; por isso nenhum teste E2E novo foi necessário (todos os 94 já existentes continuam cobrindo o comportamento preservado).
+
+### Achado prévio à implementação: o gate de type-check nunca rodou de verdade
+
+A Fase f04 já havia registrado esse achado como "fora do escopo" (ver seção anterior, item 1 de "O que não foi implementado"): `pnpm test:types` executava `tsc --noEmit` contra o `tsconfig.json` raiz "solution-style" (`files: []`, só `references`) — sem `-b`, o `tsc` não segue as referências e não compila **nenhum arquivo**, então o comando sempre passava "limpo" independente de erros reais no código. Isso mascarou, por fases inteiras, um conjunto de erros de tipo genuínos: `react-plotly.js`/`plotly.js/dist/plotly` sem declaração de tipos, um cast inválido em `pixelQuery.ts` (`ArrayBufferView` → `ArrayLike<number>`), e `String.replaceAll` exigindo `lib` ES2021+ (`i18n/t.ts`). Corrigido nesta fase junto com a remoção de `any`, já que os dois achados são a mesma causa raiz (o gate nunca filtrou nada).
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| `pnpm test:types` não checava nenhum arquivo | `package.json`: `"test:types": "tsc --noEmit"` → `"tsc -b"` (mesmo modo já usado por `pnpm build`, que sempre respeitou as referências) |
+| `replaceAll` exigia lib ES2021+ | `tsconfig.app.json`: `target`/`lib` `ES2020` → `ES2021` |
+| `react-plotly.js`/`plotly.js` sem tipos | Instalados `@types/plotly.js` e `@types/react-plotly.js` (devDependencies); `PLOT_CONFIG`/`WINDROSE_PLOT_CONFIG` em `dashboardChartConstants.ts`/`windroseConfig.ts` agora tipados como `Partial<Plotly.Config>`; novo shim `src/plotly-dist.d.ts` re-exporta os tipos de `'plotly.js'` para o caminho `'plotly.js/dist/plotly'` (o bundle prebuilt real usado em runtime — trocar para o entry `'plotly.js'` quebra o build, ver nota abaixo) |
+| `as any`/`as any as X` em `pixelQuery.ts`, `SidePanel.tsx`, `MapView.tsx` | `pixelQuery.ts`: novo helper `isArrowLike()` (type guard) substitui o cast de `.toArray()`; `asWeibull()`/`asWindRoseRecord()` substituem os `as any as RawWeibull`/`Record<...>` (cast único via `unknown`, não `any`); cast de `ArrayBufferView` passa por `unknown` em vez de direto. `SidePanel.tsx`: os dois `as any` do seletor de Altura eram desnecessários — bastava não anotar o genérico e deixar `T` inferir `string`. `MapView.tsx`: `useRef<Map<string, any>>` (cache de GeoJSON de batimetria) → `Map<string, GeoJSON.GeoJSON>` |
+| `any` implícito nos callbacks de tooltip do Chart.js | `ProfileChart.tsx`/`WeibullChart.tsx`: `(items: any)`/`(item: any)` → `TooltipItem<'line'>` (tipo real do `chart.js`) |
+| Non-null assertions (`!`) espalhadas pelo projeto | `MapView.tsx`: os dois `map.current!` viraram guard `if (!ready \|\| !map.current) return`. `cogTileRenderer.ts`: `canvas.getContext('2d')!` virou guard com `return null`. `pixelQuery.ts`: 5 ocorrências de `Map.get(...)!` (após um `.has()` separado) viraram padrão get-or-create de uma leitura só (`let x = map.get(k); if (!x) { ...; map.set(k, x) }`), mais simples e sem a asserção. `DashboardComparisonView.tsx`: as 5 ocorrências de `e.data!` viraram um único type predicate em `readyEntries` (`(e): e is ... & { data: DashboardLocationData } => e.data != null`), que já narrowa `data` em todos os usos subsequentes |
+| Tipos `TabId`/`BasemapId`/`BathyLayerId` só existiam implicitamente (string solta ou só em `TabBar.tsx`) | Novo `src/types.ts` — `TabId` (movido de `TabBar.tsx`), `BasemapId` (união das 6 chaves de `BASEMAP_TILES` em `MapView.tsx`), `BathyLayerId` (união das 6 chaves de `BATHY_FILES`). Usados agora em `TabBar.tsx`, `LandingPage.tsx`, `BasemapSwitcher.tsx`, `SidePanel.tsx`, `MapView.tsx`, `reducer.ts` |
+| `App.tsx` com 17+ `useState` independentes | Novo `src/reducer.ts` — `AppState`/`AppAction`/`appReducer`/`initialAppState`; `App.tsx` passou a um único `useReducer`. Duas ações não previstas no rascunho original do `TODO.md` foram necessárias para preservar o comportamento exato: `REFRESH_PINNED_LOCATIONS` (substituição em lote do array ao trocar model/dataset — `ADD_PIN` só cobre inserção unitária) e a lógica de `dashboardVisited` foi absorvida dentro do próprio `case 'SET_TAB'` do reducer (em vez de um `useEffect` + ação separada), eliminando um `useEffect` sem mudar o momento em que o Dashboard é montado pela primeira vez |
+| Setters individuais repassados a `SidePanel`/`MapView`/`DashboardView` | `dispatch` passado diretamente para os três (props reduzidas de ~9 setters para 1 em `SidePanel`); os callbacks que envolvem lógica de negócio async (`onAddPin`/`onRemovePin`/`onPixelClick`/`onOpenDashboard`) continuam como props dedicadas em vez de dispatch cru, já que não mapeiam 1:1 para uma única ação |
+| `App.css` monolítico (1286 linhas, todos os componentes) | Dividido em 4 arquivos co-localizados (mesmo padrão de `LandingPage.css`): `DashboardView.css` (inclui `.dv-*`, `.gpe-*` do GeoParquet Explorer e `.chart-card`/`.chart-fullscreen-*`/`.windrose-legend-*`, todos exclusivos da família Dashboard), `SidePanel.css` (`.side-panel`, `.accordion-*`, `.select-field`/`.combobox-*`, `.bathy-layers`, `.footer-*`), `MapView.css` (`.map-area`/`.map-container`, `.cog-loading`/`.cog-spinner`, `.basemap-*`), `PixelInfoPanel.css` (`.pixel-panel-*`, `.pixel-section-*`, `.chart-container`, `.pin-button`/`.dashboard-button`). `App.css` ficou só com resets globais, `.app`/`.tab-bar` (usados por `TabBar.tsx`, fora do escopo desta divisão) e estilos genuinamente compartilhados entre Mapa e Dashboard (`.chart-empty`, `.heatmap-*` — `DirectionalHeatmap` renderiza nos dois) e o Drawer/FAQ/Project Info (fora do escopo desta divisão) |
+
+### Nota: por que `windroseConfig.ts` não importa `'plotly.js'` diretamente
+
+A correção óbvia para tipar `Plotly.relayout()` seria trocar `import Plotly from 'plotly.js/dist/plotly'` por `import Plotly from 'plotly.js'` (o entry com `@types/plotly.js` real). Isso quebra `pnpm dev`: o entry `./lib/index.js` de `plotly.js` inclui o trace `image`, que faz `require('buffer/')` (pacote `buffer` na `node_modules`, não o builtin do Node) — não instalado neste projeto, e o esbuild do Vite aborta o build com `Could not resolve "buffer/"`. O bundle prebuilt `plotly.js/dist/plotly` (usado desde antes desta fase) já traz esse polyfill embutido. Em vez de adicionar mais uma dependência só para isso, o import de runtime continua apontando para o bundle prebuilt e um novo `src/plotly-dist.d.ts` só reexporta os tipos reais de `'plotly.js'` para esse caminho.
+
+### Testes
+
+Nenhum teste E2E novo — esta fase não altera nenhum comportamento observável (mesmos 94 testes de `06` a `11` continuam cobrindo tudo). `pnpm test:types` passou a checar de verdade (antes era vacuamente 0 erros; agora é genuinamente 0 erros, com `tsc -b` cobrindo os ~3.900 linhas de `src/`).
+
+### Pacotes instalados
+
+`@types/plotly.js` e `@types/react-plotly.js` (devDependencies) — necessários para tipar `<Plot data=... layout=... config=.../>` e `Plotly.relayout()` sem `any`; nenhuma delas afeta o bundle de produção (são apenas `.d.ts`, removidas no build).
+
+### Arquivos modificados
+
+`package.json`, `tsconfig.app.json`, `src/types.ts` (novo), `src/reducer.ts` (novo), `src/plotly-dist.d.ts` (novo), `src/App.tsx`, `src/App.css`, `src/components/TabBar.tsx`, `src/components/LandingPage.tsx`, `src/components/BasemapSwitcher.tsx`, `src/components/SidePanel.tsx`, `src/components/SidePanel.css` (novo), `src/components/MapView.tsx`, `src/components/MapView.css` (novo), `src/components/DashboardView.tsx`, `src/components/DashboardView.css` (novo), `src/components/DashboardComparisonView.tsx`, `src/components/PixelInfoPanel.tsx`, `src/components/PixelInfoPanel.css` (novo), `src/components/ProfileChart.tsx`, `src/components/WeibullChart.tsx`, `src/lib/pixelQuery.ts`, `src/lib/cogTileRenderer.ts`, `src/lib/dashboardChartConstants.ts`, `src/lib/windroseConfig.ts`, `TODO.md` (raiz, removido após esta entrega)
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.

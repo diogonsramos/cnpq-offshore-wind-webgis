@@ -1,23 +1,27 @@
-import { useState } from 'react'
+import { useState, type Dispatch } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS, SEASONS,
   datasetLabel, modelLabel, varLabel,
   type Model, type Dataset, type Variable, type Height, type Season,
 } from '../lib/cogCatalog'
+import type { BathyLayerId } from '../types'
+import type { AppAction } from '../reducer'
 import { t } from '../i18n/t'
+import './SidePanel.css'
 
 interface SidePanelProps {
-  model: Model; setModel: (v: Model) => void
-  dataset: Dataset; setDataset: (v: Dataset) => void
-  variable: Variable; setVariable: (v: Variable) => void
-  height: Height; setHeight: (v: Height) => void
-  season: Season; setSeason: (v: Season) => void
-  showBathymetry: boolean; setShowBathymetry: (v: boolean) => void
-  bathyLayer: string; setBathyLayer: (v: string) => void
+  model: Model
+  dataset: Dataset
+  variable: Variable
+  height: Height
+  season: Season
+  showBathymetry: boolean
+  bathyLayer: BathyLayerId
   onOpenDashboard: () => void
-  showFAQ: boolean; setShowFAQ: (v: boolean) => void
-  showProject: boolean; setShowProject: (v: boolean) => void
-  opacity: number; setOpacity: (v: number) => void
+  showFAQ: boolean
+  showProject: boolean
+  opacity: number
+  dispatch: Dispatch<AppAction>
 }
 
 function AccordionSection({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
@@ -102,7 +106,7 @@ function SearchableSelect({ label, options, value, onChange }: {
   )
 }
 
-const BATHY_LAYERS = [
+const BATHY_LAYERS: { val: BathyLayerId; label: string }[] = [
   { val: 'mn_zee_nacional', label: 'ZEE Nacional' },
   { val: 'mn_zee_estadual', label: 'ZEE Estadual' },
   { val: 'bathy_0_100_nacional', label: 'Plataforma Nacional (0-100m)' },
@@ -112,12 +116,12 @@ const BATHY_LAYERS = [
 ]
 
 export default function SidePanel({
-  model, setModel, dataset, setDataset, variable, setVariable, height, setHeight,
-  season, setSeason,
-  showBathymetry, setShowBathymetry, bathyLayer, setBathyLayer,
+  model, dataset, variable, height, season,
+  showBathymetry, bathyLayer,
   onOpenDashboard,
-  showFAQ, setShowFAQ, showProject, setShowProject,
-  opacity, setOpacity,
+  showFAQ, showProject,
+  opacity,
+  dispatch,
 }: SidePanelProps) {
   return (
     <div className="side-panel">
@@ -132,47 +136,47 @@ export default function SidePanel({
             label="Modelo"
             options={MODELS.map(m => ({ val: m, label: modelLabel(m) }))}
             value={model}
-            onChange={v => setModel(v as Model)}
+            onChange={v => dispatch({ type: 'SET_MODEL', model: v as Model })}
           />
           <SearchableSelect
             label="Experimento"
             options={DATASETS.map(d => ({ val: d, label: `${modelLabel(model)} ${datasetLabel(d)}` }))}
             value={dataset}
-            onChange={v => setDataset(v as Dataset)}
+            onChange={v => dispatch({ type: 'SET_DATASET', dataset: v as Dataset })}
           />
           <SelectField
             label="Variável"
             options={VARIABLES.map(v => ({ val: v, label: `${varLabel(v).label} (${varLabel(v).unit})` }))}
             value={variable}
-            onChange={v => setVariable(v as Variable)}
+            onChange={v => dispatch({ type: 'SET_VARIABLE', variable: v as Variable })}
           />
         </AccordionSection>
 
         <AccordionSection title="Altura & Estação" defaultOpen={false}>
           <SelectField
             label="Altura"
-            options={HEIGHTS.map(h => ({ val: String(h) as any, label: `${h}m` }))}
-            value={String(height) as any}
-            onChange={v => setHeight(Number(v) as Height)}
+            options={HEIGHTS.map(h => ({ val: String(h), label: `${h}m` }))}
+            value={String(height)}
+            onChange={v => dispatch({ type: 'SET_HEIGHT', height: Number(v) as Height })}
           />
           <SelectField
             label="Estação"
             options={SEASONS.map(s => ({ val: s, label: s.toUpperCase() }))}
             value={season}
-            onChange={setSeason}
+            onChange={v => dispatch({ type: 'SET_SEASON', season: v })}
           />
         </AccordionSection>
 
         <AccordionSection title="Shapefiles de Batimetria" defaultOpen={false}>
           <label className="checkbox-row">
-            <input type="checkbox" checked={showBathymetry} onChange={e => setShowBathymetry(e.target.checked)} />
+            <input type="checkbox" checked={showBathymetry} onChange={e => dispatch({ type: 'SET_SHOW_BATHYMETRY', show: e.target.checked })} />
             <span>Mostrar shapefiles</span>
           </label>
           {showBathymetry && (
             <div className="bathy-layers">
               {BATHY_LAYERS.map(bl => (
                 <label key={bl.val} className="radio-row">
-                  <input type="radio" name="bathyLayer" checked={bathyLayer === bl.val} onChange={() => setBathyLayer(bl.val)} />
+                  <input type="radio" name="bathyLayer" checked={bathyLayer === bl.val} onChange={() => dispatch({ type: 'SET_BATHY_LAYER', layer: bl.val })} />
                   <span>{bl.label}</span>
                 </label>
               ))}
@@ -189,7 +193,7 @@ export default function SidePanel({
               max={1}
               step={0.1}
               value={opacity}
-              onChange={e => setOpacity(Number(e.target.value))}
+              onChange={e => dispatch({ type: 'SET_COG_OPACITY', opacity: Number(e.target.value) })}
             />
           </div>
         </AccordionSection>
@@ -198,11 +202,11 @@ export default function SidePanel({
       <div className="footer">
         <p className="footer-info">{modelLabel(model)} {datasetLabel(dataset)} | {varLabel(variable).label} {height}m</p>
         <div className="footer-icons">
-          <button className="footer-icon-btn" onClick={() => setShowFAQ(true)} title="FAQ">
+          <button className="footer-icon-btn" onClick={() => dispatch({ type: 'SET_SHOW_FAQ', show: true })} title="FAQ">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/><text x="8" y="11.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="currentColor">?</text></svg>
             <span>FAQ</span>
           </button>
-          <button className="footer-icon-btn" onClick={() => setShowProject(true)} title="Project Info">
+          <button className="footer-icon-btn" onClick={() => dispatch({ type: 'SET_SHOW_PROJECT', show: true })} title="Project Info">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/><text x="8" y="11.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="currentColor">i</text></svg>
             <span>Project</span>
           </button>

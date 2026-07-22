@@ -4,6 +4,7 @@ import {
   Chart as ChartJS,
   CategoryScale, LinearScale, PointElement, LineElement,
   Title, Tooltip, Filler,
+  type TooltipItem,
 } from 'chart.js'
 import { t } from '../i18n/t'
 
@@ -65,8 +66,8 @@ function ProfileChartInner({ heights, means, variant = 'ws' }: ProfileChartProps
       legend: { display: false },
       tooltip: {
         callbacks: {
-          title: (items: any) => `${items[0].raw.toFixed(2)} ${t(cfg.unitKey)}`,
-          label: (item: any) => `${heights[item.dataIndex]}m`,
+          title: (items: TooltipItem<'line'>[]) => `${Number(items[0].raw).toFixed(2)} ${t(cfg.unitKey)}`,
+          label: (item: TooltipItem<'line'>) => `${heights[item.dataIndex]}m`,
         },
       },
     },

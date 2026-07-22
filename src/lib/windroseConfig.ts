@@ -1,4 +1,8 @@
-import Plotly from 'plotly.js/dist/plotly'
+// Imports the prebuilt UMD dist bundle (not the bare 'plotly.js' entry) — the
+// source entry's image trace pulls in a `require('buffer/')` shim that esbuild
+// can't resolve in this project; the dist bundle has it inlined already.
+import * as Plotly from 'plotly.js/dist/plotly'
+import type { Config, Layout } from 'plotly.js'
 import { PLOT_CONFIG } from './dashboardChartConstants'
 
 // Split out of dashboardChartConstants.ts so components that only need plain
@@ -18,12 +22,15 @@ const RESET_POLAR_ICON = {
 
 // Wind rose-only variant of PLOT_CONFIG: adds a "reset zoom" button that
 // restores the radial axis to autorange after the user zooms in.
-export const WINDROSE_PLOT_CONFIG = {
+export const WINDROSE_PLOT_CONFIG: Partial<Config> = {
   ...PLOT_CONFIG,
   modeBarButtonsToAdd: [{
     name: 'resetPolarView',
     title: 'Resetar zoom',
     icon: RESET_POLAR_ICON,
-    click: (gd: HTMLElement) => Plotly.relayout(gd, { 'polar.radialaxis.autorange': true }),
+    // @types/plotly.js only enumerates xaxis/yaxis dotted relayout paths (see its
+    // own comment on Layout) — polar.radialaxis.autorange is a valid runtime path
+    // Plotly supports but the type doesn't model, hence the unknown pivot.
+    click: (gd: HTMLElement) => Plotly.relayout(gd, { 'polar.radialaxis.autorange': true } as unknown as Partial<Layout>),
   }],
 }

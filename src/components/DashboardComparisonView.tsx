@@ -148,7 +148,9 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
     return { wrfMean, mpasMean, diffPct: ((mpasMean - wrfMean) / wrfMean) * 100 }
   }, [mode, entries, variable, height])
 
-  const readyEntries = entries.filter(e => e.data)
+  const readyEntries = entries.filter(
+    (e): e is (typeof entries)[number] & { data: DashboardLocationData } => e.data != null,
+  )
 
   return (
     <div className="dv-compare">
@@ -246,7 +248,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
               <Plot
                 data={readyEntries.map(e => ({
                   x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
-                  y: SEASON_ORDER.map(s => seasonStat(e.data!, variable, height, s, 'mean')),
+                  y: SEASON_ORDER.map(s => seasonStat(e.data, variable, height, s, 'mean')),
                   type: 'bar',
                   name: e.label,
                   marker: { color: e.style.color, pattern: e.style.dash === 'dash' ? { shape: '/' } : undefined },
@@ -279,7 +281,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
             <div className="chart-card" data-testid="chart-weibull">
               <Plot
                 data={readyEntries.map(e => {
-                  const w = e.data!.weibull?.[height]
+                  const w = e.data.weibull?.[height]
                   if (!w) return { x: [], y: [], type: 'scatter' as const, name: e.label }
                   const maxX = 30
                   const step = maxX / 60
@@ -319,7 +321,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
             <div className="chart-card" data-testid="chart-windrose">
               <Plot
                 data={readyEntries.map(e => {
-                  const wr = e.data!.wind_rose?.[height]
+                  const wr = e.data.wind_rose?.[height]
                   if (!wr) return { r: [], theta: [], type: 'scatterpolar' as const, name: e.label }
                   return {
                     r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
@@ -356,8 +358,8 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
             <div className="chart-card">
               <Plot
                 data={readyEntries.map(e => ({
-                  x: e.data!.profile_means,
-                  y: e.data!.profile_heights,
+                  x: e.data.profile_means,
+                  y: e.data.profile_heights,
                   type: 'scatter' as const,
                   mode: 'lines+markers' as const,
                   name: e.label,

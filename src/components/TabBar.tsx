@@ -1,6 +1,5 @@
 import { memo } from 'react'
-
-export type TabId = 'home' | 'map' | 'dashboard'
+import type { TabId } from '../types'
 
 interface TabBarProps {
   tab: TabId

@@ -10,7 +10,7 @@
     "test": "pnpm test:types && pnpm test:e2e",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:types": "tsc --noEmit"
+    "test:types": "tsc -b"
   },
   "dependencies": {
     "apache-arrow": "^21.1.0",
@@ -27,8 +27,10 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
+    "@types/plotly.js": "^3.0.10",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/react-plotly.js": "^2.6.4",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "~5.6.2",
     "vite": "^6.0.0"
