@@ -1,11 +1,12 @@
 import { memo } from 'react'
+import type { BasemapId } from '../types'
 
 interface BasemapSwitcherProps {
-  basemap: string
-  onChange: (id: string) => void
+  basemap: BasemapId
+  onChange: (id: BasemapId) => void
 }
 
-const BASEMAPS = [
+const BASEMAPS: { id: BasemapId; label: string; icon: string }[] = [
   { id: 'street', label: 'Street', icon: '🗺' },
   { id: 'satellite', label: 'Satellite', icon: '🛰' },
   { id: 'dark', label: 'Dark', icon: '🌙' },

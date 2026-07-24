@@ -155,16 +155,20 @@ function cacheKey(experiment: string, model: string, season: string): string {
 
 const HEIGHTS = [10, 50, 100, 150, 200]
 
+interface ArrowLike { toArray(): unknown }
+
+function isArrowLike(v: unknown): v is ArrowLike {
+  return v != null && typeof v === 'object' && 'toArray' in v && typeof (v as ArrowLike).toArray === 'function'
+}
+
 function safeArray(v: unknown): number[] {
   if (v === null || v === undefined) return []
   if (Array.isArray(v)) return v.map(x => x == null ? 0 : Number(x))
-  if (ArrayBuffer.isView(v)) return Array.from(v as ArrayLike<number>, x => Number(x))
+  if (ArrayBuffer.isView(v)) return Array.from(v as unknown as ArrayLike<number>, x => Number(x))
   if (typeof v === 'string') {
     try { const p = JSON.parse(v); return Array.isArray(p) ? p.map(x => Number(x)) : [] } catch { return [] }
   }
-  if (v && typeof v === 'object' && 'toArray' in v && typeof (v as any).toArray === 'function') {
-    return safeArray((v as any).toArray())
-  }
+  if (isArrowLike(v)) return safeArray(v.toArray())
   if (typeof v === 'number' || typeof v === 'bigint') return [Number(v)]
   return []
 }
@@ -196,6 +200,14 @@ export interface PixelDataSummary {
 
 interface RawWeibull { k: number; c: number }
 interface RawWindRose { freq: number; mean_ws: number }
+
+function asWeibull(v: unknown): RawWeibull | null {
+  return v ? (v as unknown as RawWeibull) : null
+}
+
+function asWindRoseRecord(v: unknown): Record<string, RawWindRose> | null {
+  return v ? (v as unknown as Record<string, RawWindRose>) : null
+}
 
 interface RawPixel {
   [key: string]: unknown
@@ -287,8 +299,8 @@ async function loadSeasonData(experiment: string, season: string, model: string)
     if (!row) continue
     const pixel_id = Number(row.pixel_id as number | bigint)
     if (!allSeasonMap) continue
-    if (!allSeasonMap.has(pixel_id)) continue
-    const sm = allSeasonMap.get(pixel_id)!
+    const sm = allSeasonMap.get(pixel_id)
+    if (!sm) continue
     const raw: Record<string, unknown> = {}
     for (const key of Object.keys(row)) {
       raw[key] = (row as Record<string, unknown>)[key]
@@ -326,15 +338,17 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
       const pixel_id = Number(row.pixel_id as number | bigint)
       const season = String(row.season || 'ANNUAL')
 
-      if (!seasonMap.has(pixel_id)) seasonMap.set(pixel_id, new Map())
+      let sm = seasonMap.get(pixel_id)
+      if (!sm) { sm = new Map(); seasonMap.set(pixel_id, sm) }
       const raw: Record<string, unknown> = {}
       for (const key of Object.keys(row)) {
         raw[key] = (row as Record<string, unknown>)[key]
       }
-      seasonMap.get(pixel_id)!.set(season, raw)
+      sm.set(season, raw)
 
-      if (!recordsMap.has(pixel_id)) {
-        recordsMap.set(pixel_id, {
+      let p = recordsMap.get(pixel_id)
+      if (!p) {
+        p = {
           pixel_id,
           lat: Number(row.lat),
           lon: Number(row.lon),
@@ -345,16 +359,16 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
           profile_means: safeArray(row.profile_means),
           wpd_profile_means: safeArray(row.wpd_profile_means),
           weibull_10m: null, weibull_50m: null, weibull_100m: null, weibull_150m: null, weibull_200m: null,
-        })
+        }
+        recordsMap.set(pixel_id, p)
       }
 
-      const p = recordsMap.get(pixel_id)!
       if (season === 'ANNUAL') {
-        p.weibull_10m = row.weibull_10m ? (row.weibull_10m as any as RawWeibull) : null
-        p.weibull_50m = row.weibull_50m ? (row.weibull_50m as any as RawWeibull) : null
-        p.weibull_100m = row.weibull_100m ? (row.weibull_100m as any as RawWeibull) : null
-        p.weibull_150m = row.weibull_150m ? (row.weibull_150m as any as RawWeibull) : null
-        p.weibull_200m = row.weibull_200m ? (row.weibull_200m as any as RawWeibull) : null
+        p.weibull_10m = asWeibull(row.weibull_10m)
+        p.weibull_50m = asWeibull(row.weibull_50m)
+        p.weibull_100m = asWeibull(row.weibull_100m)
+        p.weibull_150m = asWeibull(row.weibull_150m)
+        p.weibull_200m = asWeibull(row.weibull_200m)
         p.profile_heights = safeArray(row.profile_heights)
         p.profile_means = safeArray(row.profile_means)
         p.wpd_profile_means = safeArray(row.wpd_profile_means)
@@ -552,9 +566,7 @@ export async function queryDashboardLocation(
   if (annualRow) {
     for (const h of HEIGHTS) {
       const wrKey = `wind_rose_${h}m`
-      windRose[h] = annualRow[wrKey]
-        ? (annualRow[wrKey] as any as Record<string, { freq: number; mean_ws: number }>)
-        : null
+      windRose[h] = asWindRoseRecord(annualRow[wrKey])
     }
     for (const h of HEIGHTS) {
       for (const prefix of ['ws', 'wpd']) {
@@ -717,12 +729,14 @@ export function queryFilteredPixels(filters: FilterCriteria): FilteredAggregates
   const bathyGroups = new Map<string, number[]>()
   for (const m of matched) {
     if (m.pixel.state) {
-      if (!stateGroups.has(m.pixel.state)) stateGroups.set(m.pixel.state, [])
-      stateGroups.get(m.pixel.state)!.push(m.value)
+      let bucket = stateGroups.get(m.pixel.state)
+      if (!bucket) { bucket = []; stateGroups.set(m.pixel.state, bucket) }
+      bucket.push(m.value)
     }
     if (m.pixel.bathy_zone) {
-      if (!bathyGroups.has(m.pixel.bathy_zone)) bathyGroups.set(m.pixel.bathy_zone, [])
-      bathyGroups.get(m.pixel.bathy_zone)!.push(m.value)
+      let bucket = bathyGroups.get(m.pixel.bathy_zone)
+      if (!bucket) { bucket = []; bathyGroups.set(m.pixel.bathy_zone, bucket) }
+      bucket.push(m.value)
     }
   }
   const byState: StateAggregate[] = Array.from(stateGroups.entries())

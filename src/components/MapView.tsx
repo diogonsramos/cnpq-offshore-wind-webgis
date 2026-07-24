@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState, memo, useCallback } from 'react'
+import { useEffect, useRef, useState, memo, useCallback, type Dispatch } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { renderCog } from '../lib/cogTileRenderer'
 import { buildCogUrl, datasetFolder, datasetLabel, modelLabel, varLabel, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
 import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '../lib/pixelQuery'
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
+import type { BasemapId, BathyLayerId } from '../types'
+import type { AppAction } from '../reducer'
 import BasemapSwitcher from './BasemapSwitcher'
+import './MapView.css'
 
 interface MapViewProps {
   model: Model
@@ -14,14 +17,14 @@ interface MapViewProps {
   height: Height
   season: Season
   showBathymetry: boolean
-  bathyLayer: string
+  bathyLayer: BathyLayerId
   opacity: number
-  basemap: string
-  onBasemapChange: (id: string) => void
+  basemap: BasemapId
   onPixelClick: (data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => void
   pinnedLocations: DashboardLocationData[]
   onAddPin: (lat: number, lon: number) => void
   onRemovePin: (idx: number) => void
+  dispatch: Dispatch<AppAction>
 }
 
 const SR = 'cog-src'
@@ -32,7 +35,7 @@ const BL = 'bathy-line'
 
 // mn_zee_nacional/mn_zee_estadual have no published file yet (no ZEE boundary
 // data delivered so far) — same "not published" class as MPAS in pixelQuery.ts.
-const BATHY_FILES: Record<string, string> = {
+const BATHY_FILES: Record<BathyLayerId, string> = {
   mn_zee_nacional: '/data/shp/mn_zee_nacional.geojson',
   mn_zee_estadual: '/data/shp/mn_zee_estadual.geojson',
   bathy_0_100_nacional: '/data/bathymetry/batimetria_0_100m_cured.geojson',
@@ -41,7 +44,7 @@ const BATHY_FILES: Record<string, string> = {
   bathy_0_20_50_75_100_estadual: '/data/bathymetry/batimetria_subfaixas_estadual_cured.geojson',
 }
 
-const BASEMAP_TILES: Record<string, { tiles: string[]; attribution: string }> = {
+const BASEMAP_TILES: Record<BasemapId, { tiles: string[]; attribution: string }> = {
   street: {
     tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
     attribution: '&copy; OpenStreetMap',
@@ -79,7 +82,7 @@ const PIN_OUTLINE_LYR = 'pin-outline-lyr'
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MapViewInner(props: MapViewProps) {
-  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap, onBasemapChange, onPixelClick, pinnedLocations, onAddPin, onRemovePin } = props
+  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap, onPixelClick, pinnedLocations, onAddPin, onRemovePin, dispatch } = props
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const datasetRef = useRef(dataset)
@@ -91,7 +94,7 @@ function MapViewInner(props: MapViewProps) {
   const [ready, setReady] = useState(false)
   const [cogLoading, setCogLoading] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>()
-  const cache = useRef<Map<string, any>>(new Map())
+  const cache = useRef<Map<string, GeoJSON.GeoJSON>>(new Map())
   const cogAbort = useRef<AbortController | null>(null)
   // Fingerprint of the last COG actually rendered (filters + viewport). MapLibre's
   // resize() (fired by the ResizeObserver below when switching back to this tab)
@@ -364,8 +367,8 @@ function MapViewInner(props: MapViewProps) {
   }, [drawCog])
 
   useEffect(() => {
-    if (!ready) return
-    const m = map.current!
+    if (!ready || !map.current) return
+    const m = map.current
     const idle = () => {
       m.off('idle', idle)
       drawCogWithPins()
@@ -375,8 +378,8 @@ function MapViewInner(props: MapViewProps) {
   }, [drawCogWithPins, ready])
 
   useEffect(() => {
-    if (!ready) return
-    const m = map.current!
+    if (!ready || !map.current) return
+    const m = map.current
     const debounce = () => {
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(drawCogWithPins, 300)
@@ -435,7 +438,7 @@ function MapViewInner(props: MapViewProps) {
   return (
     <>
       <div ref={container} className="map-container" />
-      <BasemapSwitcher basemap={basemap} onChange={onBasemapChange} />
+      <BasemapSwitcher basemap={basemap} onChange={id => dispatch({ type: 'SET_BASEMAP', basemap: id })} />
       {cogLoading && (
         <div className="cog-loading">
           <div className="cog-spinner" />

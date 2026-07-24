@@ -1,0 +1,267 @@
+/* ── Side Panel ─────────────────────────── */
+.side-panel {
+  width: 280px;
+  height: 100%;
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.side-panel .header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.side-panel .header h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.side-panel .header .subtitle {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.side-panel .filters {
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Accordion ─────────────────────────── */
+.accordion-section {
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.accordion-header:hover {
+  background: #f8f9fa;
+}
+
+.accordion-arrow {
+  font-size: 10px;
+  color: #aaa;
+  transition: transform 0.2s;
+}
+.accordion-arrow.open {
+  transform: rotate(180deg);
+}
+
+.accordion-body {
+  padding: 0 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Select / Dropdown ──────────────────── */
+.select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+
+.select-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 12px;
+  background: #f8f9fa;
+  color: #1a1a2e;
+  outline: none;
+  cursor: pointer;
+  appearance: auto;
+}
+.select-field select:focus {
+  border-color: #4a90d9;
+}
+
+/* ── Range slider ───────────────────────── */
+.range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.range-field input[type="range"] {
+  width: 100%;
+  accent-color: #4a90d9;
+  cursor: pointer;
+}
+
+/* ── Combobox (searchable) ─────────────── */
+.combobox {
+  position: relative;
+}
+
+.combobox-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 12px;
+  background: #f8f9fa;
+  color: #1a1a2e;
+  outline: none;
+}
+.combobox-input:focus {
+  border-color: #4a90d9;
+  background: #fff;
+}
+.combobox-input::placeholder {
+  color: #999;
+}
+
+.combobox-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+}
+
+.combobox-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s;
+}
+.combobox-option:hover {
+  background: #f0f4ff;
+}
+.combobox-option.active {
+  background: #e8f0fe;
+  font-weight: 600;
+}
+.combobox-option-label {
+  color: #1a1a2e;
+}
+.combobox-option-val {
+  color: #999;
+  font-size: 10px;
+  font-weight: 600;
+}
+.combobox-empty {
+  padding: 12px 10px;
+  text-align: center;
+  color: #999;
+  font-size: 11px;
+}
+
+/* ── Bathymetry section ─────────── */
+.bathy-layers {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.checkbox-row input {
+  accent-color: #4a90d9;
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #555;
+  padding: 3px 0;
+}
+
+.radio-row input {
+  accent-color: #4a90d9;
+}
+
+/* ── Footer ─────────────────────────────── */
+.footer {
+  margin-top: auto;
+  padding: 8px 16px;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+.footer-info {
+  font-size: 10px;
+  color: #999;
+  margin-bottom: 6px;
+}
+.footer-icons {
+  display: flex;
+  gap: 4px;
+}
+.footer-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #f8f9fa;
+  color: #666;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.footer-icon-btn:hover {
+  background: #e8f0fe;
+  border-color: #4a90d9;
+  color: #4a90d9;
+}
+.footer-icon-btn.dashboard-btn {
+  background: #4a90d9;
+  border-color: #4a90d9;
+  color: #fff;
+}
+.footer-icon-btn.dashboard-btn:hover {
+  background: #357abd;
+  border-color: #357abd;
+}
