@@ -17,7 +17,7 @@ import DashboardComparisonView from './DashboardComparisonView'
 import GeoParquetExplorer from './GeoParquetExplorer'
 import DirectionalHeatmap from './DirectionalHeatmap'
 import DashboardSkeleton from './DashboardSkeleton'
-import { t } from '../i18n/t'
+import { useLocale } from '../i18n/provider'
 import './DashboardView.css'
 
 // Deferred so the ~1MB plotly.js payload only downloads once a chart actually
@@ -42,6 +42,7 @@ function ChartCard({
   onToggleFullscreen: (id: string) => void
   children: ReactNode
 }) {
+  const { t } = useLocale()
   const isFullscreen = fullscreenId === id
   const cls = `chart-card${wide ? ' chart-card--wide' : ''}${isFullscreen ? ' chart-card--fullscreen' : ''}`
   return (
@@ -51,8 +52,8 @@ function ChartCard({
         <button
           className="chart-fullscreen-btn"
           onClick={() => onToggleFullscreen(id)}
-          title={isFullscreen ? 'Restaurar' : 'Tela cheia'}
-          aria-label={isFullscreen ? 'Restaurar gráfico' : 'Expandir gráfico'}
+          title={isFullscreen ? t('dashboard.chart.restore') : t('dashboard.chart.fullscreen')}
+          aria-label={isFullscreen ? t('dashboard.chart.restore_aria') : t('dashboard.chart.expand_aria')}
         >
           {isFullscreen ? '✕' : '⛶'}
         </button>
@@ -79,6 +80,7 @@ function DashboardViewInner({
   onRemoveLocation,
   dispatch,
 }: DashboardViewProps) {
+  const { t } = useLocale()
   const [dvTab, setDvTab] = useState<DashboardTab>('simple')
   const [dashboardVar, setDashboardVar] = useState<Variable>('ws')
   const [dashboardHeight, setDashboardHeight] = useState<Height>(100)
@@ -137,18 +139,18 @@ function DashboardViewInner({
     URL.revokeObjectURL(url)
   }
 
-  const modelLabelStr = modelLabel(model)
-  const datasetLabelStr = datasetLabel(dataset)
+  const modelLabelStr = modelLabel(model, t)
+  const datasetLabelStr = datasetLabel(dataset, t)
 
   const handleManualAdd = () => {
     const lat = parseFloat(latInput)
     const lon = parseFloat(lonInput)
     if (isNaN(lat) || isNaN(lon)) {
-      setLocError('Enter valid numeric lat/lon.')
+      setLocError(t('dashboard.invalid_coords'))
       return
     }
     if (pinnedLocations.length >= 3) {
-      setLocError('Maximum 3 locations allowed.')
+      setLocError(t('dashboard.max_locations'))
       return
     }
     onAddLocation(lat, lon)
@@ -217,11 +219,11 @@ function DashboardViewInner({
   }, [pinnedLocations, dashboardHeight])
 
   const emptyMsg = pinnedLocations.length === 0
-    ? 'Click the map or enter coordinates to add locations.'
+    ? t('dashboard.empty_state')
     : null
 
   const profileYAxis = {
-    title: { text: 'Altura do Perfil (m)', standoff: 10 },
+    title: { text: t('dashboard.chart.profile_height_axis'), standoff: 10 },
     tickmode: 'array' as const,
     tickvals: HEIGHT_TICKVALS,
     ticktext: HEIGHT_TICKTEXT,
@@ -264,7 +266,7 @@ function DashboardViewInner({
             <label className="dv-label">{t('dashboard.filters.model_label')}</label>
             <select value={model} onChange={e => dispatch({ type: 'SET_MODEL', model: e.target.value as Model })} className="dv-select">
               {MODELS.map(m => (
-                <option key={m} value={m}>{modelLabel(m)}</option>
+                <option key={m} value={m}>{modelLabel(m, t)}</option>
               ))}
             </select>
           </div>
@@ -272,7 +274,7 @@ function DashboardViewInner({
             <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
             <select value={dataset} onChange={e => dispatch({ type: 'SET_DATASET', dataset: e.target.value as Dataset })} className="dv-select">
               {DATASETS.map(d => (
-                <option key={d} value={d}>{datasetLabel(d)}</option>
+                <option key={d} value={d}>{datasetLabel(d, t)}</option>
               ))}
             </select>
           </div>
@@ -280,7 +282,7 @@ function DashboardViewInner({
             <label className="dv-label">{t('dashboard.filters.variable_label')}</label>
             <select value={dashboardVar} onChange={e => setDashboardVar(e.target.value as Variable)} className="dv-select">
               {VARIABLES.map(v => (
-                <option key={v} value={v}>{varLabel(v).label}</option>
+                <option key={v} value={v}>{varLabel(v, t).label}</option>
               ))}
             </select>
           </div>
@@ -296,17 +298,17 @@ function DashboardViewInner({
             className="dv-export-btn"
             onClick={handleDownloadCsv}
             disabled={pinnedLocations.length === 0}
-            title="Exportar dados de todos os pontos e sazonalidades em CSV"
+            title={t('dashboard.download_csv_tooltip')}
           >
-            ⬇ Download CSV
+            {t('dashboard.download_csv')}
           </button>
         </div>
 
         <div className="dv-location-bar">
-          <input className="dv-input" type="number" step="any" placeholder="Latitude" value={latInput} onChange={e => setLatInput(e.target.value)} />
-          <input className="dv-input" type="number" step="any" placeholder="Longitude" value={lonInput} onChange={e => setLonInput(e.target.value)} />
-          <button className="dv-add-btn" onClick={handleManualAdd}>+ Add Location</button>
-          <span className="dv-hint">or click the mini-map below</span>
+          <input className="dv-input" type="number" step="any" placeholder={t('pixel.lat')} value={latInput} onChange={e => setLatInput(e.target.value)} />
+          <input className="dv-input" type="number" step="any" placeholder={t('pixel.lon')} value={lonInput} onChange={e => setLonInput(e.target.value)} />
+          <button className="dv-add-btn" onClick={handleManualAdd}>{t('dashboard.add_location')}</button>
+          <span className="dv-hint">{t('dashboard.add_location_hint')}</span>
           {locError && <span className="dv-error">{locError}</span>}
         </div>
 
@@ -329,7 +331,7 @@ function DashboardViewInner({
                 for (let i = pinnedLocations.length - 1; i >= 0; i--) onRemoveLocation(i)
               }}
             >
-              Remove All
+              {t('dashboard.remove_all')}
             </button>
           )}
         </div>
@@ -351,10 +353,10 @@ function DashboardViewInner({
                     hovertemplate: '%{y:.2f}<extra></extra>',
                   }))}
                   layout={{
-                    title: { text: `Média Sazonal — ${varLabel(dashboardVar).label} ${dashboardHeight}m` },
-                    xaxis: { title: { text: 'Sazonalidade', standoff: 10 } },
+                    title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(dashboardVar, t).label, height: `${dashboardHeight}m` }) },
+                    xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
                     yaxis: {
-                      title: { text: `${varLabel(dashboardVar).label} (${varUnit})`, standoff: 10 },
+                      title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 },
                       range: dashboardVar === 'ws' ? [0, 20] : [0, 1200],
                       zeroline: false,
                       hoverformat: '.2f',
@@ -397,15 +399,15 @@ function DashboardViewInner({
                     }
                   })}
                   layout={{
-                    title: { text: `Distribuição Weibull — ${dashboardHeight}m` },
+                    title: { text: t('dashboard.chart.weibull_title', { height: `${dashboardHeight}m` }) },
                     xaxis: {
-                      title: { text: 'Velocidade do Vento (m/s)', standoff: 10 },
+                      title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 },
                       range: [0, 30],
                       zeroline: false,
                       hoverformat: '.2f',
                     },
                     yaxis: {
-                      title: { text: 'Densidade de Probabilidade f(v)', standoff: 10 },
+                      title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 },
                       range: [0, 0.3],
                       zeroline: false,
                       hoverformat: '.4f',
@@ -443,11 +445,11 @@ function DashboardViewInner({
                       },
                       opacity: 0.85,
                       customdata: speeds,
-                      hovertemplate: '%{theta}: %{r:.1f}%<br>Vel. média: %{customdata:.2f} m/s<extra></extra>',
+                      hovertemplate: `%{theta}: %{r:.1f}%<br>${t('dashboard.chart.windrose_avg_speed')}: %{customdata:.2f} m/s<extra></extra>`,
                     }
                   })}
                   layout={{
-                    title: { text: `Rosa dos Ventos — ${dashboardHeight}m` },
+                    title: { text: t('dashboard.chart.windrose_title', { height: `${dashboardHeight}m` }) },
                     height: plotHeight('windrose'),
                     margin: { t: 40, b: 30, l: 50, r: 50 },
                     paper_bgcolor: 'transparent',
@@ -461,7 +463,7 @@ function DashboardViewInner({
                         direction: 'clockwise',
                         rotation: 90,
                       },
-                      radialaxis: { visible: true, title: { text: 'Frequência (%)' }, ticksuffix: '%' },
+                      radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' },
                     },
                   }}
                   config={WINDROSE_PLOT_CONFIG}

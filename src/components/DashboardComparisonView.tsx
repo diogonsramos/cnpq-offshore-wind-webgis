@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, memo, lazy, Suspense } from 'reac
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
   datasetLabel, varLabel, modelLabel, datasetFolder,
-  type Model, type Dataset, type Variable, type Height,
+  type Model, type Dataset, type Variable, type Height, type Translate,
 } from '../lib/cogCatalog'
 import { queryDashboardLocation, loadParquet, seasonStat, type DashboardLocationData } from '../lib/pixelQuery'
 import {
@@ -13,7 +13,7 @@ import {
 import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
 import MiniMap from './MiniMap'
 import DashboardSkeleton from './DashboardSkeleton'
-import { t } from '../i18n/t'
+import { useLocale } from '../i18n/provider'
 
 const Plot = lazy(() => import('react-plotly.js'))
 
@@ -33,8 +33,8 @@ function pairKey(p: Pair): string {
   return `${p.model}-${p.dataset}`
 }
 
-function pairLabel(p: Pair): string {
-  return `${modelLabel(p.model)} — ${datasetLabel(p.dataset)}`
+function pairLabel(p: Pair, t: Translate): string {
+  return `${modelLabel(p.model, t)} — ${datasetLabel(p.dataset, t)}`
 }
 
 function traceStyle(mode: ComparisonMode, index: number): { color: string; dash: 'solid' | 'dash' } {
@@ -43,6 +43,7 @@ function traceStyle(mode: ComparisonMode, index: number): { color: string; dash:
 }
 
 function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: DashboardComparisonViewProps) {
+  const { t } = useLocale()
   const [variable, setVariable] = useState<Variable>('ws')
   const [height, setHeight] = useState<Height>(100)
   const [latInput, setLatInput] = useState('')
@@ -104,7 +105,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
     const lat = parseFloat(latInput)
     const lon = parseFloat(lonInput)
     if (isNaN(lat) || isNaN(lon)) {
-      setLocError(t('dashboard.compare.invalid_coords'))
+      setLocError(t('dashboard.invalid_coords'))
       return
     }
     handleSetLocation(lat, lon)
@@ -122,7 +123,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
   const entries = pairs.map((p, i) => ({
     pair: p,
     key: pairKey(p),
-    label: pairLabel(p),
+    label: pairLabel(p, t),
     style: traceStyle(mode, i),
     loading: loadingKeys.has(pairKey(p)),
     data: dataMapRef.current.get(pairKey(p)),
@@ -130,7 +131,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
 
   const varUnit = variable === 'ws' ? 'm/s' : 'W/m²'
   const profileYAxis = {
-    title: { text: 'Altura do Perfil (m)', standoff: 10 },
+    title: { text: t('dashboard.chart.profile_height_axis'), standoff: 10 },
     tickmode: 'array' as const,
     tickvals: HEIGHT_TICKVALS,
     ticktext: HEIGHT_TICKTEXT,
@@ -160,7 +161,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
             <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
             <select value={selectedDataset} onChange={e => setSelectedDataset(e.target.value as Dataset)} className="dv-select">
               {DATASETS.map(d => (
-                <option key={d} value={d}>{datasetLabel(d)}</option>
+                <option key={d} value={d}>{datasetLabel(d, t)}</option>
               ))}
             </select>
           </div>
@@ -169,7 +170,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
           <label className="dv-label">{t('dashboard.filters.variable_label')}</label>
           <select value={variable} onChange={e => setVariable(e.target.value as Variable)} className="dv-select">
             {VARIABLES.map(v => (
-              <option key={v} value={v}>{varLabel(v).label}</option>
+              <option key={v} value={v}>{varLabel(v, t).label}</option>
             ))}
           </select>
         </div>
@@ -191,7 +192,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
           <div className="dv-pair-grid">
             {MODELS.map(m => (
               <div key={m} className="dv-pair-col">
-                <p className="dv-pair-col-title">{modelLabel(m)}</p>
+                <p className="dv-pair-col-title">{modelLabel(m, t)}</p>
                 {DATASETS.map(d => {
                   const p = { model: m, dataset: d }
                   const checked = selectedPairs.some(x => pairKey(x) === pairKey(p))
@@ -199,7 +200,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   return (
                     <label key={d} className="dv-pair-checkbox">
                       <input type="checkbox" checked={checked} disabled={disabled} onChange={() => togglePair(p)} />
-                      <span>{datasetLabel(d)}</span>
+                      <span>{datasetLabel(d, t)}</span>
                     </label>
                   )
                 })}
@@ -255,10 +256,10 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   hovertemplate: '%{y:.2f}<extra></extra>',
                 }))}
                 layout={{
-                  title: { text: `Média Sazonal — ${varLabel(variable).label} ${height}m` },
-                  xaxis: { title: { text: 'Sazonalidade', standoff: 10 } },
+                  title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(variable, t).label, height: `${height}m` }) },
+                  xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
                   yaxis: {
-                    title: { text: `${varLabel(variable).label} (${varUnit})`, standoff: 10 },
+                    title: { text: `${varLabel(variable, t).label} (${varUnit})`, standoff: 10 },
                     range: variable === 'ws' ? [0, 25] : [0, 1500],
                     zeroline: false,
                     hoverformat: '.2f',
@@ -299,9 +300,9 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   }
                 })}
                 layout={{
-                  title: { text: `Distribuição Weibull — ${height}m` },
-                  xaxis: { title: { text: 'Velocidade do Vento (m/s)', standoff: 10 }, range: [0, 30], zeroline: false, hoverformat: '.2f' },
-                  yaxis: { title: { text: 'Densidade de Probabilidade f(v)', standoff: 10 }, range: [0, 0.3], zeroline: false, hoverformat: '.4f' },
+                  title: { text: t('dashboard.chart.weibull_title', { height: `${height}m` }) },
+                  xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 30], zeroline: false, hoverformat: '.2f' },
+                  yaxis: { title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 }, range: [0, 0.3], zeroline: false, hoverformat: '.4f' },
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
@@ -336,7 +337,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   }
                 })}
                 layout={{
-                  title: { text: `Rosa dos Ventos — ${height}m` },
+                  title: { text: t('dashboard.chart.windrose_title', { height: `${height}m` }) },
                   height: 260,
                   margin: { t: 40, b: 30, l: 50, r: 50 },
                   paper_bgcolor: 'transparent',
@@ -346,7 +347,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   hoverlabel: { font: { size: 12, color: '#fff' } },
                   polar: {
                     angularaxis: { direction: 'clockwise', rotation: 90 },
-                    radialaxis: { visible: true, title: { text: 'Frequência (%)' }, ticksuffix: '%' },
+                    radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' },
                   },
                 }}
                 config={WINDROSE_PLOT_CONFIG}
@@ -368,8 +369,8 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
                   hovertemplate: '%{x:.2f}<extra></extra>',
                 }))}
                 layout={{
-                  title: { text: 'Perfil Vertical — Velocidade do Vento' },
-                  xaxis: { title: { text: 'Velocidade do Vento (m/s)', standoff: 10 }, range: [0, 25], zeroline: false, hoverformat: '.2f' },
+                  title: { text: t('dashboard.chart.ws_profile_title') },
+                  xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 25], zeroline: false, hoverformat: '.2f' },
                   yaxis: profileYAxis,
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },

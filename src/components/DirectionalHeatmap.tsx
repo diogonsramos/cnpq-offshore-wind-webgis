@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react'
 import { SECTOR_LABELS } from '../lib/dashboardChartConstants'
-import { t } from '../i18n/t'
+import { useLocale } from '../i18n/provider'
 
 interface DirectionalHeatmapProps {
   data: number[] | null | undefined
@@ -26,6 +26,7 @@ function cellColor(value: number, max: number): string {
 }
 
 function DirectionalHeatmapInner({ data, variable, height }: DirectionalHeatmapProps) {
+  const { t } = useLocale()
   const grid = useMemo(() => {
     if (!data || data.length === 0) return null
     const nSectors = SECTOR_LABELS.length

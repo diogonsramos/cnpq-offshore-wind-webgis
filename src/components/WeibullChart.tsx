@@ -6,7 +6,7 @@ import {
   Title, Tooltip, Filler,
   type TooltipItem,
 } from 'chart.js'
-import { t } from '../i18n/t'
+import { useLocale } from '../i18n/provider'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler)
 
@@ -25,6 +25,7 @@ function weibullPdf(x: number, k: number, c: number): number {
 }
 
 function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
+  const { t } = useLocale()
   const points = useMemo(() => {
     if (k == null || c == null || !isFinite(k) || !isFinite(c)) return []
     const pts: { x: number; y: number }[] = []

@@ -502,6 +502,126 @@ Nenhum teste E2E novo — esta fase não altera nenhum comportamento observável
 
 ---
 
+## ✅ f06 — i18n (pt-BR / English) — 2026-07-25
+
+> **Status:** Implementado e validado (`pnpm test` — 99 passed, `pnpm test:types` — 0 erros). Escopo definido em `TODO.md` (raiz, removido após esta entrega). Nenhum dos 94 testes pré-existentes precisou de alteração — todo o conteúdo em pt-BR (idioma padrão) foi movido para chaves de tradução preservando o texto exato já validado pela suite.
+
+### Arquitetura
+
+Implementado via **React Context** (`src/i18n/provider.tsx`), sem biblioteca externa, conforme decisão já registrada no `TODO.md` do ticket:
+
+| Arquivo | Conteúdo |
+|---|---|
+| `src/i18n/pt-BR.ts` | Dicionário de ~290 chaves em português (flat `Record<string, string>`, convenção de dot notation já estabelecida desde `f01`) |
+| `src/i18n/en.ts` | Dicionário espelhado em inglês — tipado como `Record<TranslationKey, string>`, onde `TranslationKey = keyof typeof ptBR`; faltar ou sobrar uma chave é erro de compilação |
+| `src/i18n/types.ts` | `TranslationKey`/`Locale` derivados do dicionário pt-BR (fonte da verdade) |
+| `src/i18n/provider.tsx` | `LocaleProvider` (envolve `<App>` inteiro) + `useLocale()` retornando `{ locale, setLocale, t }`; persiste em `localStorage` (`cnpq-webgis-locale`); fallback `!!chave!!` para chave ausente |
+
+O stub antigo `src/i18n/t.ts` (função solta, lia só `pt-BR.ts`, sem reatividade a troca de idioma) foi removido — os 7 componentes que o importavam migraram para `useLocale()`.
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| Toggle de idioma na UI | Par de botões "PT \| EN" no canto direito do `TabBar`, sempre visível (Mapa e Dashboard); `.locale-btn.active` destaca o idioma atual |
+| Troca instantânea sem reload | `setLocale()` atualiza o estado do Context; todo componente que chama `useLocale().t()` re-renderiza no próximo ciclo do React — validado visualmente (dev server) trocando PT→EN na aba Mapa: SidePanel, tooltips e badge de loading do COG mudam de texto imediatamente |
+| Persistência em `localStorage` | `LocaleProvider` lê `cnpq-webgis-locale` no primeiro render (`useState` lazy init) e grava a cada mudança; `T92` cobre reload |
+| LandingPage totalmente traduzida | Hero, stats, resumo técnico (parágrafos com `<abbr>`/`<strong>` inline quebrados em sub-chaves ao redor de cada elemento, preservando os tooltips de sigla), cenários, galeria, equipe (papéis "Coordenador"/"Pesquisador(a) Líder"/"Pesquisador(a)"), FAQ da seção `#faq` e rodapé (citação, disclaimer, copyright) |
+| SidePanel, PixelInfoPanel, TabBar, BasemapSwitcher totalmente traduzidos | Todos os rótulos, títulos de accordion, tooltips e nomes de camada de batimetria |
+| FAQPanel (drawer) e ProjectInfoPanel (drawer) | Migrados para ler as 20 perguntas/respostas e os campos de financiamento/resumo técnico/equipe/publicações/contato diretamente de chaves `faq.*`/`project.*`, em vez do array estático `src/lib/metadata.ts` — arquivo removido (ficou sem nenhum importador) |
+| DashboardView / DashboardComparisonView / GeoParquetExplorer | Migrados do antigo `import { t } from '../i18n/t'` para `useLocale()`; títulos/eixos de gráfico Plotly que ainda estavam hardcoded em pt-BR (`Média Sazonal`, `Sazonalidade`, `Rosa dos Ventos`, `Frequência (%)`, `Altura do Perfil (m)`, `Distância da Costa (nm)`, nomes de trace do scatter/perfil do GeoParquet Explorer) viraram chaves novas — resolve também a limitação registrada nas Fases 1/2/3 ("rótulos de eixo continuam hardcoded") |
+| "+ Add Location" / "Remove All" / mensagens de validação | Traduzidas para pt-BR real (`+ Adicionar Local`, `Remover Tudo`, `Informe latitude/longitude numéricas válidas.`) — resolve a limitação registrada na Fase 2 ("placeholders e texto do botão continuam em inglês") |
+| `ErrorBoundary.tsx` (fallback de erro do Pixel Info) | Extraído um componente funcional `DefaultFallback` (hooks só funcionam em function components, não na classe do error boundary) para poder chamar `useLocale()` |
+| Novos `console.log`/textos de UI do `MapView.tsx` | Badge "Carregando..." do COG e tooltip do botão de screenshot, que o escopo original do ticket listava como "sem strings de usuário" mas continham 2 textos visíveis — encontrados durante a checagem visual manual (ver abaixo) |
+
+### O que foi deliberadamente mantido em inglês nos dois idiomas (não é limitação, é decisão de escopo)
+
+Para não gerar uma quantidade grande de atualizações mecânicas em testes E2E existentes sem nenhum ganho real de i18n (esses elementos já eram, na prática, nomes de produto/marca em inglês desde fases anteriores, inclusive na experiência em "português"):
+
+- Abas do `TabBar`: `WebGIS Map` / `Analytical Dashboard` (usadas como seletor `has-text` em ~15 pontos de `02-navigation`, `06-dashboard-controls` e `11-performance`)
+- Nomes dos 6 basemaps (`Street`, `Satellite`, `Dark`, `Terrain`, `Night`, `Topo` — `T78` filtra por esses rótulos literalmente)
+- Botão "← Home" do TabBar
+
+Citações bibliográficas da seção "Publicações Científicas" (9 itens) também são reproduzidas verbatim nos dois idiomas — títulos de artigos científicos não se traduzem em uma lista de referências.
+
+### Testes novos — `tests/e2e/12-i18n.spec.ts` (T89–T93)
+
+| Teste | O que valida |
+|---|---|
+| T89 | Toggle PT/EN aparece no TabBar com PT ativo por padrão |
+| T90 | Clicar em EN traduz o H1 da landing page para o inglês, sem erro de console |
+| T91 | Trocar para EN traduz os rótulos do SidePanel em tempo real (sem reload) |
+| T92 | Escolha de idioma persiste em `localStorage` após reload da página |
+| T93 | FAQ do drawer exibe as perguntas em inglês após trocar para EN |
+
+Não foi necessário alterar nenhum dos 94 testes pré-existentes — todos continuam validando o texto em pt-BR (idioma padrão), que permaneceu byte-a-byte idêntico ao que já existia antes desta fase.
+
+### Pacotes instalados
+
+Nenhum — implementação 100% com React Context, conforme decisão de arquitetura do ticket (evitar `react-intl`/`i18next` para apenas 2 idiomas).
+
+### Arquivos modificados
+
+`src/i18n/pt-BR.ts`, `src/i18n/en.ts` (novo), `src/i18n/types.ts` (novo), `src/i18n/provider.tsx` (novo), `src/i18n/t.ts` (removido), `src/lib/metadata.ts` (removido), `src/App.tsx`, `src/App.css`, `src/components/TabBar.tsx`, `src/components/BasemapSwitcher.tsx`, `src/components/SidePanel.tsx`, `src/components/PixelInfoPanel.tsx`, `src/components/ProfileChart.tsx`, `src/components/WeibullChart.tsx`, `src/components/DirectionalHeatmap.tsx`, `src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/GeoParquetExplorer.tsx`, `src/components/LandingPage.tsx`, `src/components/FAQPanel.tsx`, `src/components/ProjectInfoPanel.tsx`, `src/components/MapView.tsx`, `src/components/ErrorBoundary.tsx`, `tests/e2e/12-i18n.spec.ts` (novo), `TODO.md` (raiz, removido após esta entrega), `CLAUDE.md` (contagem de testes)
+
+---
+
+## ✅ f06.1 — Correção: rótulos de Experimento/Variável/Modelo não traduzidos (revisão manual) — 2026-07-25
+
+> **Status:** Implementado e validado (`pnpm test` — 104 passed, `pnpm test:types` — 0 erros). Bug reportado pelo usuário ao testar o modo EN da entrega `f06`: os seletores de "Experiment"/"Variable" (e o rótulo de "Model" no footer/watermark) continuavam em português em toda parte onde apareciam — SidePanel, Simple View, Compare Experiments, Compare Models e GeoParquet Explorer — mesmo com o resto da UI já traduzido para inglês.
+
+### Causa raiz
+
+`datasetLabel()`, `varLabel()`, `modelLabel()` e `bathyLabel()`, em `src/lib/cogCatalog.ts`, eram funções puras que retornavam strings hardcoded em português, lidas de `Record<Dataset, string>`/`Record<Variable, {...}>`/etc. locais ao módulo — nenhuma delas passava pelo `useLocale()`. Na entrega original do `f06`, esse arquivo tinha sido classificado (por analogia ao `TODO.md` do ticket, que cita `cogCatalog.ts` como "labels técnicos, não precisam de tradução") no mesmo grupo de `varLabel`/`datasetLabel` que o próprio ticket já descrevia como "technical terms" — uma leitura equivocada: `datasetLabel`/`varLabel` retornam texto descritivo real (`"ERA5 Reanálise (Histórico)"`, `"Vel. Vento"`), não termos técnicos como `WRF`/`ERA5`/`COG`, que são os que de fato não deveriam ser traduzidos.
+
+### Correção
+
+`src/lib/cogCatalog.ts`: as 4 funções passaram a receber um parâmetro `t: Translate` (novo tipo exportado, `(key: TranslationKey, vars?) => string`) e a resolver o texto via chaves novas (`cogcatalog.model.*`, `cogcatalog.variable.*`, `cogcatalog.dataset.*`, `cogcatalog.bathy.*`) em vez de `Record` locais. Todo call site nos 5 componentes que as usam passou a passar `t` (obtido do `useLocale()` já presente em cada um, do trabalho da entrega `f06`):
+
+`SidePanel.tsx`, `DashboardView.tsx`, `DashboardComparisonView.tsx` (incluindo a função solta `pairLabel()`, que passou a receber `t` como segundo argumento), `GeoParquetExplorer.tsx`, `MapView.tsx` (usado no watermark do screenshot do mapa — `handleScreenshot`, cujo `useCallback` ganhou `t` no array de dependências para não usar uma closure de idioma desatualizada após a troca).
+
+`bathyLabel()` não tinha nenhum call site (código morto pré-existente) — corrigida por consistência, mas sem call site para atualizar.
+
+### Testes novos — T94–T98 (`tests/e2e/12-i18n.spec.ts`)
+
+| Teste | O que valida |
+|---|---|
+| T94 | SidePanel (aba Mapa): select de Variável e rótulo do footer traduzidos para inglês |
+| T95 | Simple View: selects de Experiment e Variable traduzidos |
+| T96 | Compare Experiments: checkboxes de pares modelo+experimento traduzidos |
+| T97 | Compare Models: chips "WRF — ..."/"MPAS — ..." traduzidos |
+| T98 | GeoParquet Explorer: selects de Experiment e Variable traduzidos |
+
+### Arquivos modificados
+
+`src/lib/cogCatalog.ts`, `src/i18n/pt-BR.ts`, `src/i18n/en.ts`, `src/components/SidePanel.tsx`, `src/components/DashboardView.tsx`, `src/components/DashboardComparisonView.tsx`, `src/components/GeoParquetExplorer.tsx`, `src/components/MapView.tsx`, `tests/e2e/12-i18n.spec.ts`, `CLAUDE.md` (contagem de testes)
+
+---
+
+## ✅ f06.2 — Toggle PT/EN também na navbar da Landing Page — 2026-07-25
+
+> **Status:** Implementado e validado (`pnpm test` — 106 passed, `pnpm test:types` — 0 erros). Pedido do usuário ao revisar a entrega `f06`: o toggle de idioma só existia dentro do `TabBar`, que só é montado depois de entrar no sistema (`tab !== 'home'`) — na landing page não havia nenhuma forma de trocar de idioma antes de navegar, mesmo com todo o conteúdo da landing já traduzido desde o `f06`.
+
+### Itens concluídos
+
+| Item | Resolução |
+|---|---|
+| Toggle PT/EN ausente na landing page | Novo `src/components/LocaleToggle.tsx` — extrai a UI de par de botões "PT \| EN" (antes inline no `TabBar.tsx`) em um componente reutilizável (`useLocale()` + `className` opcional); usado agora pelo `TabBar.tsx` (sem mudança visual) e adicionado à `<nav className="lp-navbar">` da `LandingPage.tsx`, entre os links de âncora e o botão "Entrar no Sistema" |
+| Botão "Entrar no Sistema →" ficava parcialmente fora da viewport em mobile (375px) | Adicionar o 3º elemento (`.lp-navbar-locale`) ao `.lp-navbar` (já `display:flex`, sem wrap) estourava a largura disponível — medido via bounding box: botão "Entrar" terminava em `x≈396px` numa viewport de `375px`. Novo bloco na media query `@media (max-width: 480px)` já existente em `LandingPage.css`: reduz `gap`/padding do `.lp-navbar`, altura do logo (24px→20px) e padding/font-size do `.lp-navbar-enter` — medido novamente após o ajuste: botão termina em `x=365px` (viewport 375px, 10px de padding), sem overflow |
+
+### Testes novos — T99–T100 (`tests/e2e/12-i18n.spec.ts`)
+
+| Teste | O que valida |
+|---|---|
+| T99 | Toggle PT/EN visível na navbar da landing page (sem precisar entrar no sistema); clicar em EN traduz o H1 e o CTA "Entrar no Sistema", sem erro de console |
+| T100 | Navbar da landing page com o toggle visível não gera scroll horizontal em mobile (375px) — regressão do ajuste de CSS acima |
+
+### Arquivos modificados
+
+`src/components/LocaleToggle.tsx` (novo), `src/components/TabBar.tsx`, `src/components/LandingPage.tsx`, `src/components/LandingPage.css`, `tests/e2e/12-i18n.spec.ts`, `CLAUDE.md` (contagem de testes)
+
+---
+
 ## ✅ 1.D. Correções pré-merge (TOFIX.md) — 2026-06-22
 
 > **Status:** Implementado e validado.

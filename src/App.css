@@ -108,6 +108,37 @@ html.landing-mode #root {
 .tab-btn.active::after {
   width: 60%;
 }
+.tab-bar-spacer {
+  flex: 1;
+}
+.tab-bar-locale {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  padding-right: 12px;
+  flex-shrink: 0;
+}
+.locale-btn {
+  padding: 4px 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  background: transparent;
+  color: #888;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.locale-btn:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+.locale-btn.active {
+  color: #fff;
+  background: #4a90d9;
+  border-color: #4a90d9;
+}
 
 /* ── Chart empty state (shared: ProfileChart/WeibullChart/DirectionalHeatmap
    in the Pixel Info Panel, GeoParquetExplorer/DashboardView chart cards) ── */

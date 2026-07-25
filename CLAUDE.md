@@ -49,7 +49,8 @@ tests/
     ├── 08-geoparquet-explorer.spec.ts     # 4ª aba do Dashboard — filtros, histograma, boxplot, scatter
     ├── 09-dashboard-charts.spec.ts        # Perfil WPD, heatmap direcional, eixos fixos dos gráficos (f02)
     ├── 10-ui-enhancements.spec.ts         # Loading do COG, export CSV/PNG, tela cheia, rosa dos ventos colorida, basemaps (f03)
-    └── 11-performance.spec.ts             # Lazy-load do Plotly e preservação de estado do Dashboard (f04)
+    ├── 11-performance.spec.ts             # Lazy-load do Plotly e preservação de estado do Dashboard (f04)
+    └── 12-i18n.spec.ts                    # Toggle PT/EN no TabBar, troca de textos em tempo real, persistência via localStorage (f06)
 ```
 
 Cada arquivo cobre um contexto funcional. Novos contextos ganham **novos arquivos** numerados em sequência: `12-nome-do-contexto.spec.ts`, `13-...`, etc.
@@ -99,10 +100,10 @@ pnpm test:e2e --grep "T04"
 ### Saída esperada (suite completa — 94 testes)
 
 ```
-94 passed (~70 s)
+106 passed (~70 s)
 ```
 
-Qualquer número diferente de `94 passed` indica falha ou teste faltando. Investigate antes de continuar. Esse número cresce a cada fase que adiciona testes novos — ao terminar uma entrega, atualize-o aqui.
+Qualquer número diferente de `106 passed` indica falha ou teste faltando. Investigate antes de continuar. Esse número cresce a cada fase que adiciona testes novos — ao terminar uma entrega, atualize-o aqui.
 
 ---
 
@@ -116,7 +117,7 @@ Qualquer número diferente de `94 passed` indica falha ou teste faltando. Invest
 2. **Verificar** se algum teste existente quebrou: `pnpm test`
    - Se quebrou → corrigir o código **ou** atualizar o teste se o comportamento mudou intencionalmente
 3. **Criar novos testes** para a feature implementada:
-   - Se for um novo contexto funcional (ex: motor de cálculo de AEP) → criar `tests/e2e/12-nome-do-contexto.spec.ts` (próximo número livre — ver lista em "Estrutura dos testes")
+   - Se for um novo contexto funcional (ex: motor de cálculo de AEP) → criar `tests/e2e/13-nome-do-contexto.spec.ts` (próximo número livre — ver lista em "Estrutura dos testes")
    - Se for uma extensão de contexto existente (ex: novo botão na navbar) → adicionar `test()` no arquivo correspondente
 4. **Rodar a suite completa** e confirmar que todos passam: `pnpm test`
 5. **Atualizar `docs/TODO.md`** — seção de especificações da fase, tabela de testes com IDs e resultados
