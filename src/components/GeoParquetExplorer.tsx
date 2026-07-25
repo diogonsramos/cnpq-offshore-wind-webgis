@@ -10,7 +10,7 @@ import {
   DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS, PLOT_CONFIG, CHART_FONT, HOVER_LABEL_STYLE,
 } from '../lib/dashboardChartConstants'
 import DashboardSkeleton from './DashboardSkeleton'
-import { t } from '../i18n/t'
+import { useLocale } from '../i18n/provider'
 
 const Plot = lazy(() => import('react-plotly.js'))
 
@@ -59,6 +59,7 @@ function distanceMaxFromZones(zones: string[]): number {
 }
 
 function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExplorerProps) {
+  const { t } = useLocale()
   const [model, setModel] = useState<Model>(currentModel)
   const [dataset, setDataset] = useState<Dataset>(currentDataset)
   const [variable, setVariable] = useState<Variable>('ws')
@@ -146,7 +147,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
   }, [result])
 
   const profileYAxis = {
-    title: { text: 'Altura do Perfil (m)', standoff: 10 },
+    title: { text: t('dashboard.chart.profile_height_axis'), standoff: 10 },
     tickmode: 'array' as const,
     tickvals: HEIGHT_TICKVALS,
     ticktext: HEIGHT_TICKTEXT,
@@ -159,19 +160,19 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
         <div className="dv-filter-group">
           <label className="dv-label">{t('dashboard.filters.model_label')}</label>
           <select value={model} onChange={e => setModel(e.target.value as Model)} className="dv-select">
-            {MODELS.map(m => <option key={m} value={m}>{modelLabel(m)}</option>)}
+            {MODELS.map(m => <option key={m} value={m}>{modelLabel(m, t)}</option>)}
           </select>
         </div>
         <div className="dv-filter-group">
           <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
           <select value={dataset} onChange={e => setDataset(e.target.value as Dataset)} className="dv-select">
-            {DATASETS.map(d => <option key={d} value={d}>{datasetLabel(d)}</option>)}
+            {DATASETS.map(d => <option key={d} value={d}>{datasetLabel(d, t)}</option>)}
           </select>
         </div>
         <div className="dv-filter-group">
           <label className="dv-label">{t('dashboard.filters.variable_label')}</label>
           <select value={variable} onChange={e => setVariable(e.target.value as Variable)} className="dv-select">
-            {VARIABLES.map(v => <option key={v} value={v}>{varLabel(v).label}</option>)}
+            {VARIABLES.map(v => <option key={v} value={v}>{varLabel(v, t).label}</option>)}
           </select>
         </div>
         <div className="dv-filter-group">
@@ -250,9 +251,9 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
               <Plot
                 data={histogramTrace ? [{ ...histogramTrace, hovertemplate: '%{y} pixels<extra></extra>' }] : []}
                 layout={{
-                  title: { text: `${t('geoparquet_explorer.charts.histogram_title')} — ${varLabel(appliedVariable).label} ${appliedHeight}m` },
-                  xaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 } },
-                  yaxis: { title: { text: 'Nº de pixels', standoff: 10 }, zeroline: false },
+                  title: { text: `${t('geoparquet_explorer.charts.histogram_title')} — ${varLabel(appliedVariable, t).label} ${appliedHeight}m` },
+                  xaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 } },
+                  yaxis: { title: { text: t('dashboard.chart.pixel_count_axis'), standoff: 10 }, zeroline: false },
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },
                   paper_bgcolor: 'transparent',
@@ -277,7 +278,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   }))}
                   layout={{
                     title: { text: t('geoparquet_explorer.charts.boxplot_state_title') },
-                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                    yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                     height: 260,
                     margin: { t: 40, b: 60, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
@@ -305,7 +306,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   }))}
                   layout={{
                     title: { text: t('geoparquet_explorer.charts.boxplot_bathy_title') },
-                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                    yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
@@ -329,7 +330,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   data={[
                     {
                       x: result.distances, y: result.values, type: 'scatter' as const, mode: 'markers' as const,
-                      name: 'Pixels', marker: { color: CHART_COLORS[0], size: 5, opacity: 0.6 },
+                      name: t('dashboard.chart.pixels_trace'), marker: { color: CHART_COLORS[0], size: 5, opacity: 0.6 },
                       hovertemplate: '%{x:.1f} nm, %{y:.2f}<extra></extra>',
                     },
                     ...(regression ? [{
@@ -338,15 +339,15 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                         regression.intercept + regression.slope * appliedDistanceMin,
                         regression.intercept + regression.slope * appliedDistanceMax,
                       ],
-                      type: 'scatter' as const, mode: 'lines' as const, name: 'Tendência (linear)',
+                      type: 'scatter' as const, mode: 'lines' as const, name: t('dashboard.chart.trend_trace'),
                       line: { color: CHART_COLORS[1], width: 2, dash: 'dash' as const },
                       hovertemplate: '%{y:.2f}<extra></extra>',
                     }] : []),
                   ]}
                   layout={{
                     title: { text: t('geoparquet_explorer.charts.scatter_title') },
-                    xaxis: { title: { text: 'Distância da Costa (nm)', standoff: 10 }, range: [appliedDistanceMin, appliedDistanceMax], zeroline: false, hoverformat: '.1f' },
-                    yaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                    xaxis: { title: { text: t('dashboard.chart.distance_axis'), standoff: 10 }, range: [appliedDistanceMin, appliedDistanceMax], zeroline: false, hoverformat: '.1f' },
+                    yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
@@ -371,7 +372,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
               <Plot
                 data={[{
                   x: result.profileMeans, y: result.profileHeights, type: 'scatter' as const, mode: 'lines+markers' as const,
-                  name: 'Perfil médio',
+                  name: t('dashboard.chart.mean_profile_trace'),
                   line: { color: CHART_COLORS[0], width: 2 },
                   marker: { color: CHART_COLORS[0], size: 6 },
                   error_x: { type: 'data' as const, array: result.profileStds, visible: true, color: CHART_COLORS[0] + '88' },
@@ -379,7 +380,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                 }]}
                 layout={{
                   title: { text: t('geoparquet_explorer.charts.profile_title') },
-                  xaxis: { title: { text: `${varLabel(appliedVariable).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                  xaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
                   yaxis: profileYAxis,
                   height: 260,
                   margin: { t: 40, b: 40, l: 55, r: 20 },

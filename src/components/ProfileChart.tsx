@@ -6,7 +6,7 @@ import {
   Title, Tooltip, Filler,
   type TooltipItem,
 } from 'chart.js'
-import { t } from '../i18n/t'
+import { useLocale } from '../i18n/provider'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler)
 
@@ -36,6 +36,7 @@ const VARIANT_CONFIG = {
 } as const
 
 function ProfileChartInner({ heights, means, variant = 'ws' }: ProfileChartProps) {
+  const { t } = useLocale()
   const cfg = VARIANT_CONFIG[variant]
   const hasData = heights.length > 0 && means.some(v => v != null && isFinite(v))
 

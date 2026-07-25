@@ -3,6 +3,7 @@ import type { PixelDataSummary } from '../lib/pixelQuery'
 import ProfileChart from './ProfileChart'
 import WeibullChart from './WeibullChart'
 import DirectionalHeatmap from './DirectionalHeatmap'
+import { useLocale } from '../i18n/provider'
 import './PixelInfoPanel.css'
 
 interface PixelInfoPanelProps {
@@ -17,61 +18,62 @@ interface PixelInfoPanelProps {
 }
 
 function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, onClose, onOpenDashboard, onAddPin }: PixelInfoPanelProps) {
+  const { t } = useLocale()
   const className = `pixel-panel${(data || loading) ? ' open' : ''}`
 
   return (
     <div className={className}>
       <div className="pixel-panel-header">
-        <span>Pixel Info</span>
+        <span>{t('pixel.header')}</span>
         {data && <button className="pixel-panel-close" onClick={onClose}>&times;</button>}
       </div>
       <div className="pixel-panel-content">
-        {loading && <p className="pixel-panel-status">Loading data...</p>}
-        {!loaded && !loading && <p className="pixel-panel-status">Click map to query</p>}
+        {loading && <p className="pixel-panel-status">{t('pixel.loading')}</p>}
+        {!loaded && !loading && <p className="pixel-panel-status">{t('pixel.click_hint')}</p>}
         {loaded && !data && (
           <p className="pixel-panel-status">
             {recordCount > 0
-              ? `Click on the map to see wind statistics (${recordCount} points loaded)`
-              : 'No point data loaded'}
+              ? t('pixel.click_hint_with_count', { count: recordCount })
+              : t('pixel.no_data_loaded')}
           </p>
         )}
         {data && (
           <div className="pixel-panel-data">
-            <Section title="Location">
-              <Row label="Latitude" value={data.lat.toFixed(4)} />
-              <Row label="Longitude" value={data.lon.toFixed(4)} />
-              <Row label="Pixel ID" value={String(data.pixel_id)} />
-              {data.state && <Row label="State" value={data.state} />}
-              {data.bathy_zone && <Row label="Bathymetry" value={data.bathy_zone.replace('_', '-') + 'm'} />}
-              <Row label="Dist. Costa" value={fmt(data.distance_nm, ' nm')} />
+            <Section title={t('pixel.section.location')}>
+              <Row label={t('pixel.lat')} value={data.lat.toFixed(4)} />
+              <Row label={t('pixel.lon')} value={data.lon.toFixed(4)} />
+              <Row label={t('pixel.pixel_id')} value={String(data.pixel_id)} />
+              {data.state && <Row label={t('pixel.state')} value={data.state} />}
+              {data.bathy_zone && <Row label={t('pixel.bathy')} value={data.bathy_zone.replace('_', '-') + 'm'} />}
+              <Row label={t('pixel.dist_coast')} value={fmt(data.distance_nm, ' nm')} />
             </Section>
 
-            <Section title="Wind Speed 100m">
-              <Row label="Mean" value={fmt(data.ws[100]?.mean, ' m/s')} />
-              <Row label="Min" value={fmt(data.ws[100]?.min, ' m/s')} />
-              <Row label="Max" value={fmt(data.ws[100]?.max, ' m/s')} />
-              <Row label="Std Dev" value={fmt(data.ws[100]?.std, ' m/s')} />
+            <Section title={t('pixel.section.wind_speed', { height: '100m' })}>
+              <Row label={t('pixel.mean')} value={fmt(data.ws[100]?.mean, ' m/s')} />
+              <Row label={t('pixel.min')} value={fmt(data.ws[100]?.min, ' m/s')} />
+              <Row label={t('pixel.max')} value={fmt(data.ws[100]?.max, ' m/s')} />
+              <Row label={t('pixel.std')} value={fmt(data.ws[100]?.std, ' m/s')} />
             </Section>
 
-            <Section title="Wind Speed 10m">
-              <Row label="Mean" value={fmt(data.ws[10]?.mean, ' m/s')} />
-              <Row label="Min" value={fmt(data.ws[10]?.min, ' m/s')} />
-              <Row label="Max" value={fmt(data.ws[10]?.max, ' m/s')} />
-              <Row label="Std Dev" value={fmt(data.ws[10]?.std, ' m/s')} />
+            <Section title={t('pixel.section.wind_speed', { height: '10m' })}>
+              <Row label={t('pixel.mean')} value={fmt(data.ws[10]?.mean, ' m/s')} />
+              <Row label={t('pixel.min')} value={fmt(data.ws[10]?.min, ' m/s')} />
+              <Row label={t('pixel.max')} value={fmt(data.ws[10]?.max, ' m/s')} />
+              <Row label={t('pixel.std')} value={fmt(data.ws[10]?.std, ' m/s')} />
             </Section>
 
             {data.profile_heights.length > 0 && (
-              <Section title="Vertical Profile">
+              <Section title={t('pixel.section.vertical_profile')}>
                 <ProfileChart heights={data.profile_heights} means={data.profile_means} variant="ws" />
               </Section>
             )}
 
-            <Section title="Vertical Profile — Power Density">
+            <Section title={t('dashboard.chart.wpd_profile_title')}>
               <ProfileChart heights={data.profile_heights} means={data.wpd_profile_means} variant="wpd" />
             </Section>
 
             {data.weibull[100] && (
-              <Section title="Weibull Parameters">
+              <Section title={t('pixel.section.weibull')}>
                 <Row label="WS10 k" value={fmt(data.weibull[10]?.k)} />
                 <Row label="WS10 c" value={fmt(data.weibull[10]?.c, ' m/s')} />
                 <Row label="WS100 k" value={fmt(data.weibull[100]?.k)} />
@@ -83,7 +85,7 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
               </Section>
             )}
 
-            <Section title="Directional Distribution">
+            <Section title={t('pixel.section.directional')}>
               <DirectionalHeatmap data={data.heatmap['ws100_heatmap']} variable="ws" height={100} />
               {data.heatmap['ws10_heatmap'] && data.heatmap['ws10_heatmap'].length > 0 && (
                 <DirectionalHeatmap data={data.heatmap['ws10_heatmap']} variable="ws" height={10} />
@@ -92,10 +94,10 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
 
             <div className="pixel-panel-actions">
               <button className="pin-button" onClick={() => onAddPin(data.lat, data.lon)} disabled={pinnedCount >= 3}>
-                {pinnedCount >= 3 ? 'Max 3 Pins' : `📌 Pin This Location (${pinnedCount}/3)`}
+                {pinnedCount >= 3 ? t('pixel.pin_max') : t('pixel.pin_button', { count: pinnedCount })}
               </button>
               <button className="dashboard-button" onClick={onOpenDashboard}>
-                Open Global Time-Series Dashboard
+                {t('pixel.open_dashboard')}
               </button>
             </div>
           </div>

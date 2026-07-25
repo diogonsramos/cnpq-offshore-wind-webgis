@@ -8,6 +8,7 @@ import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
 import type { BasemapId, BathyLayerId } from '../types'
 import type { AppAction } from '../reducer'
 import BasemapSwitcher from './BasemapSwitcher'
+import { useLocale } from '../i18n/provider'
 import './MapView.css'
 
 interface MapViewProps {
@@ -83,6 +84,7 @@ const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MapViewInner(props: MapViewProps) {
   const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap, onPixelClick, pinnedLocations, onAddPin, onRemovePin, dispatch } = props
+  const { t } = useLocale()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const datasetRef = useRef(dataset)
@@ -414,7 +416,7 @@ function MapViewInner(props: MapViewProps) {
       if (!ctx) return
       ctx.drawImage(img, 0, 0)
 
-      const label = `CNPq WebGIS — ${modelLabel(modelRef.current)} ${datasetLabel(datasetRef.current)} ${varLabel(variable).label} ${height}m`
+      const label = `CNPq WebGIS — ${modelLabel(modelRef.current, t)} ${datasetLabel(datasetRef.current, t)} ${varLabel(variable, t).label} ${height}m`
       ctx.font = '14px sans-serif'
       const textWidth = ctx.measureText(label).width
       const padX = 8
@@ -433,7 +435,7 @@ function MapViewInner(props: MapViewProps) {
       document.body.removeChild(a)
     }
     img.src = dataUrl
-  }, [variable, height])
+  }, [variable, height, t])
 
   return (
     <>
@@ -442,10 +444,10 @@ function MapViewInner(props: MapViewProps) {
       {cogLoading && (
         <div className="cog-loading">
           <div className="cog-spinner" />
-          <span>Carregando...</span>
+          <span>{t('mapview.loading')}</span>
         </div>
       )}
-      <button className="map-screenshot-btn" onClick={handleScreenshot} title="Baixar screenshot do mapa">
+      <button className="map-screenshot-btn" onClick={handleScreenshot} title={t('mapview.screenshot_title')}>
         📷 Screenshot
       </button>
     </>

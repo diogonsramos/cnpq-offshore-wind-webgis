@@ -1,3 +1,7 @@
+import type { TranslationKey } from '../i18n/types'
+
+export type Translate = (key: TranslationKey, vars?: Record<string, string | number>) => string
+
 export type Model = 'wrf' | 'mpas'
 export type Dataset = 'ERA5_atlas_historico' | 'HIST_historico' | 'SSP2-4.5_presente' | 'SSP2-4.5_futuro' | 'SSP5-8.5_presente' | 'SSP5-8.5_futuro'
 export type Variable = 'ws' | 'wpd'
@@ -56,46 +60,46 @@ export function stateNorthSouthIndex(code: string): number {
   return i === -1 ? STATE_ORDER_NORTH_SOUTH.length : i
 }
 
-const VAR_LABEL: Record<Variable, { label: string; unit: string }> = {
-  ws: { label: 'Vel. Vento', unit: 'm/s' },
-  wpd: { label: 'Dens. Potência', unit: 'W/m²' },
+const VAR_LABEL_KEY: Record<Variable, { labelKey: TranslationKey; unit: string }> = {
+  ws: { labelKey: 'cogcatalog.variable.ws', unit: 'm/s' },
+  wpd: { labelKey: 'cogcatalog.variable.wpd', unit: 'W/m²' },
 }
 
-const DATASET_LABEL: Record<Dataset, string> = {
-  ERA5_atlas_historico: 'ERA5 Reanálise (Histórico)',
-  HIST_historico: 'Histórico',
-  'SSP2-4.5_presente': 'SSP2-4.5 (Presente)',
-  'SSP2-4.5_futuro': 'SSP2-4.5 (Futuro)',
-  'SSP5-8.5_presente': 'SSP5-8.5 (Presente)',
-  'SSP5-8.5_futuro': 'SSP5-8.5 (Futuro)',
+const DATASET_LABEL_KEY: Record<Dataset, TranslationKey> = {
+  ERA5_atlas_historico: 'cogcatalog.dataset.era5_atlas_historico',
+  HIST_historico: 'cogcatalog.dataset.hist_historico',
+  'SSP2-4.5_presente': 'cogcatalog.dataset.ssp245_presente',
+  'SSP2-4.5_futuro': 'cogcatalog.dataset.ssp245_futuro',
+  'SSP5-8.5_presente': 'cogcatalog.dataset.ssp585_presente',
+  'SSP5-8.5_futuro': 'cogcatalog.dataset.ssp585_futuro',
 }
 
-const MODEL_LABEL: Record<Model, string> = {
-  wrf: 'WRF',
-  mpas: 'MPAS',
+const MODEL_LABEL_KEY: Record<Model, TranslationKey> = {
+  wrf: 'cogcatalog.model.wrf',
+  mpas: 'cogcatalog.model.mpas',
 }
 
-const BATHY_LABEL: Record<BathyBand, string> = {
-  '0_20': '0 a -20 m',
-  '20_50': '-20 a -50 m',
-  '50_100': '-50 a -100 m',
-  '0_100': '0 a -100 m (Plataforma)',
+const BATHY_LABEL_KEY: Record<BathyBand, TranslationKey> = {
+  '0_20': 'cogcatalog.bathy.0_20',
+  '20_50': 'cogcatalog.bathy.20_50',
+  '50_100': 'cogcatalog.bathy.50_100',
+  '0_100': 'cogcatalog.bathy.0_100',
 }
 
-export function datasetLabel(d: Dataset): string {
-  return DATASET_LABEL[d]
+export function datasetLabel(d: Dataset, t: Translate): string {
+  return t(DATASET_LABEL_KEY[d])
 }
 
-export function modelLabel(m: Model): string {
-  return MODEL_LABEL[m]
+export function modelLabel(m: Model, t: Translate): string {
+  return t(MODEL_LABEL_KEY[m])
 }
 
-export function varLabel(v: Variable): { label: string; unit: string } {
-  return VAR_LABEL[v]
+export function varLabel(v: Variable, t: Translate): { label: string; unit: string } {
+  return { label: t(VAR_LABEL_KEY[v].labelKey), unit: VAR_LABEL_KEY[v].unit }
 }
 
-export function bathyLabel(b: BathyBand): string {
-  return BATHY_LABEL[b]
+export function bathyLabel(b: BathyBand, t: Translate): string {
+  return t(BATHY_LABEL_KEY[b])
 }
 
 // Dataset ids carry a _historico/_presente/_futuro suffix that has no counterpart
