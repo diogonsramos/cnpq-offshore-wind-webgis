@@ -37,12 +37,12 @@ const BL = 'bathy-line'
 // mn_zee_nacional/mn_zee_estadual have no published file yet (no ZEE boundary
 // data delivered so far) — same "not published" class as MPAS in pixelQuery.ts.
 const BATHY_FILES: Record<BathyLayerId, string> = {
-  mn_zee_nacional: '/data/shp/mn_zee_nacional.geojson',
-  mn_zee_estadual: '/data/shp/mn_zee_estadual.geojson',
-  bathy_0_100_nacional: '/data/bathymetry/batimetria_0_100m_cured.geojson',
-  bathy_0_100_estadual: '/data/bathymetry/batimetria_0_100m_estadual_cured.geojson',
-  bathy_0_20_50_75_100_nacional: '/data/bathymetry/batimetria_0_20_50_75_100m_cured.geojson',
-  bathy_0_20_50_75_100_estadual: '/data/bathymetry/batimetria_subfaixas_estadual_cured.geojson',
+  mn_zee_nacional: '/data/bathymetry/mn_zee_nacional.geojson',
+  mn_zee_estadual: '/data/bathymetry/mn_zee_estadual.geojson',
+  bathy_0_100_nacional: '/data/bathymetry/bathy_0_100_nacional.geojson',
+  bathy_0_100_estadual: '/data/bathymetry/bathy_0_100_estadual.geojson',
+  bathy_0_20_50_75_100_nacional: '/data/bathymetry/bathy_0_20_50_75_100_nacional.geojson',
+  bathy_0_20_50_75_100_estadual: '/data/bathymetry/bathy_0_20_50_75_100_estadual.geojson',
 }
 
 const BASEMAP_TILES: Record<BasemapId, { tiles: string[]; attribution: string }> = {
