@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, memo, useCallback, type Dispatch } from 'r
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { renderCog } from '../lib/cogTileRenderer'
-import { buildCogUrl, datasetFolder, datasetLabel, modelLabel, varLabel, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
+import { buildCogUrl, datasetLabel, modelLabel, varLabel, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
 import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '../lib/pixelQuery'
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
 import type { BasemapId, BathyLayerId } from '../types'
@@ -145,7 +145,7 @@ function MapViewInner(props: MapViewProps) {
       const mdl = modelRef.current
       if (!isLoaded()) {
         onPixelClick(null, true, false, 0)
-        loadParquet(datasetFolder(exp), mdl).then(() => {
+        loadParquet(exp, mdl).then(() => {
           const p = queryNearest(lat, lng)
           onPixelClick(p, false, true, getRecordCount())
         })
@@ -186,7 +186,7 @@ function MapViewInner(props: MapViewProps) {
   useEffect(() => {
     if (lastSyncedRef.current.dataset === dataset && lastSyncedRef.current.model === model) return
     lastSyncedRef.current = { dataset, model }
-    loadParquet(datasetFolder(dataset), model)
+    loadParquet(dataset, model)
   }, [dataset, model])
 
   const drawCog = useCallback(async () => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, memo, lazy, Suspense } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
-  datasetLabel, varLabel, modelLabel, datasetFolder,
+  datasetLabel, varLabel, modelLabel,
   type Model, type Dataset, type Variable, type Height, type Translate,
 } from '../lib/cogCatalog'
 import { queryDashboardLocation, loadParquet, seasonStat, type DashboardLocationData } from '../lib/pixelQuery'
@@ -77,23 +77,23 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
 
     const myGen = ++loadGenRef.current
     setLoadingKeys(prev => new Set([...prev, ...pending.map(pairKey)]))
-    ;(async () => {
-      for (const p of pending) {
-        if (loadGenRef.current !== myGen) return
-        try {
-          const data = await queryDashboardLocation(location.lat, location.lon, p.model, datasetFolder(p.dataset))
-          dataMapRef.current.set(pairKey(p), data)
-        } catch {
-          dataMapRef.current.set(pairKey(p), null)
+      ; (async () => {
+        for (const p of pending) {
+          if (loadGenRef.current !== myGen) return
+          try {
+            const data = await queryDashboardLocation(location.lat, location.lon, p.model, p.dataset)
+            dataMapRef.current.set(pairKey(p), data)
+          } catch {
+            dataMapRef.current.set(pairKey(p), null)
+          }
         }
-      }
-      // Restore the singleton parquet slot to the globally selected pair so a
-      // subsequent map click in the "WebGIS Map" tab queries the right dataset.
-      await loadParquet(datasetFolder(currentDataset), currentModel).catch(() => {})
-      if (loadGenRef.current !== myGen) return
-      setLoadingKeys(new Set())
-      setDataVersion(v => v + 1)
-    })()
+        // Restore the singleton parquet slot to the globally selected pair so a
+        // subsequent map click in the "WebGIS Map" tab queries the right dataset.
+        await loadParquet(currentDataset, currentModel).catch(() => { })
+        if (loadGenRef.current !== myGen) return
+        setLoadingKeys(new Set())
+        setDataVersion(v => v + 1)
+      })()
   }, [location, pairs, currentDataset, currentModel])
 
   const handleSetLocation = (lat: number, lon: number) => {
@@ -244,149 +244,149 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: Da
       ) : (
         <div className="dv-main">
           <Suspense fallback={<DashboardSkeleton />}>
-          <div className="dv-chart-grid">
-            <div className="chart-card" data-testid="chart-seasonal">
-              <Plot
-                data={readyEntries.map(e => ({
-                  x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
-                  y: SEASON_ORDER.map(s => seasonStat(e.data, variable, height, s, 'mean')),
-                  type: 'bar',
-                  name: e.label,
-                  marker: { color: e.style.color, pattern: e.style.dash === 'dash' ? { shape: '/' } : undefined },
-                  hovertemplate: '%{y:.2f}<extra></extra>',
-                }))}
-                layout={{
-                  title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(variable, t).label, height: `${height}m` }) },
-                  xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
-                  yaxis: {
-                    title: { text: `${varLabel(variable, t).label} (${varUnit})`, standoff: 10 },
-                    range: variable === 'ws' ? [0, 25] : [0, 1500],
-                    zeroline: false,
-                    hoverformat: '.2f',
-                  },
-                  height: 260,
-                  margin: { t: 40, b: 40, l: 55, r: 20 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: CHART_FONT,
-                  showlegend: false,
-                  hovermode: 'x unified',
-                  hoverlabel: HOVER_LABEL_STYLE,
-                }}
-                config={PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
-            </div>
-
-            <div className="chart-card" data-testid="chart-weibull">
-              <Plot
-                data={readyEntries.map(e => {
-                  const w = e.data.weibull?.[height]
-                  if (!w) return { x: [], y: [], type: 'scatter' as const, name: e.label }
-                  const maxX = 30
-                  const step = maxX / 60
-                  const xs: number[] = [], ys: number[] = []
-                  for (let x = 0; x <= maxX; x += step) {
-                    xs.push(x)
-                    const k = w.k, c = w.c
-                    ys.push(k > 0 && c > 0 ? (k / c) * Math.pow(x / c, k - 1) * Math.exp(-Math.pow(x / c, k)) : 0)
-                  }
-                  return {
-                    x: xs, y: ys, type: 'scatter' as const, mode: 'lines' as const,
-                    name: `${e.label} (k=${w.k.toFixed(2)}, c=${w.c.toFixed(2)})`,
-                    line: { color: e.style.color, width: 2, dash: e.style.dash },
-                    hovertemplate: '%{y:.4f}<extra></extra>',
-                  }
-                })}
-                layout={{
-                  title: { text: t('dashboard.chart.weibull_title', { height: `${height}m` }) },
-                  xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 30], zeroline: false, hoverformat: '.2f' },
-                  yaxis: { title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 }, range: [0, 0.3], zeroline: false, hoverformat: '.4f' },
-                  height: 260,
-                  margin: { t: 40, b: 40, l: 55, r: 20 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: CHART_FONT,
-                  showlegend: true,
-                  legend: { x: 1, xanchor: 'right', y: 1 },
-                  hovermode: 'x unified',
-                  hoverlabel: HOVER_LABEL_STYLE,
-                }}
-                config={PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
-            </div>
-
-            <div className="chart-card" data-testid="chart-windrose">
-              <Plot
-                data={readyEntries.map(e => {
-                  const wr = e.data.wind_rose?.[height]
-                  if (!wr) return { r: [], theta: [], type: 'scatterpolar' as const, name: e.label }
-                  return {
-                    r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
-                    theta: SECTOR_LABELS,
-                    type: 'scatterpolar' as const,
-                    fill: 'toself',
+            <div className="dv-chart-grid">
+              <div className="chart-card" data-testid="chart-seasonal">
+                <Plot
+                  data={readyEntries.map(e => ({
+                    x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
+                    y: SEASON_ORDER.map(s => seasonStat(e.data, variable, height, s, 'mean')),
+                    type: 'bar',
                     name: e.label,
-                    marker: { color: e.style.color },
-                    line: { dash: e.style.dash },
-                    hovertemplate: '%{theta}: %{r:.1f}%<extra></extra>',
-                    hoverlabel: { bgcolor: e.style.color },
-                  }
-                })}
-                layout={{
-                  title: { text: t('dashboard.chart.windrose_title', { height: `${height}m` }) },
-                  height: 260,
-                  margin: { t: 40, b: 30, l: 50, r: 50 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: CHART_FONT,
-                  showlegend: false,
-                  hoverlabel: { font: { size: 12, color: '#fff' } },
-                  polar: {
-                    angularaxis: { direction: 'clockwise', rotation: 90 },
-                    radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' },
-                  },
-                }}
-                config={WINDROSE_PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
-            </div>
+                    marker: { color: e.style.color, pattern: e.style.dash === 'dash' ? { shape: '/' } : undefined },
+                    hovertemplate: '%{y:.2f}<extra></extra>',
+                  }))}
+                  layout={{
+                    title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(variable, t).label, height: `${height}m` }) },
+                    xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
+                    yaxis: {
+                      title: { text: `${varLabel(variable, t).label} (${varUnit})`, standoff: 10 },
+                      range: variable === 'ws' ? [0, 25] : [0, 1500],
+                      zeroline: false,
+                      hoverformat: '.2f',
+                    },
+                    height: 260,
+                    margin: { t: 40, b: 40, l: 55, r: 20 },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hovermode: 'x unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
+                  }}
+                  config={PLOT_CONFIG}
+                  style={{ width: '100%' }}
+                  useResizeHandler
+                />
+              </div>
 
-            <div className="chart-card">
-              <Plot
-                data={readyEntries.map(e => ({
-                  x: e.data.profile_means,
-                  y: e.data.profile_heights,
-                  type: 'scatter' as const,
-                  mode: 'lines+markers' as const,
-                  name: e.label,
-                  line: { color: e.style.color, width: 2, dash: e.style.dash },
-                  marker: { color: e.style.color, size: 6 },
-                  hovertemplate: '%{x:.2f}<extra></extra>',
-                }))}
-                layout={{
-                  title: { text: t('dashboard.chart.ws_profile_title') },
-                  xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 25], zeroline: false, hoverformat: '.2f' },
-                  yaxis: profileYAxis,
-                  height: 260,
-                  margin: { t: 40, b: 40, l: 55, r: 20 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: CHART_FONT,
-                  showlegend: false,
-                  hovermode: 'y unified',
-                  hoverlabel: HOVER_LABEL_STYLE,
-                }}
-                config={PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
+              <div className="chart-card" data-testid="chart-weibull">
+                <Plot
+                  data={readyEntries.map(e => {
+                    const w = e.data.weibull?.[height]
+                    if (!w) return { x: [], y: [], type: 'scatter' as const, name: e.label }
+                    const maxX = 30
+                    const step = maxX / 60
+                    const xs: number[] = [], ys: number[] = []
+                    for (let x = 0; x <= maxX; x += step) {
+                      xs.push(x)
+                      const k = w.k, c = w.c
+                      ys.push(k > 0 && c > 0 ? (k / c) * Math.pow(x / c, k - 1) * Math.exp(-Math.pow(x / c, k)) : 0)
+                    }
+                    return {
+                      x: xs, y: ys, type: 'scatter' as const, mode: 'lines' as const,
+                      name: `${e.label} (k=${w.k.toFixed(2)}, c=${w.c.toFixed(2)})`,
+                      line: { color: e.style.color, width: 2, dash: e.style.dash },
+                      hovertemplate: '%{y:.4f}<extra></extra>',
+                    }
+                  })}
+                  layout={{
+                    title: { text: t('dashboard.chart.weibull_title', { height: `${height}m` }) },
+                    xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 30], zeroline: false, hoverformat: '.2f' },
+                    yaxis: { title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 }, range: [0, 0.3], zeroline: false, hoverformat: '.4f' },
+                    height: 260,
+                    margin: { t: 40, b: 40, l: 55, r: 20 },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: CHART_FONT,
+                    showlegend: true,
+                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    hovermode: 'x unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
+                  }}
+                  config={PLOT_CONFIG}
+                  style={{ width: '100%' }}
+                  useResizeHandler
+                />
+              </div>
+
+              <div className="chart-card" data-testid="chart-windrose">
+                <Plot
+                  data={readyEntries.map(e => {
+                    const wr = e.data.wind_rose?.[height]
+                    if (!wr) return { r: [], theta: [], type: 'scatterpolar' as const, name: e.label }
+                    return {
+                      r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
+                      theta: SECTOR_LABELS,
+                      type: 'scatterpolar' as const,
+                      fill: 'toself',
+                      name: e.label,
+                      marker: { color: e.style.color },
+                      line: { dash: e.style.dash },
+                      hovertemplate: '%{theta}: %{r:.1f}%<extra></extra>',
+                      hoverlabel: { bgcolor: e.style.color },
+                    }
+                  })}
+                  layout={{
+                    title: { text: t('dashboard.chart.windrose_title', { height: `${height}m` }) },
+                    height: 260,
+                    margin: { t: 40, b: 30, l: 50, r: 50 },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hoverlabel: { font: { size: 12, color: '#fff' } },
+                    polar: {
+                      angularaxis: { direction: 'clockwise', rotation: 90 },
+                      radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' },
+                    },
+                  }}
+                  config={WINDROSE_PLOT_CONFIG}
+                  style={{ width: '100%' }}
+                  useResizeHandler
+                />
+              </div>
+
+              <div className="chart-card">
+                <Plot
+                  data={readyEntries.map(e => ({
+                    x: e.data.profile_means,
+                    y: e.data.profile_heights,
+                    type: 'scatter' as const,
+                    mode: 'lines+markers' as const,
+                    name: e.label,
+                    line: { color: e.style.color, width: 2, dash: e.style.dash },
+                    marker: { color: e.style.color, size: 6 },
+                    hovertemplate: '%{x:.2f}<extra></extra>',
+                  }))}
+                  layout={{
+                    title: { text: t('dashboard.chart.ws_profile_title') },
+                    xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 25], zeroline: false, hoverformat: '.2f' },
+                    yaxis: profileYAxis,
+                    height: 260,
+                    margin: { t: 40, b: 40, l: 55, r: 20 },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: CHART_FONT,
+                    showlegend: false,
+                    hovermode: 'y unified',
+                    hoverlabel: HOVER_LABEL_STYLE,
+                  }}
+                  config={PLOT_CONFIG}
+                  style={{ width: '100%' }}
+                  useResizeHandler
+                />
+              </div>
             </div>
-          </div>
           </Suspense>
 
           <div className="dv-sidebar">

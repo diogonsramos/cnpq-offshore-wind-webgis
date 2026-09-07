@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, memo, lazy, Suspense } from 'react'
 import {
   MODELS, DATASETS, VARIABLES, HEIGHTS,
-  datasetLabel, varLabel, modelLabel, datasetFolder, COASTAL_STATES, stateNorthSouthIndex,
+  datasetLabel, varLabel, modelLabel, COASTAL_STATES, stateNorthSouthIndex,
   type Model, type Dataset, type Variable, type Height,
 } from '../lib/cogCatalog'
 import { loadParquet, queryFilteredPixels, hasRealDistanceData, type FilterCriteria, type FilteredAggregates } from '../lib/pixelQuery'
@@ -82,11 +82,11 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
   const handleApply = async () => {
     const myGen = ++loadGenRef.current
     setLoading(true)
-    await loadParquet(datasetFolder(dataset), model).catch(() => {})
+    await loadParquet(dataset, model).catch(() => { })
     if (loadGenRef.current !== myGen) return
 
     const filters: FilterCriteria = {
-      model, experiment: datasetFolder(dataset), variable, height,
+      model, experiment: dataset, variable, height,
       states, bathyZones, distanceMin: 0, distanceMax: distanceMaxFromZones(distanceZones),
     }
     const fp = fingerprint(filters)
@@ -98,7 +98,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
 
     // Restore the singleton parquet slot to the globally selected pair so a
     // subsequent map click in the "WebGIS Map" tab queries the right dataset.
-    await loadParquet(datasetFolder(currentDataset), currentModel).catch(() => {})
+    await loadParquet(currentDataset, currentModel).catch(() => { })
     if (loadGenRef.current !== myGen) return
 
     setAppliedFilters(filters)
@@ -246,67 +246,14 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
           </div>
 
           <Suspense fallback={<DashboardSkeleton />}>
-          <div className="dv-chart-grid">
-            <div className="chart-card">
-              <Plot
-                data={histogramTrace ? [{ ...histogramTrace, hovertemplate: '%{y} pixels<extra></extra>' }] : []}
-                layout={{
-                  title: { text: `${t('geoparquet_explorer.charts.histogram_title')} — ${varLabel(appliedVariable, t).label} ${appliedHeight}m` },
-                  xaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 } },
-                  yaxis: { title: { text: t('dashboard.chart.pixel_count_axis'), standoff: 10 }, zeroline: false },
-                  height: 260,
-                  margin: { t: 40, b: 40, l: 55, r: 20 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: CHART_FONT,
-                  showlegend: false,
-                  hoverlabel: HOVER_LABEL_STYLE,
-                }}
-                config={PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
-            </div>
-
-            {showBoxplotByState ? (
+            <div className="dv-chart-grid">
               <div className="chart-card">
                 <Plot
-                  data={byStateOrdered.map((g, i) => ({
-                    y: g.values, type: 'box' as const, name: stateLabel(g.state),
-                    marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
-                    boxpoints: false as const,
-                  }))}
+                  data={histogramTrace ? [{ ...histogramTrace, hovertemplate: '%{y} pixels<extra></extra>' }] : []}
                   layout={{
-                    title: { text: t('geoparquet_explorer.charts.boxplot_state_title') },
-                    yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
-                    height: 260,
-                    margin: { t: 40, b: 60, l: 55, r: 20 },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: CHART_FONT,
-                    showlegend: false,
-                    hoverlabel: HOVER_LABEL_STYLE,
-                  }}
-                  config={PLOT_CONFIG}
-                  style={{ width: '100%' }}
-                  useResizeHandler
-                />
-              </div>
-            ) : (
-              <div className="chart-card chart-empty">{t('geoparquet_explorer.charts.boxplot_state_hidden')}</div>
-            )}
-
-            {showBoxplotByBathy ? (
-              <div className="chart-card">
-                <Plot
-                  data={byBathyOrdered.map((g, i) => ({
-                    y: g.values, type: 'box' as const, name: bathyOptionLabel(g.zone),
-                    marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
-                    boxpoints: false as const,
-                  }))}
-                  layout={{
-                    title: { text: t('geoparquet_explorer.charts.boxplot_bathy_title') },
-                    yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                    title: { text: `${t('geoparquet_explorer.charts.histogram_title')} — ${varLabel(appliedVariable, t).label} ${appliedHeight}m` },
+                    xaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 } },
+                    yaxis: { title: { text: t('dashboard.chart.pixel_count_axis'), standoff: 10 }, zeroline: false },
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
@@ -320,41 +267,128 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   useResizeHandler
                 />
               </div>
-            ) : (
-              <div className="chart-card chart-empty">{t('geoparquet_explorer.charts.boxplot_bathy_hidden')}</div>
-            )}
 
-            {hasRealDistanceData(result) ? (
+              {showBoxplotByState ? (
+                <div className="chart-card">
+                  <Plot
+                    data={byStateOrdered.map((g, i) => ({
+                      y: g.values, type: 'box' as const, name: stateLabel(g.state),
+                      marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
+                      boxpoints: false as const,
+                    }))}
+                    layout={{
+                      title: { text: t('geoparquet_explorer.charts.boxplot_state_title') },
+                      yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                      height: 260,
+                      margin: { t: 40, b: 60, l: 55, r: 20 },
+                      paper_bgcolor: 'transparent',
+                      plot_bgcolor: 'transparent',
+                      font: CHART_FONT,
+                      showlegend: false,
+                      hoverlabel: HOVER_LABEL_STYLE,
+                    }}
+                    config={PLOT_CONFIG}
+                    style={{ width: '100%' }}
+                    useResizeHandler
+                  />
+                </div>
+              ) : (
+                <div className="chart-card chart-empty">{t('geoparquet_explorer.charts.boxplot_state_hidden')}</div>
+              )}
+
+              {showBoxplotByBathy ? (
+                <div className="chart-card">
+                  <Plot
+                    data={byBathyOrdered.map((g, i) => ({
+                      y: g.values, type: 'box' as const, name: bathyOptionLabel(g.zone),
+                      marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
+                      boxpoints: false as const,
+                    }))}
+                    layout={{
+                      title: { text: t('geoparquet_explorer.charts.boxplot_bathy_title') },
+                      yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                      height: 260,
+                      margin: { t: 40, b: 40, l: 55, r: 20 },
+                      paper_bgcolor: 'transparent',
+                      plot_bgcolor: 'transparent',
+                      font: CHART_FONT,
+                      showlegend: false,
+                      hoverlabel: HOVER_LABEL_STYLE,
+                    }}
+                    config={PLOT_CONFIG}
+                    style={{ width: '100%' }}
+                    useResizeHandler
+                  />
+                </div>
+              ) : (
+                <div className="chart-card chart-empty">{t('geoparquet_explorer.charts.boxplot_bathy_hidden')}</div>
+              )}
+
+              {hasRealDistanceData(result) ? (
+                <div className="chart-card">
+                  <Plot
+                    data={[
+                      {
+                        x: result.distances, y: result.values, type: 'scatter' as const, mode: 'markers' as const,
+                        name: t('dashboard.chart.pixels_trace'), marker: { color: CHART_COLORS[0], size: 5, opacity: 0.6 },
+                        hovertemplate: '%{x:.1f} nm, %{y:.2f}<extra></extra>',
+                      },
+                      ...(regression ? [{
+                        x: [appliedDistanceMin, appliedDistanceMax],
+                        y: [
+                          regression.intercept + regression.slope * appliedDistanceMin,
+                          regression.intercept + regression.slope * appliedDistanceMax,
+                        ],
+                        type: 'scatter' as const, mode: 'lines' as const, name: t('dashboard.chart.trend_trace'),
+                        line: { color: CHART_COLORS[1], width: 2, dash: 'dash' as const },
+                        hovertemplate: '%{y:.2f}<extra></extra>',
+                      }] : []),
+                    ]}
+                    layout={{
+                      title: { text: t('geoparquet_explorer.charts.scatter_title') },
+                      xaxis: { title: { text: t('dashboard.chart.distance_axis'), standoff: 10 }, range: [appliedDistanceMin, appliedDistanceMax], zeroline: false, hoverformat: '.1f' },
+                      yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                      height: 260,
+                      margin: { t: 40, b: 40, l: 55, r: 20 },
+                      paper_bgcolor: 'transparent',
+                      plot_bgcolor: 'transparent',
+                      font: CHART_FONT,
+                      showlegend: true,
+                      legend: { x: 1, xanchor: 'right', y: 1 },
+                      hoverlabel: HOVER_LABEL_STYLE,
+                    }}
+                    config={PLOT_CONFIG}
+                    style={{ width: '100%' }}
+                    useResizeHandler
+                  />
+                </div>
+              ) : (
+                <div className="chart-card chart-empty" data-testid="scatter-distance-hidden">
+                  {t('geoparquet_explorer.charts.scatter_hidden')}
+                </div>
+              )}
+
               <div className="chart-card">
                 <Plot
-                  data={[
-                    {
-                      x: result.distances, y: result.values, type: 'scatter' as const, mode: 'markers' as const,
-                      name: t('dashboard.chart.pixels_trace'), marker: { color: CHART_COLORS[0], size: 5, opacity: 0.6 },
-                      hovertemplate: '%{x:.1f} nm, %{y:.2f}<extra></extra>',
-                    },
-                    ...(regression ? [{
-                      x: [appliedDistanceMin, appliedDistanceMax],
-                      y: [
-                        regression.intercept + regression.slope * appliedDistanceMin,
-                        regression.intercept + regression.slope * appliedDistanceMax,
-                      ],
-                      type: 'scatter' as const, mode: 'lines' as const, name: t('dashboard.chart.trend_trace'),
-                      line: { color: CHART_COLORS[1], width: 2, dash: 'dash' as const },
-                      hovertemplate: '%{y:.2f}<extra></extra>',
-                    }] : []),
-                  ]}
+                  data={[{
+                    x: result.profileMeans, y: result.profileHeights, type: 'scatter' as const, mode: 'lines+markers' as const,
+                    name: t('dashboard.chart.mean_profile_trace'),
+                    line: { color: CHART_COLORS[0], width: 2 },
+                    marker: { color: CHART_COLORS[0], size: 6 },
+                    error_x: { type: 'data' as const, array: result.profileStds, visible: true, color: CHART_COLORS[0] + '88' },
+                    hovertemplate: '%{x:.2f}<extra></extra>',
+                  }]}
                   layout={{
-                    title: { text: t('geoparquet_explorer.charts.scatter_title') },
-                    xaxis: { title: { text: t('dashboard.chart.distance_axis'), standoff: 10 }, range: [appliedDistanceMin, appliedDistanceMax], zeroline: false, hoverformat: '.1f' },
-                    yaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                    title: { text: t('geoparquet_explorer.charts.profile_title') },
+                    xaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                    yaxis: profileYAxis,
                     height: 260,
                     margin: { t: 40, b: 40, l: 55, r: 20 },
                     paper_bgcolor: 'transparent',
                     plot_bgcolor: 'transparent',
                     font: CHART_FONT,
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
+                    showlegend: false,
+                    hovermode: 'y unified',
                     hoverlabel: HOVER_LABEL_STYLE,
                   }}
                   config={PLOT_CONFIG}
@@ -362,41 +396,7 @@ function GeoParquetExplorerInner({ currentModel, currentDataset }: GeoParquetExp
                   useResizeHandler
                 />
               </div>
-            ) : (
-              <div className="chart-card chart-empty" data-testid="scatter-distance-hidden">
-                {t('geoparquet_explorer.charts.scatter_hidden')}
-              </div>
-            )}
-
-            <div className="chart-card">
-              <Plot
-                data={[{
-                  x: result.profileMeans, y: result.profileHeights, type: 'scatter' as const, mode: 'lines+markers' as const,
-                  name: t('dashboard.chart.mean_profile_trace'),
-                  line: { color: CHART_COLORS[0], width: 2 },
-                  marker: { color: CHART_COLORS[0], size: 6 },
-                  error_x: { type: 'data' as const, array: result.profileStds, visible: true, color: CHART_COLORS[0] + '88' },
-                  hovertemplate: '%{x:.2f}<extra></extra>',
-                }]}
-                layout={{
-                  title: { text: t('geoparquet_explorer.charts.profile_title') },
-                  xaxis: { title: { text: `${varLabel(appliedVariable, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
-                  yaxis: profileYAxis,
-                  height: 260,
-                  margin: { t: 40, b: 40, l: 55, r: 20 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: CHART_FONT,
-                  showlegend: false,
-                  hovermode: 'y unified',
-                  hoverlabel: HOVER_LABEL_STYLE,
-                }}
-                config={PLOT_CONFIG}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
             </div>
-          </div>
           </Suspense>
         </>
       )}
