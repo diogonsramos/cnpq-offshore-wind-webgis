@@ -37,6 +37,7 @@ export const BATHY_ZONE_OPTIONS: { val: string; label: string }[] = [
   { val: '0_20', label: '0 – 20 m' },
   { val: '20_50', label: '20 – 50 m' },
   { val: '50_100', label: '50 – 100 m' },
+  { val: 'out_of_range', label: 'Sem Batimetria (Erro ETL Python)' },
 ]
 
 export const DISTANCE_MAX_NM = 400

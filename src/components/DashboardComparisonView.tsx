@@ -25,6 +25,7 @@ interface DashboardComparisonViewProps {
   mode: ComparisonMode
   currentModel: Model
   currentDataset: Dataset
+  pinnedLocations: DashboardLocationData[]
 }
 
 const MAX_EXPERIMENT_PAIRS = 3
@@ -42,14 +43,22 @@ function traceStyle(mode: ComparisonMode, index: number): { color: string; dash:
   return { color: CHART_COLORS[index % CHART_COLORS.length], dash: 'solid' }
 }
 
-function DashboardComparisonViewInner({ mode, currentModel, currentDataset }: DashboardComparisonViewProps) {
+function DashboardComparisonViewInner({ mode, currentModel, currentDataset, pinnedLocations }: DashboardComparisonViewProps) {
   const { t } = useLocale()
   const [variable, setVariable] = useState<Variable>('ws')
   const [height, setHeight] = useState<Height>(100)
   const [latInput, setLatInput] = useState('')
   const [lonInput, setLonInput] = useState('')
   const [locError, setLocError] = useState('')
-  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(
+    pinnedLocations.length > 0 ? { lat: pinnedLocations[0].lat, lon: pinnedLocations[0].lon } : null
+  )
+
+  useEffect(() => {
+    if (!location && pinnedLocations.length > 0) {
+      setLocation({ lat: pinnedLocations[0].lat, lon: pinnedLocations[0].lon })
+    }
+  }, [pinnedLocations, location])
 
   const [selectedPairs, setSelectedPairs] = useState<Pair[]>([])
   const [selectedDataset, setSelectedDataset] = useState<Dataset>(currentDataset)

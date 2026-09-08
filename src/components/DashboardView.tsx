@@ -583,11 +583,11 @@ function DashboardViewInner({
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'compare_exp' ? 'flex' : 'none' }}>
-        <DashboardComparisonView mode="experiments" currentModel={model} currentDataset={dataset} />
+        <DashboardComparisonView mode="experiments" currentModel={model} currentDataset={dataset} pinnedLocations={pinnedLocations} />
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'compare_model' ? 'flex' : 'none' }}>
-        <DashboardComparisonView mode="models" currentModel={model} currentDataset={dataset} />
+        <DashboardComparisonView mode="models" currentModel={model} currentDataset={dataset} pinnedLocations={pinnedLocations} />
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'geoparquet' ? 'flex' : 'none' }}>
