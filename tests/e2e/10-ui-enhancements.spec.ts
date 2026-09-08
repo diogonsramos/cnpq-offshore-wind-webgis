@@ -72,7 +72,7 @@ test.describe('Dashboard — exportação CSV, tela cheia e rosa dos ventos colo
     await page.click('.lp-cta-secondary')
     await expect(page.locator('.dashboard-view')).toBeVisible()
     const panel = page.locator('.dv-tab-panel').nth(0)
-    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('HIST_historico')
+    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('hist')
   })
 
   test('T81 — "Download CSV" fica desabilitado sem locais fixados e habilita após adicionar um', async ({ page }) => {

@@ -18,7 +18,7 @@ test.describe('Dashboard — Visão Simples: novos gráficos (f02)', () => {
     await expect(page.locator('.dashboard-view')).toBeVisible()
 
     const panel = page.locator('.dv-tab-panel').nth(0)
-    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('HIST_historico')
+    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('hist')
 
     await panel.locator('.dv-input').nth(0).fill('-10')
     await panel.locator('.dv-input').nth(1).fill('-35')
