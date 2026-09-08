@@ -1,17 +1,17 @@
+import type { TranslationKey } from '../i18n/types'
+
+export type Translate = (key: TranslationKey, vars?: Record<string, string | number>) => string
+
 export type Model = 'wrf' | 'mpas'
-export type Dataset = 'ERA5_atlas_historico' | 'ERA5_atlas_presente' | 'HIST_historico' | 'SSP2-4.5_presente' | 'SSP2-4.5_futuro' | 'SSP5-8.5_presente' | 'SSP5-8.5_futuro'
+export type Dataset = 'era5' | 'hist' | 'ssp245' | 'ssp585'
 export type Variable = 'ws' | 'wpd'
 export type Height = 10 | 50 | 100 | 150 | 200
 export type Season = 'annual' | 'djf' | 'mam' | 'jja' | 'son'
 export type Region = 'nacional' | 'estadual'
 export type BathyBand = '0_20' | '20_50' | '50_100' | '0_100'
+
 export const MODELS: Model[] = ['wrf', 'mpas']
-export const DATASETS: Dataset[] = [
-  'ERA5_atlas_historico', 'ERA5_atlas_presente',
-  'HIST_historico',
-  'SSP2-4.5_presente', 'SSP2-4.5_futuro',
-  'SSP5-8.5_presente', 'SSP5-8.5_futuro',
-]
+export const DATASETS: Dataset[] = ['era5', 'hist', 'ssp245', 'ssp585']
 export const VARIABLES: Variable[] = ['ws', 'wpd']
 export const HEIGHTS: Height[] = [10, 50, 100, 150, 200]
 export const SEASONS: Season[] = ['annual', 'djf', 'mam', 'jja', 'son']
@@ -43,49 +43,60 @@ export const COASTAL_STATES: StateDef[] = [
   { val: 'SP', label: 'São Paulo' },
 ]
 
-const VAR_LABEL: Record<Variable, { label: string; unit: string }> = {
-  ws: { label: 'Vel. Vento', unit: 'm/s' },
-  wpd: { label: 'Dens. Potência', unit: 'W/m²' },
+// Geographic Norte→Sul ordering of the coastal states, used to sort the
+// per-state boxplot so it reads as a latitudinal gradient down the coast.
+export const STATE_ORDER_NORTH_SOUTH: string[] = [
+  'AP', 'PA', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA', 'ES', 'RJ', 'SP', 'PR', 'SC', 'RS',
+]
+
+export function stateNorthSouthIndex(code: string): number {
+  const i = STATE_ORDER_NORTH_SOUTH.indexOf(code)
+  return i === -1 ? STATE_ORDER_NORTH_SOUTH.length : i
 }
 
-const DATASET_LABEL: Record<Dataset, string> = {
-  ERA5_atlas_historico: 'ERA5 Reanálise (Histórico)',
-  ERA5_atlas_presente: 'ERA5 Reanálise (Presente)',
-  HIST_historico: 'Histórico',
-  'SSP2-4.5_presente': 'SSP2-4.5 (Presente)',
-  'SSP2-4.5_futuro': 'SSP2-4.5 (Futuro)',
-  'SSP5-8.5_presente': 'SSP5-8.5 (Presente)',
-  'SSP5-8.5_futuro': 'SSP5-8.5 (Futuro)',
+const VAR_LABEL_KEY: Record<Variable, { labelKey: TranslationKey; unit: string }> = {
+  ws: { labelKey: 'cogcatalog.variable.ws', unit: 'm/s' },
+  wpd: { labelKey: 'cogcatalog.variable.wpd', unit: 'W/m²' },
 }
 
-const MODEL_LABEL: Record<Model, string> = {
-  wrf: 'WRF',
-  mpas: 'MPAS',
+const DATASET_LABEL_KEY: Record<Dataset, TranslationKey> = {
+  era5: 'cogcatalog.dataset.era5',
+  hist: 'cogcatalog.dataset.hist',
+  ssp245: 'cogcatalog.dataset.ssp245',
+  ssp585: 'cogcatalog.dataset.ssp585',
 }
 
-const BATHY_LABEL: Record<BathyBand, string> = {
-  '0_20': '0 a -20 m',
-  '20_50': '-20 a -50 m',
-  '50_100': '-50 a -100 m',
-  '0_100': '0 a -100 m (Plataforma)',
+const MODEL_LABEL_KEY: Record<Model, TranslationKey> = {
+  wrf: 'cogcatalog.model.wrf',
+  mpas: 'cogcatalog.model.mpas',
 }
 
-export function datasetLabel(d: Dataset): string {
-  return DATASET_LABEL[d]
+const BATHY_LABEL_KEY: Record<BathyBand, TranslationKey> = {
+  '0_20': 'cogcatalog.bathy.0_20',
+  '20_50': 'cogcatalog.bathy.20_50',
+  '50_100': 'cogcatalog.bathy.50_100',
+  '0_100': 'cogcatalog.bathy.0_100',
 }
 
-export function modelLabel(m: Model): string {
-  return MODEL_LABEL[m]
+export function datasetLabel(d: Dataset, t: Translate): string {
+  return t(DATASET_LABEL_KEY[d])
 }
 
-export function varLabel(v: Variable): { label: string; unit: string } {
-  return VAR_LABEL[v]
+export function modelLabel(m: Model, t: Translate): string {
+  return t(MODEL_LABEL_KEY[m])
 }
 
-export function bathyLabel(b: BathyBand): string {
-  return BATHY_LABEL[b]
+export function varLabel(v: Variable, t: Translate): { label: string; unit: string } {
+  return { label: t(VAR_LABEL_KEY[v].labelKey), unit: VAR_LABEL_KEY[v].unit }
 }
 
+export function bathyLabel(b: BathyBand, t: Translate): string {
+  return t(BATHY_LABEL_KEY[b])
+}
+
+// COG file schema: {model}/{dataset}/{anual|sazonal}/{VAR}_{height}_avg[_{SEASON}].tif
+// Only the `avg` statistic is served to the map renderer (statistical layers
+// like p5/p95/std are for download, not for real-time tile rendering).
 export function buildCogUrl(
   dataset: Dataset,
   variable: Variable,
@@ -93,6 +104,10 @@ export function buildCogUrl(
   season: Season,
   model: Model = 'wrf',
 ): string {
-  const varLower = variable === 'ws' ? `ws${height}` : `wpd${height}`
-  return `/data/cogs/${model}/${dataset}/${varLower}/${height}m/${season}.tif`
+  const VAR = variable.toUpperCase() // 'WS' | 'WPD'
+  if (season === 'annual') {
+    return `/data/cogs/${model}/${dataset}/anual/${VAR}_${height}_avg.tif`
+  }
+  const seasonSuffix = season.toUpperCase() // 'DJF' | 'MAM' | 'JJA' | 'SON'
+  return `/data/cogs/${model}/${dataset}/sazonal/${VAR}_${height}_avg_${seasonSuffix}.tif`
 }

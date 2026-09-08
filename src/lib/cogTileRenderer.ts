@@ -97,7 +97,8 @@ export async function renderCog(
     const canvas = document.createElement('canvas')
     canvas.width = cw
     canvas.height = ch
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
     const id = ctx.createImageData(cw, ch)
     const pix = id.data
 

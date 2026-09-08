@@ -1,0 +1,477 @@
+/* ── Dashboard View ─────────────────────── */
+.dashboard-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f0f2f5;
+  overflow: hidden;
+}
+
+/* Internal tabs: Simple View / Compare Experiments / Compare Models */
+.dv-inner-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  flex-shrink: 0;
+}
+.dv-inner-tab-btn {
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.dv-inner-tab-btn:hover {
+  color: #555;
+}
+.dv-inner-tab-btn.active {
+  color: #1a1a2e;
+  border-bottom-color: #4a90d9;
+}
+
+.dv-tab-panel {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dv-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 12px 16px;
+  gap: 10px;
+}
+
+/* Filter bar */
+.dv-filter-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+.dv-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dv-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+.dv-select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  background: #f8f9fa;
+  color: #1a1a2e;
+  outline: none;
+  cursor: pointer;
+}
+.dv-select:focus {
+  border-color: #4a90d9;
+}
+.dv-select:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Location bar */
+.dv-location-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dv-input {
+  width: 120px;
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  outline: none;
+}
+.dv-input:focus {
+  border-color: #4a90d9;
+}
+.dv-add-btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dv-add-btn:hover {
+  background: #357abd;
+}
+.dv-export-btn {
+  margin-left: auto;
+  padding: 7px 14px;
+  border: 1px solid #4a90d9;
+  border-radius: 6px;
+  background: #fff;
+  color: #4a90d9;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dv-export-btn:hover:not(:disabled) {
+  background: #4a90d9;
+  color: #fff;
+}
+.dv-export-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dv-hint {
+  font-size: 11px;
+  color: #999;
+}
+.dv-error {
+  color: #e74c3c;
+  font-size: 12px;
+}
+
+/* Location chips */
+.dv-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.dv-remove-all {
+  padding: 5px 10px;
+  border: 1px solid #e74c3c;
+  border-radius: 6px;
+  background: #fff;
+  color: #e74c3c;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dv-remove-all:hover {
+  background: #e74c3c;
+  color: #fff;
+}
+/* Main area: chart grid + mini-map sidebar */
+.dv-main {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+.dv-chart-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-content: start;
+}
+.dv-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .dv-main {
+    flex-direction: column;
+  }
+  .dv-sidebar {
+    width: 100%;
+  }
+  /* Visão Simples nests .dv-body + .dv-sidebar directly under .dv-tab-panel
+     (not under .dv-main like the comparison views) — without this, .dv-sidebar's
+     width:100% above still applies while the row stays row-direction, squeezing
+     .dv-body down to a sliver next to a full-width map. */
+  .dv-tab-panel {
+    flex-direction: column;
+  }
+}
+@media (max-width: 700px) {
+  .dv-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mini-map */
+.minimap {
+  width: 100%;
+  height: 220px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+/* Empty state */
+.dv-empty {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+/* ── Dashboard comparison view (Compare Experiments / Compare Models) ── */
+.dv-compare {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 12px 16px;
+  gap: 10px;
+}
+
+.dv-pair-picker {
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+.dv-pair-picker-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 8px;
+}
+.dv-pair-grid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.dv-pair-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4a90d9;
+  margin-bottom: 4px;
+}
+.dv-pair-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.dv-pair-checkbox input:disabled {
+  cursor: not-allowed;
+}
+.dv-pair-checkbox--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dv-legend-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-left: 3px solid #4a90d9;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #555;
+}
+.dv-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dv-legend-swatch--dash {
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(45deg, currentColor 0 2px, transparent 2px 4px);
+}
+.dv-legend-state {
+  color: #999;
+  font-style: italic;
+}
+
+.dv-diff-stat {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-left: 3px solid #d55e00;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ── GeoParquet Explorer tab ─────────────────────────── */
+.gpe {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 12px 16px;
+  gap: 10px;
+}
+.gpe-checkbox-panel {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+.gpe-checkbox-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+}
+.gpe-checkbox-col--states {
+  flex: 1;
+}
+.gpe-state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 2px 8px;
+}
+.gpe-apply-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gpe-stats-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gpe-stat-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  min-width: 80px;
+}
+.gpe-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+.gpe-stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: #ccc;
+  padding: 0 2px;
+  line-height: 1;
+}
+.chip-remove:hover {
+  color: #e74c3c;
+}
+.chart-card {
+  position: relative;
+  background: #fafbfc;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 12px;
+}
+.chart-fullscreen-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.85);
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.chart-fullscreen-btn:hover {
+  background: #4a90d9;
+  color: #fff;
+}
+.chart-fullscreen-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 999;
+}
+.chart-card--fullscreen {
+  position: fixed;
+  top: 5vh;
+  left: 5vw;
+  right: 5vw;
+  bottom: 5vh;
+  width: auto;
+  z-index: 1000;
+  overflow: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+.windrose-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.windrose-legend-bar {
+  width: 100px;
+  height: 8px;
+  border-radius: 4px;
+}
+.windrose-legend-label {
+  font-size: 10px;
+  color: #888;
+}
+.chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+.heatmap-loc-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #333;
+  border-left: 3px solid #4a90d9;
+  padding-left: 8px;
+  margin-bottom: 6px;
+}

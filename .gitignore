@@ -8,6 +8,9 @@ dist-ssr/
 # vite cache
 .vite/
 
+# TypeScript incremental build cache (tsc -b) — machine-specific, must not be committed
+*.tsbuildinfo
+
 # environment variables
 .env
 .env.local

@@ -108,656 +108,40 @@ html.landing-mode #root {
 .tab-btn.active::after {
   width: 60%;
 }
-
-/* ── Dashboard View ─────────────────────── */
-.dashboard-view {
+.tab-bar-spacer {
   flex: 1;
-  display: flex;
-  background: #f0f2f5;
-  overflow: hidden;
 }
-.dv-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 12px 16px;
-  gap: 10px;
-}
-
-/* Filter bar */
-.dv-filter-bar {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  background: #fff;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-.dv-filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.dv-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #888;
-}
-.dv-select {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 12px;
-  background: #f8f9fa;
-  color: #1a1a2e;
-  outline: none;
-  cursor: pointer;
-}
-.dv-select:focus {
-  border-color: #4a90d9;
-}
-.dv-select:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-/* Location bar */
-.dv-location-bar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.dv-input {
-  width: 120px;
-  padding: 7px 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 12px;
-  outline: none;
-}
-.dv-input:focus {
-  border-color: #4a90d9;
-}
-.dv-add-btn {
-  padding: 7px 14px;
-  border: none;
-  border-radius: 6px;
-  background: #4a90d9;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.dv-add-btn:hover {
-  background: #357abd;
-}
-.dv-hint {
-  font-size: 11px;
-  color: #999;
-}
-.dv-error {
-  color: #e74c3c;
-  font-size: 12px;
-}
-
-/* Location chips */
-.dv-chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.dv-remove-all {
-  padding: 5px 10px;
-  border: 1px solid #e74c3c;
-  border-radius: 6px;
-  background: #fff;
-  color: #e74c3c;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.dv-remove-all:hover {
-  background: #e74c3c;
-  color: #fff;
-}
-.dv-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-left: 3px solid #4a90d9;
-  border-radius: 6px;
-  font-size: 11px;
-  color: #555;
-}
-
-/* Main area: chart grid + mini-map sidebar */
-.dv-main {
-  display: flex;
-  gap: 14px;
-  flex: 1;
-  min-height: 0;
-}
-.dv-chart-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  align-content: start;
-}
-.dv-sidebar {
-  width: 320px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .dv-main {
-    flex-direction: column;
-  }
-  .dv-sidebar {
-    width: 100%;
-  }
-}
-@media (max-width: 700px) {
-  .dv-chart-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Mini-map */
-.minimap {
-  width: 100%;
-  height: 220px;
-  border-radius: 10px;
-  border: 1px solid #e0e0e0;
-  overflow: hidden;
-  cursor: crosshair;
-}
-
-/* Empty state */
-.dv-empty {
-  text-align: center;
-  padding: 20px;
-  color: #999;
-  font-size: 12px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-/* ── Side Panel ─────────────────────────── */
-.side-panel {
-  width: 280px;
-  height: 100%;
-  background: #fff;
-  border-right: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  z-index: 10;
-}
-
-.side-panel .header {
-  padding: 16px 16px 12px;
-  border-bottom: 1px solid #eee;
-  flex-shrink: 0;
-}
-
-.side-panel .header h1 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a1a2e;
-}
-
-.side-panel .header .subtitle {
-  font-size: 11px;
-  color: #888;
-  margin-top: 2px;
-}
-
-.side-panel .filters {
-  padding: 8px 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── Accordion ─────────────────────────── */
-.accordion-section {
-  border-bottom: 1px solid #f0f2f5;
-}
-
-.accordion-header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 16px;
-  border: none;
-  background: none;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #555;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.accordion-header:hover {
-  background: #f8f9fa;
-}
-
-.accordion-arrow {
-  font-size: 10px;
-  color: #aaa;
-  transition: transform 0.2s;
-}
-.accordion-arrow.open {
-  transform: rotate(180deg);
-}
-
-.accordion-body {
-  padding: 0 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* ── Select / Dropdown ──────────────────── */
-.select-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #888;
-}
-
-.select-field select {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 12px;
-  background: #f8f9fa;
-  color: #1a1a2e;
-  outline: none;
-  cursor: pointer;
-  appearance: auto;
-}
-.select-field select:focus {
-  border-color: #4a90d9;
-}
-
-/* ── Combobox (searchable) ─────────────── */
-.combobox {
-  position: relative;
-}
-
-.combobox-input {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 12px;
-  background: #f8f9fa;
-  color: #1a1a2e;
-  outline: none;
-}
-.combobox-input:focus {
-  border-color: #4a90d9;
-  background: #fff;
-}
-.combobox-input::placeholder {
-  color: #999;
-}
-
-.combobox-dropdown {
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0;
-  right: 0;
-  max-height: 220px;
-  overflow-y: auto;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  z-index: 100;
-}
-
-.combobox-option {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.1s;
-}
-.combobox-option:hover {
-  background: #f0f4ff;
-}
-.combobox-option.active {
-  background: #e8f0fe;
-  font-weight: 600;
-}
-.combobox-option-label {
-  color: #1a1a2e;
-}
-.combobox-option-val {
-  color: #999;
-  font-size: 10px;
-  font-weight: 600;
-}
-.combobox-empty {
-  padding: 12px 10px;
-  text-align: center;
-  color: #999;
-  font-size: 11px;
-}
-
-/* ── Bathymetry section ─────────── */
-.bathy-layers {
-  margin-top: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.checkbox-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 4px 0;
-}
-
-.checkbox-row input {
-  accent-color: #4a90d9;
-}
-
-.radio-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  font-size: 11px;
-  color: #555;
-  padding: 3px 0;
-}
-
-.radio-row input {
-  accent-color: #4a90d9;
-}
-
-/* ── Footer ─────────────────────────────── */
-.footer {
-  margin-top: auto;
-  padding: 8px 16px;
-  border-top: 1px solid #eee;
-  flex-shrink: 0;
-}
-.footer-info {
-  font-size: 10px;
-  color: #999;
-  margin-bottom: 6px;
-}
-.footer-icons {
-  display: flex;
-  gap: 4px;
-}
-.footer-icon-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  background: #f8f9fa;
-  color: #666;
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.footer-icon-btn:hover {
-  background: #e8f0fe;
-  border-color: #4a90d9;
-  color: #4a90d9;
-}
-.footer-icon-btn.dashboard-btn {
-  background: #4a90d9;
-  border-color: #4a90d9;
-  color: #fff;
-}
-.footer-icon-btn.dashboard-btn:hover {
-  background: #357abd;
-  border-color: #357abd;
-}
-
-/* ── Map ────────────────────────────────── */
-.map-area {
-  flex: 1;
-  position: relative;
-}
-.map-container {
-  width: 100%;
-  height: 100%;
-}
-
-/* ── Pixel Info Panel ──────────────────── */
-.pixel-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 340px;
-  height: 100%;
-  background: #fff;
-  box-shadow: -2px 0 12px rgba(0,0,0,0.12);
-  transform: translateX(100%);
-  transition: transform 0.25s ease;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.pixel-panel.open {
-  transform: translateX(0);
-}
-.pixel-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  font-weight: 600;
-  font-size: 14px;
-  border-bottom: 1px solid #eee;
-  flex-shrink: 0;
-}
-.pixel-panel-close {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #888;
-  padding: 0 4px;
-  line-height: 1;
-}
-.pixel-panel-close:hover {
-  color: #333;
-}
-.pixel-panel-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px 16px;
-}
-.pixel-panel-status {
-  color: #888;
-  font-size: 12px;
-  text-align: center;
-  padding: 24px 0;
-}
-.pixel-section {
-  margin-bottom: 12px;
-}
-.pixel-section-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #4a90d9;
-  margin-bottom: 4px;
-  padding-bottom: 2px;
-  border-bottom: 1px solid #f0f2f5;
-}
-.pixel-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 2px 0;
-  font-size: 12px;
-}
-.pixel-row-label {
-  color: #666;
-}
-.pixel-row-value {
-  font-weight: 500;
-  color: #1a1a2e;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── Chart containers ───────────────────── */
-.chart-container {
-  width: 100%;
-  margin: 4px 0;
-}
-
-/* ── Pixel panel action buttons ─────────── */
-.pixel-panel-actions {
-  padding: 12px 0 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.pin-button {
-  width: 100%;
-  padding: 8px 16px;
-  border: 1px solid #e67e22;
-  border-radius: 8px;
-  background: #fff;
-  color: #e67e22;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.pin-button:hover:not(:disabled) {
-  background: #e67e22;
-  color: #fff;
-}
-.pin-button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-.dashboard-button {
-  width: 100%;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #4a90d9, #357abd);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.dashboard-button:hover {
-  opacity: 0.9;
-}
-
-/* ── Basemap Switcher ───────────────────── */
-.basemap-switcher {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+.tab-bar-locale {
   display: flex;
   gap: 2px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  padding: 3px;
-  z-index: 15;
-}
-.basemap-btn {
-  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 6px;
+  padding-right: 12px;
+  flex-shrink: 0;
+}
+.locale-btn {
+  padding: 4px 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
   background: transparent;
-  color: #666;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.basemap-btn:hover {
-  background: #f0f4ff;
-  color: #4a90d9;
-}
-.basemap-btn.active {
-  background: #4a90d9;
-  color: #fff;
-}
-.basemap-icon {
-  font-size: 14px;
-}
-.basemap-label {
+  color: #888;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.locale-btn:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+.locale-btn.active {
+  color: #fff;
+  background: #4a90d9;
+  border-color: #4a90d9;
 }
 
-/* ── Dashboard Modal (dead, kept for reference) ── */
-.chip-state {
-  font-weight: 600;
-  color: #4a90d9;
-  font-size: 10px;
-}
-.chip-remove {
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  color: #ccc;
-  padding: 0 2px;
-  line-height: 1;
-}
-.chip-remove:hover {
-  color: #e74c3c;
-}
-.chart-card {
-  background: #fafbfc;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  padding: 12px;
-}
+/* ── Chart empty state (shared: ProfileChart/WeibullChart/DirectionalHeatmap
+   in the Pixel Info Panel, GeoParquetExplorer/DashboardView chart cards) ── */
 .chart-empty {
   display: flex;
   align-items: center;
@@ -766,6 +150,54 @@ html.landing-mode #root {
   color: #999;
   font-size: 12px;
   text-align: center;
+}
+
+/* ── Directional Heatmap (shared: Pixel Info Panel + Dashboard) ─────────── */
+.heatmap-container {
+  width: 100%;
+}
+.heatmap-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.heatmap-scroll {
+  overflow-x: auto;
+}
+.heatmap-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.heatmap-table th,
+.heatmap-table td {
+  padding: 3px 6px;
+  text-align: center;
+  white-space: nowrap;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.heatmap-table thead th {
+  color: #666;
+  font-weight: 600;
+  background: #fafbfc;
+}
+.heatmap-table tbody th {
+  color: #666;
+  font-weight: 600;
+  background: #fafbfc;
+  text-align: left;
+}
+.heatmap-corner {
+  background: #fafbfc;
+}
+.heatmap-axis-label {
+  font-size: 10px;
+  color: #888;
+  text-align: center;
+  margin-top: 6px;
 }
 
 /* ── Drawer (FAQ / Project Info) ─────────── */

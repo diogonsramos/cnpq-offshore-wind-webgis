@@ -39,14 +39,21 @@ Não confundir com:
 ```
 tests/
 └── e2e/
-    ├── 01-landing-page.spec.ts           # Conteúdo, seções e interações da landing page
-    ├── 02-navigation.spec.ts             # Navegação entre landing e sistema (CTAs, gallery cards, ← Home)
-    ├── 03-responsiveness.spec.ts         # Layout responsivo em 3 breakpoints
-    ├── 04-scroll-and-inpage-nav.spec.ts  # Scroll vertical, âncoras in-page, botão "Voltar ao topo"
-    └── 05-team-and-faq.spec.ts           # Cards de equipe (avatar, Lattes) e FAQ accordion
+    ├── 01-landing-page.spec.ts            # Conteúdo, seções e interações da landing page
+    ├── 02-navigation.spec.ts              # Navegação entre landing e sistema (CTAs, gallery cards, ← Home)
+    ├── 03-responsiveness.spec.ts          # Layout responsivo em 3 breakpoints
+    ├── 04-scroll-and-inpage-nav.spec.ts   # Scroll vertical, âncoras in-page, botão "Voltar ao topo"
+    ├── 05-team-and-faq.spec.ts            # Cards de equipe (avatar, Lattes) e FAQ accordion
+    ├── 06-dashboard-controls.spec.ts      # Seletores Modelo/Experimento, opacidade do COG, carregamento inicial do Dashboard
+    ├── 07-dashboard-comparison.spec.ts    # Abas internas Compare Experiments / Compare Models
+    ├── 08-geoparquet-explorer.spec.ts     # 4ª aba do Dashboard — filtros, histograma, boxplot, scatter
+    ├── 09-dashboard-charts.spec.ts        # Perfil WPD, heatmap direcional, eixos fixos dos gráficos (f02)
+    ├── 10-ui-enhancements.spec.ts         # Loading do COG, export CSV/PNG, tela cheia, rosa dos ventos colorida, basemaps (f03)
+    ├── 11-performance.spec.ts             # Lazy-load do Plotly e preservação de estado do Dashboard (f04)
+    └── 12-i18n.spec.ts                    # Toggle PT/EN no TabBar, troca de textos em tempo real, persistência via localStorage (f06)
 ```
 
-Cada arquivo cobre um contexto funcional. Novos contextos ganham **novos arquivos** numerados em sequência: `06-map.spec.ts`, `07-dashboard.spec.ts`, etc.
+Cada arquivo cobre um contexto funcional. Novos contextos ganham **novos arquivos** numerados em sequência: `12-nome-do-contexto.spec.ts`, `13-...`, etc.
 
 ### Convenções de nomenclatura
 
@@ -90,13 +97,13 @@ pnpm test:e2e tests/e2e/02-navigation.spec.ts
 pnpm test:e2e --grep "T04"
 ```
 
-### Saída esperada (suite completa — 41 testes)
+### Saída esperada (suite completa — 94 testes)
 
 ```
-41 passed (~17 s)
+106 passed (~70 s)
 ```
 
-Qualquer número diferente de `41 passed` indica falha ou teste faltando. Investigate antes de continuar.
+Qualquer número diferente de `106 passed` indica falha ou teste faltando. Investigate antes de continuar. Esse número cresce a cada fase que adiciona testes novos — ao terminar uma entrega, atualize-o aqui.
 
 ---
 
@@ -110,7 +117,7 @@ Qualquer número diferente de `41 passed` indica falha ou teste faltando. Invest
 2. **Verificar** se algum teste existente quebrou: `pnpm test`
    - Se quebrou → corrigir o código **ou** atualizar o teste se o comportamento mudou intencionalmente
 3. **Criar novos testes** para a feature implementada:
-   - Se for um novo contexto funcional (ex: mapa interativo) → criar `tests/e2e/04-map.spec.ts`
+   - Se for um novo contexto funcional (ex: motor de cálculo de AEP) → criar `tests/e2e/13-nome-do-contexto.spec.ts` (próximo número livre — ver lista em "Estrutura dos testes")
    - Se for uma extensão de contexto existente (ex: novo botão na navbar) → adicionar `test()` no arquivo correspondente
 4. **Rodar a suite completa** e confirmar que todos passam: `pnpm test`
 5. **Atualizar `docs/TODO.md`** — seção de especificações da fase, tabela de testes com IDs e resultados
@@ -129,7 +136,7 @@ Qualquer número diferente de `41 passed` indica falha ou teste faltando. Invest
 
 ### O que NÃO testar via E2E (por ora)
 
-- Lógica interna de `cogTileRenderer.ts` ou `pixelQuery.ts` — requer testes unitários (Fase futura)
+- Lógica interna de `cogTileRenderer.ts` ou `pixelQuery.ts` — inclui o cache IndexedDB (eviction LRU, invalidação por `CACHE_VERSION`) e o fingerprint de redraw do COG em `MapView.tsx` — requer testes unitários (Fase futura); via E2E só validamos o efeito observável (ex.: `11-performance.spec.ts` checa requisições de rede, não o tamanho do cache em bytes)
 - Renderização correta de tiles do mapa — requer comparação visual ou mock de rede
 - Performance de carregamento do GeoParquet — requer benchmark separado (ver `docs/TODO.md` Fase 6)
 
