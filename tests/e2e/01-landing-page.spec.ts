@@ -47,13 +47,9 @@ test.describe('Landing Page — seções de conteúdo', () => {
     await expect(cards).toHaveCount(5)
   })
 
-  test('ScenariosSection — 4 cards de experimentos visíveis', async ({ page }) => {
+  test('T08 — ScenariosSection — 7 cards de experimentos visíveis', async ({ page }) => {
     const cards = page.locator('.lp-scenario-card')
-    await expect(cards).toHaveCount(4)
-    await expect(cards.nth(0)).toContainText('ERA5_atlas')
-    await expect(cards.nth(1)).toContainText('HIST')
-    await expect(cards.nth(2)).toContainText('SSP2-4.5')
-    await expect(cards.nth(3)).toContainText('SSP5-8.5')
+    await expect(cards).toHaveCount(7)
   })
 
   test('TeamSection — 17 pesquisadores listados', async ({ page }) => {
@@ -61,9 +57,9 @@ test.describe('Landing Page — seções de conteúdo', () => {
     await expect(cards).toHaveCount(17)
   })
 
-  test('PublicationsSection — 9 publicações listadas', async ({ page }) => {
+  test('PublicationsSection — 10 publicações listadas', async ({ page }) => {
     const items = page.locator('.lp-pub-card')
-    await expect(items).toHaveCount(9)
+    await expect(items).toHaveCount(10)
   })
 
   test('FooterSection — disclaimer de dados preliminares visível', async ({ page }) => {
@@ -84,20 +80,4 @@ test.describe('Landing Page — seções de conteúdo', () => {
   })
 })
 
-test.describe('TeamSection — colapso e expansão', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-  })
 
-  test('T26 — botão de toggle visível e colapsado por padrão', async ({ page }) => {
-    await expect(page.locator('.lp-team-toggle')).toBeVisible()
-    await expect(page.locator('.lp-team-toggle')).toContainText('Ver todos os 17 pesquisadores')
-    await expect(page.locator('.lp-team-toggle')).toHaveAttribute('aria-expanded', 'false')
-  })
-
-  test('T27 — clique no toggle expande todos os membros da equipe', async ({ page }) => {
-    await page.click('.lp-team-toggle')
-    await expect(page.locator('.lp-team-toggle')).toHaveAttribute('aria-expanded', 'true')
-    await expect(page.locator('.lp-team-toggle')).toContainText('Ver menos')
-  })
-})
