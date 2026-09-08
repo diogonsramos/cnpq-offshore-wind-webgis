@@ -59,7 +59,7 @@ async function cacheGet(key: string): Promise<Uint8Array | null> {
       req.onerror = () => reject(null)
       tx.oncomplete = () => db.close()
     })
-    if (result) touchLastAccessed(key).catch(() => {})
+    if (result) touchLastAccessed(key).catch(() => { })
     return result
   } catch { return null }
 }
@@ -267,7 +267,7 @@ let loadedSeasons = new Set<string>()
 let loadGen = 0
 
 function parquetUrl(experiment: string, season: string, model: string = 'wrf'): string {
-  return `/data/geoparquet/${model}/${experiment.toLowerCase()}/season=${season.toLowerCase()}/data.parquet`
+  return `/data/geoparquet/${model}/${experiment.toLowerCase()}/season=${season.toLowerCase()}.parquet`
 }
 
 async function fetchAndParseParquet(url: string, cacheKey: string): Promise<Table> {
