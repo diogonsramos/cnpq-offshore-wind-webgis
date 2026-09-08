@@ -116,7 +116,7 @@ function DashboardViewInner({
     pinnedLocations.forEach((loc, i) => {
       const label = locLabel(loc, i)
       SEASON_ORDER.forEach(season => {
-        ;(['ws', 'wpd'] as const).forEach(v => {
+        ; (['ws', 'wpd'] as const).forEach(v => {
           HEIGHTS.forEach(h => {
             const mean = seasonStat(loc, v, h, season, 'mean')
             const min = seasonStat(loc, v, h, season, 'min')
@@ -260,322 +260,326 @@ function DashboardViewInner({
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'simple' ? 'flex' : 'none' }}>
-      <div className="dv-body">
-        <div className="dv-filter-bar">
-          <div className="dv-filter-group">
-            <label className="dv-label">{t('dashboard.filters.model_label')}</label>
-            <select value={model} onChange={e => dispatch({ type: 'SET_MODEL', model: e.target.value as Model })} className="dv-select">
-              {MODELS.map(m => (
-                <option key={m} value={m}>{modelLabel(m, t)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="dv-filter-group">
-            <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
-            <select value={dataset} onChange={e => dispatch({ type: 'SET_DATASET', dataset: e.target.value as Dataset })} className="dv-select">
-              {DATASETS.map(d => (
-                <option key={d} value={d}>{datasetLabel(d, t)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="dv-filter-group">
-            <label className="dv-label">{t('dashboard.filters.variable_label')}</label>
-            <select value={dashboardVar} onChange={e => setDashboardVar(e.target.value as Variable)} className="dv-select">
-              {VARIABLES.map(v => (
-                <option key={v} value={v}>{varLabel(v, t).label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="dv-filter-group">
-            <label className="dv-label">{t('dashboard.filters.height_label')}</label>
-            <select value={dashboardHeight} onChange={e => setDashboardHeight(Number(e.target.value) as Height)} className="dv-select">
-              {HEIGHTS.map(h => (
-                <option key={h} value={h}>{h}m</option>
-              ))}
-            </select>
-          </div>
-          <button
-            className="dv-export-btn"
-            onClick={handleDownloadCsv}
-            disabled={pinnedLocations.length === 0}
-            title={t('dashboard.download_csv_tooltip')}
-          >
-            {t('dashboard.download_csv')}
-          </button>
-        </div>
-
-        <div className="dv-location-bar">
-          <input className="dv-input" type="number" step="any" placeholder={t('pixel.lat')} value={latInput} onChange={e => setLatInput(e.target.value)} />
-          <input className="dv-input" type="number" step="any" placeholder={t('pixel.lon')} value={lonInput} onChange={e => setLonInput(e.target.value)} />
-          <button className="dv-add-btn" onClick={handleManualAdd}>{t('dashboard.add_location')}</button>
-          <span className="dv-hint">{t('dashboard.add_location_hint')}</span>
-          {locError && <span className="dv-error">{locError}</span>}
-        </div>
-
-        <div className="dv-chips">
-          {pinnedLocations.map((loc, i) => (
-            <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
-              <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
-              {locLabel(loc, i)} — {modelLabelStr} ({loc.lat.toFixed(2)}, {loc.lon.toFixed(2)})
-              <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
-            </span>
-          ))}
-          {pinnedLocations.length > 0 && (
+        <div className="dv-body">
+          <div className="dv-filter-bar">
+            <div className="dv-filter-group">
+              <label className="dv-label">{t('dashboard.filters.model_label')}</label>
+              <select value={model} onChange={e => dispatch({ type: 'SET_MODEL', model: e.target.value as Model })} className="dv-select">
+                {MODELS.map(m => (
+                  <option key={m} value={m}>{modelLabel(m, t)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="dv-filter-group">
+              <label className="dv-label">{t('dashboard.filters.experiment_label')}</label>
+              <select value={dataset} onChange={e => dispatch({ type: 'SET_DATASET', dataset: e.target.value as Dataset })} className="dv-select">
+                {DATASETS.map(d => (
+                  <option key={d} value={d}>{datasetLabel(d, t)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="dv-filter-group">
+              <label className="dv-label">{t('dashboard.filters.variable_label')}</label>
+              <select value={dashboardVar} onChange={e => setDashboardVar(e.target.value as Variable)} className="dv-select">
+                {VARIABLES.map(v => (
+                  <option key={v} value={v}>{varLabel(v, t).label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="dv-filter-group">
+              <label className="dv-label">{t('dashboard.filters.height_label')}</label>
+              <select value={dashboardHeight} onChange={e => setDashboardHeight(Number(e.target.value) as Height)} className="dv-select">
+                {HEIGHTS.map(h => (
+                  <option key={h} value={h}>{h}m</option>
+                ))}
+              </select>
+            </div>
             <button
-              className="dv-remove-all"
-              onClick={() => {
-                // Removing ascending indices while onRemoveLocation splices the array
-                // (idx: number) => void shifts every later index down, so removing
-                // 0,1,2 in order only ever removes 0 and what becomes the new 1 —
-                // descending order removes each item before the shift can affect it.
-                for (let i = pinnedLocations.length - 1; i >= 0; i--) onRemoveLocation(i)
-              }}
+              className="dv-export-btn"
+              onClick={handleDownloadCsv}
+              disabled={pinnedLocations.length === 0}
+              title={t('dashboard.download_csv_tooltip')}
             >
-              {t('dashboard.remove_all')}
+              {t('dashboard.download_csv')}
             </button>
+          </div>
+
+          <div className="dv-location-bar">
+            <input className="dv-input" type="number" step="any" placeholder={t('pixel.lat')} value={latInput} onChange={e => setLatInput(e.target.value)} />
+            <input className="dv-input" type="number" step="any" placeholder={t('pixel.lon')} value={lonInput} onChange={e => setLonInput(e.target.value)} />
+            <button className="dv-add-btn" onClick={handleManualAdd}>{t('dashboard.add_location')}</button>
+            <span className="dv-hint">{t('dashboard.add_location_hint')}</span>
+            {locError && <span className="dv-error">{locError}</span>}
+          </div>
+
+          <div style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '10px', fontSize: '0.85rem', borderRadius: '4px', margin: '0 20px 10px 20px', display: dvTab === 'simple' ? 'block' : 'none' }}>
+            <strong>Aviso:</strong> Weibull, Rosa dos Ventos e Perfis Climatológicos utilizam dados <strong>sintéticos/provísórios</strong> enquanto o servidor finaliza o processamento oficial do WRF/MPAS.
+          </div>
+
+          <div className="dv-chips">
+            {pinnedLocations.map((loc, i) => (
+              <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
+                <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
+                {locLabel(loc, i)} — {modelLabelStr} ({loc.lat.toFixed(2)}, {loc.lon.toFixed(2)})
+                <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
+              </span>
+            ))}
+            {pinnedLocations.length > 0 && (
+              <button
+                className="dv-remove-all"
+                onClick={() => {
+                  // Removing ascending indices while onRemoveLocation splices the array
+                  // (idx: number) => void shifts every later index down, so removing
+                  // 0,1,2 in order only ever removes 0 and what becomes the new 1 —
+                  // descending order removes each item before the shift can affect it.
+                  for (let i = pinnedLocations.length - 1; i >= 0; i--) onRemoveLocation(i)
+                }}
+              >
+                {t('dashboard.remove_all')}
+              </button>
+            )}
+          </div>
+
+          {emptyMsg ? (
+            <div className="dv-empty">{emptyMsg}</div>
+          ) : (
+            <div className="dv-main">
+              <Suspense fallback={<DashboardSkeleton />}>
+                <div className="dv-chart-grid">
+                  <ChartCard id="seasonal" testId="chart-seasonal" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                    <Plot
+                      data={seasonChartData.datasets.map((ds, i) => ({
+                        x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
+                        y: ds.data,
+                        type: 'bar',
+                        name: ds.label,
+                        marker: { color: COLORS[i % COLORS.length] },
+                        hovertemplate: '%{y:.2f}<extra></extra>',
+                      }))}
+                      layout={{
+                        title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(dashboardVar, t).label, height: `${dashboardHeight}m` }) },
+                        xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
+                        yaxis: {
+                          title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 },
+                          range: dashboardVar === 'ws' ? [0, 20] : [0, 1200],
+                          zeroline: false,
+                          hoverformat: '.2f',
+                        },
+                        height: plotHeight('seasonal'),
+                        margin: { t: 40, b: 40, l: 55, r: 20 },
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: CHART_FONT,
+                        showlegend: false,
+                        hovermode: 'x unified',
+                        hoverlabel: HOVER_LABEL_STYLE,
+                      }}
+                      config={PLOT_CONFIG}
+                      style={{ width: '100%' }}
+                      useResizeHandler
+                    />
+                  </ChartCard>
+
+                  <ChartCard id="weibull" testId="chart-weibull" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                    <Plot
+                      data={pinnedLocations.map((loc, i) => {
+                        const w = loc.weibull?.[dashboardHeight]
+                        if (!w) return { x: [], y: [], type: 'scatter', name: locLabel(loc, i) }
+                        const maxX = 30
+                        const step = maxX / 60
+                        const xs: number[] = [], ys: number[] = []
+                        for (let x = 0; x <= maxX; x += step) {
+                          xs.push(x)
+                          const k = w.k, c = w.c
+                          ys.push(k > 0 && c > 0 ? (k / c) * Math.pow(x / c, k - 1) * Math.exp(-Math.pow(x / c, k)) : 0)
+                        }
+                        return {
+                          x: xs, y: ys, type: 'scatter' as const, mode: 'lines' as const,
+                          name: `${locLabel(loc, i)} (k=${w.k.toFixed(2)}, c=${w.c.toFixed(2)})`,
+                          line: { color: COLORS[i], width: 2 },
+                          fill: 'tozeroy',
+                          fillcolor: COLORS[i] + '22',
+                          hovertemplate: '%{y:.4f}<extra></extra>',
+                        }
+                      })}
+                      layout={{
+                        title: { text: t('dashboard.chart.weibull_title', { height: `${dashboardHeight}m` }) },
+                        xaxis: {
+                          title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 },
+                          range: [0, 30],
+                          zeroline: false,
+                          hoverformat: '.2f',
+                        },
+                        yaxis: {
+                          title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 },
+                          range: [0, 0.3],
+                          zeroline: false,
+                          hoverformat: '.4f',
+                        },
+                        height: plotHeight('weibull'),
+                        margin: { t: 40, b: 40, l: 55, r: 20 },
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: CHART_FONT,
+                        showlegend: true,
+                        legend: { x: 1, xanchor: 'right', y: 1 },
+                        hovermode: 'x unified',
+                        hoverlabel: HOVER_LABEL_STYLE,
+                      }}
+                      config={PLOT_CONFIG}
+                      style={{ width: '100%' }}
+                      useResizeHandler
+                    />
+                  </ChartCard>
+
+                  <ChartCard id="windrose" testId="chart-windrose" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                    <Plot
+                      data={pinnedLocations.map((loc, i) => {
+                        const wr = loc.wind_rose?.[dashboardHeight]
+                        if (!wr) return { r: [], theta: [], type: 'barpolar', name: locLabel(loc, i) }
+                        const speeds = SECTOR_LABELS.map(s => wr[s]?.mean_ws ?? 0)
+                        return {
+                          r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
+                          theta: SECTOR_LABELS,
+                          type: 'barpolar' as const,
+                          name: locLabel(loc, i),
+                          marker: {
+                            color: speeds.map(v => windSpeedColor(v, windRoseMaxSpeed)),
+                            line: { color: COLORS[i], width: 1.5 },
+                          },
+                          opacity: 0.85,
+                          customdata: speeds,
+                          hovertemplate: `%{theta}: %{r:.1f}%<br>${t('dashboard.chart.windrose_avg_speed')}: %{customdata:.2f} m/s<extra></extra>`,
+                        }
+                      })}
+                      layout={{
+                        title: { text: t('dashboard.chart.windrose_title', { height: `${dashboardHeight}m` }) },
+                        height: plotHeight('windrose'),
+                        margin: { t: 40, b: 30, l: 50, r: 50 },
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: CHART_FONT,
+                        showlegend: false,
+                        barmode: 'overlay',
+                        hoverlabel: { font: { size: 12, color: '#fff' } },
+                        polar: {
+                          angularaxis: {
+                            direction: 'clockwise',
+                            rotation: 90,
+                          },
+                          radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' },
+                        },
+                      }}
+                      config={WINDROSE_PLOT_CONFIG}
+                      style={{ width: '100%' }}
+                      useResizeHandler
+                    />
+                    {windRoseMaxSpeed > 0 && (
+                      <div className="windrose-legend">
+                        <span className="windrose-legend-label">0 m/s</span>
+                        <div className="windrose-legend-bar" style={{ background: WS_LEGEND_GRADIENT }} />
+                        <span className="windrose-legend-label">{windRoseMaxSpeed.toFixed(1)} m/s</span>
+                      </div>
+                    )}
+                  </ChartCard>
+
+                  <ChartCard id="ws-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                    <Plot
+                      data={wsProfileData.datasets.map((ds, i) => ({
+                        x: ds.data,
+                        y: wsProfileData.heights,
+                        type: 'scatter' as const,
+                        mode: 'lines+markers' as const,
+                        name: ds.label,
+                        line: { color: COLORS[i], width: 2 },
+                        marker: { color: COLORS[i], size: 6 },
+                        hovertemplate: '%{x:.2f}<extra></extra>',
+                      }))}
+                      layout={{
+                        title: { text: t('dashboard.chart.ws_profile_title') },
+                        xaxis: {
+                          title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 },
+                          range: [0, 20],
+                          zeroline: false,
+                          hoverformat: '.2f',
+                        },
+                        yaxis: profileYAxis,
+                        height: plotHeight('ws-profile'),
+                        margin: { t: 40, b: 40, l: 55, r: 20 },
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: CHART_FONT,
+                        showlegend: false,
+                        hovermode: 'y unified',
+                        hoverlabel: HOVER_LABEL_STYLE,
+                      }}
+                      config={PLOT_CONFIG}
+                      style={{ width: '100%' }}
+                      useResizeHandler
+                    />
+                  </ChartCard>
+
+                  <ChartCard id="wpd-profile" testId="chart-wpd-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                    {hasWpdProfileData ? (
+                      <Plot
+                        data={wpdProfileData.datasets.map((ds, i) => ({
+                          x: ds.data,
+                          y: wpdProfileData.heights,
+                          type: 'scatter' as const,
+                          mode: 'lines+markers' as const,
+                          name: ds.label,
+                          line: { color: COLORS[i], width: 2 },
+                          marker: { color: COLORS[i], size: 6 },
+                          hovertemplate: `%{x:.1f} ${t('dashboard.chart.wpd_unit')}<extra></extra>`,
+                        }))}
+                        layout={{
+                          title: { text: t('dashboard.chart.wpd_profile_title') },
+                          xaxis: {
+                            title: { text: t('dashboard.chart.wpd_axis'), standoff: 10 },
+                            range: [0, 1500],
+                            zeroline: false,
+                            hoverformat: '.1f',
+                          },
+                          yaxis: profileYAxis,
+                          height: plotHeight('wpd-profile'),
+                          margin: { t: 40, b: 40, l: 55, r: 20 },
+                          paper_bgcolor: 'transparent',
+                          plot_bgcolor: 'transparent',
+                          font: CHART_FONT,
+                          showlegend: false,
+                          hovermode: 'y unified',
+                          hoverlabel: HOVER_LABEL_STYLE,
+                        }}
+                        config={PLOT_CONFIG}
+                        style={{ width: '100%' }}
+                        useResizeHandler
+                      />
+                    ) : (
+                      <div className="chart-empty">{t('dashboard.chart.profile_empty')}</div>
+                    )}
+                  </ChartCard>
+
+                  {pinnedLocations.map((loc, i) => (
+                    <ChartCard key={i} id={`heatmap-${i}`} wide testId="chart-heatmap" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                      <div className="heatmap-loc-label" style={{ borderLeftColor: COLORS[i] }}>{locLabel(loc, i)}</div>
+                      <DirectionalHeatmap
+                        data={loc.heatmap[`${dashboardVar}${dashboardHeight}_heatmap`]}
+                        variable={dashboardVar}
+                        height={dashboardHeight}
+                      />
+                    </ChartCard>
+                  ))}
+                </div>
+              </Suspense>
+            </div>
           )}
         </div>
 
-        {emptyMsg ? (
-          <div className="dv-empty">{emptyMsg}</div>
-        ) : (
-          <div className="dv-main">
-            <Suspense fallback={<DashboardSkeleton />}>
-            <div className="dv-chart-grid">
-              <ChartCard id="seasonal" testId="chart-seasonal" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                <Plot
-                  data={seasonChartData.datasets.map((ds, i) => ({
-                    x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
-                    y: ds.data,
-                    type: 'bar',
-                    name: ds.label,
-                    marker: { color: COLORS[i % COLORS.length] },
-                    hovertemplate: '%{y:.2f}<extra></extra>',
-                  }))}
-                  layout={{
-                    title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(dashboardVar, t).label, height: `${dashboardHeight}m` }) },
-                    xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
-                    yaxis: {
-                      title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 },
-                      range: dashboardVar === 'ws' ? [0, 20] : [0, 1200],
-                      zeroline: false,
-                      hoverformat: '.2f',
-                    },
-                    height: plotHeight('seasonal'),
-                    margin: { t: 40, b: 40, l: 55, r: 20 },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: CHART_FONT,
-                    showlegend: false,
-                    hovermode: 'x unified',
-                    hoverlabel: HOVER_LABEL_STYLE,
-                  }}
-                  config={PLOT_CONFIG}
-                  style={{ width: '100%' }}
-                  useResizeHandler
-                />
-              </ChartCard>
-
-              <ChartCard id="weibull" testId="chart-weibull" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                <Plot
-                  data={pinnedLocations.map((loc, i) => {
-                    const w = loc.weibull?.[dashboardHeight]
-                    if (!w) return { x: [], y: [], type: 'scatter', name: locLabel(loc, i) }
-                    const maxX = 30
-                    const step = maxX / 60
-                    const xs: number[] = [], ys: number[] = []
-                    for (let x = 0; x <= maxX; x += step) {
-                      xs.push(x)
-                      const k = w.k, c = w.c
-                      ys.push(k > 0 && c > 0 ? (k / c) * Math.pow(x / c, k - 1) * Math.exp(-Math.pow(x / c, k)) : 0)
-                    }
-                    return {
-                      x: xs, y: ys, type: 'scatter' as const, mode: 'lines' as const,
-                      name: `${locLabel(loc, i)} (k=${w.k.toFixed(2)}, c=${w.c.toFixed(2)})`,
-                      line: { color: COLORS[i], width: 2 },
-                      fill: 'tozeroy',
-                      fillcolor: COLORS[i] + '22',
-                      hovertemplate: '%{y:.4f}<extra></extra>',
-                    }
-                  })}
-                  layout={{
-                    title: { text: t('dashboard.chart.weibull_title', { height: `${dashboardHeight}m` }) },
-                    xaxis: {
-                      title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 },
-                      range: [0, 30],
-                      zeroline: false,
-                      hoverformat: '.2f',
-                    },
-                    yaxis: {
-                      title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 },
-                      range: [0, 0.3],
-                      zeroline: false,
-                      hoverformat: '.4f',
-                    },
-                    height: plotHeight('weibull'),
-                    margin: { t: 40, b: 40, l: 55, r: 20 },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: CHART_FONT,
-                    showlegend: true,
-                    legend: { x: 1, xanchor: 'right', y: 1 },
-                    hovermode: 'x unified',
-                    hoverlabel: HOVER_LABEL_STYLE,
-                  }}
-                  config={PLOT_CONFIG}
-                  style={{ width: '100%' }}
-                  useResizeHandler
-                />
-              </ChartCard>
-
-              <ChartCard id="windrose" testId="chart-windrose" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                <Plot
-                  data={pinnedLocations.map((loc, i) => {
-                    const wr = loc.wind_rose?.[dashboardHeight]
-                    if (!wr) return { r: [], theta: [], type: 'barpolar', name: locLabel(loc, i) }
-                    const speeds = SECTOR_LABELS.map(s => wr[s]?.mean_ws ?? 0)
-                    return {
-                      r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
-                      theta: SECTOR_LABELS,
-                      type: 'barpolar' as const,
-                      name: locLabel(loc, i),
-                      marker: {
-                        color: speeds.map(v => windSpeedColor(v, windRoseMaxSpeed)),
-                        line: { color: COLORS[i], width: 1.5 },
-                      },
-                      opacity: 0.85,
-                      customdata: speeds,
-                      hovertemplate: `%{theta}: %{r:.1f}%<br>${t('dashboard.chart.windrose_avg_speed')}: %{customdata:.2f} m/s<extra></extra>`,
-                    }
-                  })}
-                  layout={{
-                    title: { text: t('dashboard.chart.windrose_title', { height: `${dashboardHeight}m` }) },
-                    height: plotHeight('windrose'),
-                    margin: { t: 40, b: 30, l: 50, r: 50 },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: CHART_FONT,
-                    showlegend: false,
-                    barmode: 'overlay',
-                    hoverlabel: { font: { size: 12, color: '#fff' } },
-                    polar: {
-                      angularaxis: {
-                        direction: 'clockwise',
-                        rotation: 90,
-                      },
-                      radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' },
-                    },
-                  }}
-                  config={WINDROSE_PLOT_CONFIG}
-                  style={{ width: '100%' }}
-                  useResizeHandler
-                />
-                {windRoseMaxSpeed > 0 && (
-                  <div className="windrose-legend">
-                    <span className="windrose-legend-label">0 m/s</span>
-                    <div className="windrose-legend-bar" style={{ background: WS_LEGEND_GRADIENT }} />
-                    <span className="windrose-legend-label">{windRoseMaxSpeed.toFixed(1)} m/s</span>
-                  </div>
-                )}
-              </ChartCard>
-
-              <ChartCard id="ws-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                <Plot
-                  data={wsProfileData.datasets.map((ds, i) => ({
-                    x: ds.data,
-                    y: wsProfileData.heights,
-                    type: 'scatter' as const,
-                    mode: 'lines+markers' as const,
-                    name: ds.label,
-                    line: { color: COLORS[i], width: 2 },
-                    marker: { color: COLORS[i], size: 6 },
-                    hovertemplate: '%{x:.2f}<extra></extra>',
-                  }))}
-                  layout={{
-                    title: { text: t('dashboard.chart.ws_profile_title') },
-                    xaxis: {
-                      title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 },
-                      range: [0, 20],
-                      zeroline: false,
-                      hoverformat: '.2f',
-                    },
-                    yaxis: profileYAxis,
-                    height: plotHeight('ws-profile'),
-                    margin: { t: 40, b: 40, l: 55, r: 20 },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: CHART_FONT,
-                    showlegend: false,
-                    hovermode: 'y unified',
-                    hoverlabel: HOVER_LABEL_STYLE,
-                  }}
-                  config={PLOT_CONFIG}
-                  style={{ width: '100%' }}
-                  useResizeHandler
-                />
-              </ChartCard>
-
-              <ChartCard id="wpd-profile" testId="chart-wpd-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                {hasWpdProfileData ? (
-                  <Plot
-                    data={wpdProfileData.datasets.map((ds, i) => ({
-                      x: ds.data,
-                      y: wpdProfileData.heights,
-                      type: 'scatter' as const,
-                      mode: 'lines+markers' as const,
-                      name: ds.label,
-                      line: { color: COLORS[i], width: 2 },
-                      marker: { color: COLORS[i], size: 6 },
-                      hovertemplate: `%{x:.1f} ${t('dashboard.chart.wpd_unit')}<extra></extra>`,
-                    }))}
-                    layout={{
-                      title: { text: t('dashboard.chart.wpd_profile_title') },
-                      xaxis: {
-                        title: { text: t('dashboard.chart.wpd_axis'), standoff: 10 },
-                        range: [0, 1500],
-                        zeroline: false,
-                        hoverformat: '.1f',
-                      },
-                      yaxis: profileYAxis,
-                      height: plotHeight('wpd-profile'),
-                      margin: { t: 40, b: 40, l: 55, r: 20 },
-                      paper_bgcolor: 'transparent',
-                      plot_bgcolor: 'transparent',
-                      font: CHART_FONT,
-                      showlegend: false,
-                      hovermode: 'y unified',
-                      hoverlabel: HOVER_LABEL_STYLE,
-                    }}
-                    config={PLOT_CONFIG}
-                    style={{ width: '100%' }}
-                    useResizeHandler
-                  />
-                ) : (
-                  <div className="chart-empty">{t('dashboard.chart.profile_empty')}</div>
-                )}
-              </ChartCard>
-
-              {pinnedLocations.map((loc, i) => (
-                <ChartCard key={i} id={`heatmap-${i}`} wide testId="chart-heatmap" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                  <div className="heatmap-loc-label" style={{ borderLeftColor: COLORS[i] }}>{locLabel(loc, i)}</div>
-                  <DirectionalHeatmap
-                    data={loc.heatmap[`${dashboardVar}${dashboardHeight}_heatmap`]}
-                    variable={dashboardVar}
-                    height={dashboardHeight}
-                  />
-                </ChartCard>
-              ))}
-            </div>
-            </Suspense>
+        <div className="dv-sidebar">
+          <div className="minimap">
+            <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} />
           </div>
-        )}
-      </div>
-
-      <div className="dv-sidebar">
-        <div className="minimap">
-          <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} />
         </div>
-      </div>
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'compare_exp' ? 'flex' : 'none' }}>

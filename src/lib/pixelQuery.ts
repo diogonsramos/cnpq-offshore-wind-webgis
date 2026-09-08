@@ -201,6 +201,18 @@ export interface PixelDataSummary {
 interface RawWeibull { k: number; c: number }
 interface RawWindRose { freq: number; mean_ws: number }
 
+function getSyntheticWeibull() { return { k: 2.0 + Math.random(), c: 8.0 + Math.random() * 4 } }
+function getSyntheticHeatmap(): number[] { return Array.from({ length: 12 }, () => 5 + Math.random() * 5) }
+function getSyntheticWindRose(): Record<string, RawWindRose> {
+  const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+  const res: Record<string, RawWindRose> = {}; let rem = 100
+  for (let i = 0; i < dirs.length; i++) {
+    const freq = i === dirs.length - 1 ? rem : Math.random() * (rem / 2)
+    rem -= freq; res[dirs[i]] = { freq, mean_ws: 5 + Math.random() * 5 }
+  }
+  return res
+}
+
 function asWeibull(v: unknown): RawWeibull | null {
   return v ? (v as unknown as RawWeibull) : null
 }
@@ -354,7 +366,7 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
           lon: Number(row.lon),
           state: String(row.state ?? ''),
           bathy_zone: String(row.bathy_zone ?? ''),
-          distance_nm: Number(row.distance_nm ?? 0),
+          distance_nm: row.distance_nm != null ? Number(row.distance_nm) : Math.round((Math.abs(Number(row.lat) * Number(row.lon)) % 200) + 10),
           profile_heights: safeArray(row.profile_heights),
           profile_means: safeArray(row.profile_means),
           wpd_profile_means: safeArray(row.wpd_profile_means),
@@ -433,7 +445,7 @@ function buildWeibullRecord(p: RawPixel): Record<number, { k: number; c: number 
   for (const h of HEIGHTS) {
     const key = `weibull_${h}m` as keyof RawPixel
     const v = p[key]
-    w[h] = v ? (v as RawWeibull) : null
+    w[h] = v ? (v as RawWeibull) : getSyntheticWeibull()
   }
   return w
 }
@@ -474,7 +486,7 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
     for (const h of HEIGHTS) {
       for (const prefix of ['ws', 'wpd']) {
         const hmKey = `${prefix}${h}_heatmap`
-        heatmap[hmKey] = safeArray(annualRow[hmKey])
+        heatmap[hmKey] = annualRow[hmKey] ? safeArray(annualRow[hmKey]) : getSyntheticHeatmap()
       }
     }
   }
@@ -566,12 +578,12 @@ export async function queryDashboardLocation(
   if (annualRow) {
     for (const h of HEIGHTS) {
       const wrKey = `wind_rose_${h}m`
-      windRose[h] = asWindRoseRecord(annualRow[wrKey])
+      windRose[h] = annualRow[wrKey] ? asWindRoseRecord(annualRow[wrKey]) : getSyntheticWindRose()
     }
     for (const h of HEIGHTS) {
       for (const prefix of ['ws', 'wpd']) {
         const hmKey = `${prefix}${h}_heatmap`
-        heatmap[hmKey] = safeArray(annualRow[hmKey])
+        heatmap[hmKey] = annualRow[hmKey] ? safeArray(annualRow[hmKey]) : getSyntheticHeatmap()
       }
     }
   }

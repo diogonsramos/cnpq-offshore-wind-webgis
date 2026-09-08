@@ -39,6 +39,9 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
         )}
         {data && (
           <div className="pixel-panel-data">
+            <div style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '8px', fontSize: '0.8rem', borderRadius: '4px', marginBottom: '10px' }}>
+              <strong>Aviso:</strong> Weibull, Rosa dos Ventos e Distância são dados <strong>sintéticos e temporários</strong> em processo de cálculo pelo modelo.
+            </div>
             <Section title={t('pixel.section.location')}>
               <Row label={t('pixel.lat')} value={data.lat.toFixed(4)} />
               <Row label={t('pixel.lon')} value={data.lon.toFixed(4)} />
