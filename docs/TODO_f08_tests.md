@@ -1,14 +1,22 @@
-# f08 — tests & hardening (E2E, load, security, performance)
+# f08 — QA, Consertos do E2E, Validação MPAS e Hardening (Load, Security, Performance)
 
 ## Goal
 
-Prepare the application for **production deployment on a datacenter VM with public multi-user internet access**. This goes beyond functional E2E tests to include load testing, security vulnerability scanning, dependency auditing, and infrastructure hardening.
+Prepare the application for **production deployment on a datacenter VM with public multi-user internet access**. This sprint aggressively expands beyond standard tests to **rescue and refactor the E2E suite** that was broken during the F07 data migrations, validating the mathematical parity of WRF vs MPAS, while enforcing load testing, security vulnerability scanning, dependency auditing, and infrastructure hardening.
 
 ---
 
-## Part 1 — E2E regression tests
+## Part 1 — Reconstrunção dos Testes E2E e Validação Paridade WRF/MPAS
 
-Add Playwright E2E tests for all untested functional areas: Map, Dashboard, SidePanel.
+### 1.1 — Reconstruir testes quebrados pela F07
+As mudanças estruturais em F07 (substituição dos sufixos de variáveis, migração das estatísticas `min`/`max` para percentis `p5`/`p95`, e tradução global das chaves `era5`, `hist`, `ssp245`) inutilizaram grande parte das asserções antigas nos arquivos `tests/e2e/06` ao `12`.
+Esses arquivos precisam ser refatorados para a nova malha de chaves e de agregação estatística.
+
+### 1.2 — Validação WRF vs MPAS
+Com a subida dos arquivos GeoParquet do MPAS, a suite de testes também deverá checar se as grades desestruturadas e aninhadas se comparam de forma resiliente no painel DashboardComparisonView.
+
+### 1.3 — Extensão e novos escopos de E2E
+Add Playwright E2E tests for the newly expanded functional areas including the Lazy Loading charts.
 
 ### Files to create
 
@@ -196,8 +204,10 @@ Since the app runs on a **datacenter VM**, document:
 
 ## Acceptance criteria
 
-- [ ] All E2E tests (06–08) pass in Chromium headless
-- [ ] Existing 41 tests still pass with 0 modifications
+- [ ] Todas as tipagens Typescript passando.
+- [ ] Regressões dos testes E2E (`06` ao `12`) completamente consertadas e tolerantes a Lazy Loading e p5/p95.
+- [ ] MPAS renderizando lado-a-lado com WRF sem falhas matemáticas pelo PixelQuery.
+- [ ] All E2E tests pass em Chromium headless.
 - [ ] `pnpm audit` reports 0 critical vulnerabilities (or documented exceptions)
 - [ ] ZAP baseline scan produces report with 0 high-severity alerts
 - [ ] k6 load test completes with error rate < 1% for 50 concurrent users
