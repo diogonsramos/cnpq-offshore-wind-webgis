@@ -82,6 +82,7 @@ function DashboardViewInner({
 }: DashboardViewProps) {
   const { t } = useLocale()
   const [dvTab, setDvTab] = useState<DashboardTab>('simple')
+  const [visitedTabs, setVisitedTabs] = useState<Set<DashboardTab>>(new Set(['simple']))
   const [dashboardVar, setDashboardVar] = useState<Variable>('ws')
   const [dashboardHeight, setDashboardHeight] = useState<Height>(100)
   const [latInput, setLatInput] = useState('')
@@ -235,25 +236,25 @@ function DashboardViewInner({
       <div className="dv-inner-tabs">
         <button
           className={`dv-inner-tab-btn ${dvTab === 'simple' ? 'active' : ''}`}
-          onClick={() => setDvTab('simple')}
+          onClick={() => { setDvTab('simple'); setVisitedTabs(prev => new Set(prev).add('simple')) }}
         >
           {t('dashboard.tab.simple')}
         </button>
         <button
           className={`dv-inner-tab-btn ${dvTab === 'compare_exp' ? 'active' : ''}`}
-          onClick={() => setDvTab('compare_exp')}
+          onClick={() => { setDvTab('compare_exp'); setVisitedTabs(prev => new Set(prev).add('compare_exp')) }}
         >
           {t('dashboard.tab.compare_exp')}
         </button>
         <button
           className={`dv-inner-tab-btn ${dvTab === 'compare_model' ? 'active' : ''}`}
-          onClick={() => setDvTab('compare_model')}
+          onClick={() => { setDvTab('compare_model'); setVisitedTabs(prev => new Set(prev).add('compare_model')) }}
         >
           {t('dashboard.tab.compare_model')}
         </button>
         <button
           className={`dv-inner-tab-btn ${dvTab === 'geoparquet' ? 'active' : ''}`}
-          onClick={() => setDvTab('geoparquet')}
+          onClick={() => { setDvTab('geoparquet'); setVisitedTabs(prev => new Set(prev).add('geoparquet')) }}
         >
           {t('dashboard.tab.geoparquet')}
         </button>
@@ -583,15 +584,15 @@ function DashboardViewInner({
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'compare_exp' ? 'flex' : 'none' }}>
-        <DashboardComparisonView mode="experiments" currentModel={model} currentDataset={dataset} pinnedLocations={pinnedLocations} />
+        {visitedTabs.has('compare_exp') && <DashboardComparisonView mode="experiments" currentModel={model} currentDataset={dataset} pinnedLocations={pinnedLocations} />}
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'compare_model' ? 'flex' : 'none' }}>
-        <DashboardComparisonView mode="models" currentModel={model} currentDataset={dataset} pinnedLocations={pinnedLocations} />
+        {visitedTabs.has('compare_model') && <DashboardComparisonView mode="models" currentModel={model} currentDataset={dataset} pinnedLocations={pinnedLocations} />}
       </div>
 
       <div className="dv-tab-panel" style={{ display: dvTab === 'geoparquet' ? 'flex' : 'none' }}>
-        <GeoParquetExplorer currentModel={model} currentDataset={dataset} />
+        {visitedTabs.has('geoparquet') && <GeoParquetExplorer currentModel={model} currentDataset={dataset} />}
       </div>
     </div>
   )
