@@ -3,19 +3,15 @@ import type { TranslationKey } from '../i18n/types'
 export type Translate = (key: TranslationKey, vars?: Record<string, string | number>) => string
 
 export type Model = 'wrf' | 'mpas'
-export type Dataset = 'ERA5_atlas_historico' | 'HIST_historico' | 'SSP2-4.5_presente' | 'SSP2-4.5_futuro' | 'SSP5-8.5_presente' | 'SSP5-8.5_futuro'
+export type Dataset = 'era5' | 'hist' | 'ssp245' | 'ssp585'
 export type Variable = 'ws' | 'wpd'
 export type Height = 10 | 50 | 100 | 150 | 200
 export type Season = 'annual' | 'djf' | 'mam' | 'jja' | 'son'
 export type Region = 'nacional' | 'estadual'
 export type BathyBand = '0_20' | '20_50' | '50_100' | '0_100'
+
 export const MODELS: Model[] = ['wrf', 'mpas']
-export const DATASETS: Dataset[] = [
-  'ERA5_atlas_historico',
-  'HIST_historico',
-  'SSP2-4.5_presente', 'SSP2-4.5_futuro',
-  'SSP5-8.5_presente', 'SSP5-8.5_futuro',
-]
+export const DATASETS: Dataset[] = ['era5', 'hist', 'ssp245', 'ssp585']
 export const VARIABLES: Variable[] = ['ws', 'wpd']
 export const HEIGHTS: Height[] = [10, 50, 100, 150, 200]
 export const SEASONS: Season[] = ['annual', 'djf', 'mam', 'jja', 'son']
@@ -49,8 +45,6 @@ export const COASTAL_STATES: StateDef[] = [
 
 // Geographic Norte→Sul ordering of the coastal states, used to sort the
 // per-state boxplot so it reads as a latitudinal gradient down the coast.
-// COASTAL_STATES itself stays alphabetical (easier to locate a state in the
-// checkbox grid); this is the separate geographic axis.
 export const STATE_ORDER_NORTH_SOUTH: string[] = [
   'AP', 'PA', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA', 'ES', 'RJ', 'SP', 'PR', 'SC', 'RS',
 ]
@@ -66,12 +60,10 @@ const VAR_LABEL_KEY: Record<Variable, { labelKey: TranslationKey; unit: string }
 }
 
 const DATASET_LABEL_KEY: Record<Dataset, TranslationKey> = {
-  ERA5_atlas_historico: 'cogcatalog.dataset.era5_atlas_historico',
-  HIST_historico: 'cogcatalog.dataset.hist_historico',
-  'SSP2-4.5_presente': 'cogcatalog.dataset.ssp245_presente',
-  'SSP2-4.5_futuro': 'cogcatalog.dataset.ssp245_futuro',
-  'SSP5-8.5_presente': 'cogcatalog.dataset.ssp585_presente',
-  'SSP5-8.5_futuro': 'cogcatalog.dataset.ssp585_futuro',
+  era5: 'cogcatalog.dataset.era5',
+  hist: 'cogcatalog.dataset.hist',
+  ssp245: 'cogcatalog.dataset.ssp245',
+  ssp585: 'cogcatalog.dataset.ssp585',
 }
 
 const MODEL_LABEL_KEY: Record<Model, TranslationKey> = {
@@ -102,12 +94,9 @@ export function bathyLabel(b: BathyBand, t: Translate): string {
   return t(BATHY_LABEL_KEY[b])
 }
 
-// Dataset ids carry a _historico/_presente/_futuro suffix that has no counterpart
-// on disk — the real geoparquet/cog folders only exist per base experiment.
-export function datasetFolder(d: Dataset): string {
-  return d.replace(/_(historico|presente|futuro)$/, '')
-}
-
+// COG file schema: {model}/{dataset}/{anual|sazonal}/{VAR}_{height}_avg[_{SEASON}].tif
+// Only the `avg` statistic is served to the map renderer (statistical layers
+// like p5/p95/std are for download, not for real-time tile rendering).
 export function buildCogUrl(
   dataset: Dataset,
   variable: Variable,
@@ -115,7 +104,10 @@ export function buildCogUrl(
   season: Season,
   model: Model = 'wrf',
 ): string {
-  const varLower = variable === 'ws' ? `ws${height}` : `wpd${height}`
-  const folder = datasetFolder(dataset)
-  return `/data/cogs/${model}/${folder}/${varLower}/${height}m/${season}_nacional_0_100.tif`
+  const VAR = variable.toUpperCase() // 'WS' | 'WPD'
+  if (season === 'annual') {
+    return `/data/cogs/${model}/${dataset}/anual/${VAR}_${height}_avg.tif`
+  }
+  const seasonSuffix = season.toUpperCase() // 'DJF' | 'MAM' | 'JJA' | 'SON'
+  return `/data/cogs/${model}/${dataset}/sazonal/${VAR}_${height}_avg_${seasonSuffix}.tif`
 }

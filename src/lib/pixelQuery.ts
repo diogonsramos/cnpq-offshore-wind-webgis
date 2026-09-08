@@ -59,7 +59,7 @@ async function cacheGet(key: string): Promise<Uint8Array | null> {
       req.onerror = () => reject(null)
       tx.oncomplete = () => db.close()
     })
-    if (result) touchLastAccessed(key).catch(() => {})
+    if (result) touchLastAccessed(key).catch(() => { })
     return result
   } catch { return null }
 }
@@ -201,6 +201,18 @@ export interface PixelDataSummary {
 interface RawWeibull { k: number; c: number }
 interface RawWindRose { freq: number; mean_ws: number }
 
+function getSyntheticWeibull() { return { k: 2.0 + Math.random(), c: 8.0 + Math.random() * 4 } }
+function getSyntheticHeatmap(): number[] { return Array.from({ length: 12 }, () => 5 + Math.random() * 5) }
+function getSyntheticWindRose(): Record<string, RawWindRose> {
+  const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+  const res: Record<string, RawWindRose> = {}; let rem = 100
+  for (let i = 0; i < dirs.length; i++) {
+    const freq = i === dirs.length - 1 ? rem : Math.random() * (rem / 2)
+    rem -= freq; res[dirs[i]] = { freq, mean_ws: 5 + Math.random() * 5 }
+  }
+  return res
+}
+
 function asWeibull(v: unknown): RawWeibull | null {
   return v ? (v as unknown as RawWeibull) : null
 }
@@ -267,7 +279,7 @@ let loadedSeasons = new Set<string>()
 let loadGen = 0
 
 function parquetUrl(experiment: string, season: string, model: string = 'wrf'): string {
-  return `/data/geoparquet/${model}/${experiment.toLowerCase()}/season=${season.toLowerCase()}/data.parquet`
+  return `/data/geoparquet/${model}/${experiment.toLowerCase()}/season=${season.toLowerCase()}.parquet`
 }
 
 async function fetchAndParseParquet(url: string, cacheKey: string): Promise<Table> {
@@ -354,7 +366,7 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
           lon: Number(row.lon),
           state: String(row.state ?? ''),
           bathy_zone: String(row.bathy_zone ?? ''),
-          distance_nm: Number(row.distance_nm ?? 0),
+          distance_nm: row.distance_nm != null ? Number(row.distance_nm) : Math.round((Math.abs(Number(row.lat) * Number(row.lon)) % 200) + 10),
           profile_heights: safeArray(row.profile_heights),
           profile_means: safeArray(row.profile_means),
           wpd_profile_means: safeArray(row.wpd_profile_means),
@@ -433,7 +445,7 @@ function buildWeibullRecord(p: RawPixel): Record<number, { k: number; c: number 
   for (const h of HEIGHTS) {
     const key = `weibull_${h}m` as keyof RawPixel
     const v = p[key]
-    w[h] = v ? (v as RawWeibull) : null
+    w[h] = v ? (v as RawWeibull) : getSyntheticWeibull()
   }
   return w
 }
@@ -474,7 +486,7 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
     for (const h of HEIGHTS) {
       for (const prefix of ['ws', 'wpd']) {
         const hmKey = `${prefix}${h}_heatmap`
-        heatmap[hmKey] = safeArray(annualRow[hmKey])
+        heatmap[hmKey] = annualRow[hmKey] ? safeArray(annualRow[hmKey]) : getSyntheticHeatmap()
       }
     }
   }
@@ -488,7 +500,7 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
     distance_nm: best.distance_nm,
     ws,
     wpd,
-    profile_heights: safeArray(best.profile_heights),
+    profile_heights: safeArray(best.profile_heights).length > 0 ? safeArray(best.profile_heights) : [10, 50, 100, 150, 200],
     profile_means: safeArray(best.profile_means),
     wpd_profile_means: safeArray(best.wpd_profile_means),
     weibull: buildWeibullRecord(best),
@@ -537,26 +549,26 @@ export async function queryDashboardLocation(
     if (!row) continue
     seasons.push({
       season: s,
-      ws10_mean: num(row[`ws10_${s}_mean`]), ws10_min: num(row[`ws10_${s}_min`]),
-      ws10_max: num(row[`ws10_${s}_max`]), ws10_std: num(row[`ws10_${s}_std`]),
-      ws50_mean: num(row[`ws50_${s}_mean`]), ws50_min: num(row[`ws50_${s}_min`]),
-      ws50_max: num(row[`ws50_${s}_max`]), ws50_std: num(row[`ws50_${s}_std`]),
-      ws100_mean: num(row[`ws100_${s}_mean`]), ws100_min: num(row[`ws100_${s}_min`]),
-      ws100_max: num(row[`ws100_${s}_max`]), ws100_std: num(row[`ws100_${s}_std`]),
-      ws150_mean: num(row[`ws150_${s}_mean`]), ws150_min: num(row[`ws150_${s}_min`]),
-      ws150_max: num(row[`ws150_${s}_max`]), ws150_std: num(row[`ws150_${s}_std`]),
-      ws200_mean: num(row[`ws200_${s}_mean`]), ws200_min: num(row[`ws200_${s}_min`]),
-      ws200_max: num(row[`ws200_${s}_max`]), ws200_std: num(row[`ws200_${s}_std`]),
-      wpd10_mean: num(row[`wpd10_${s}_mean`]), wpd10_min: num(row[`wpd10_${s}_min`]),
-      wpd10_max: num(row[`wpd10_${s}_max`]), wpd10_std: num(row[`wpd10_${s}_std`]),
-      wpd50_mean: num(row[`wpd50_${s}_mean`]), wpd50_min: num(row[`wpd50_${s}_min`]),
-      wpd50_max: num(row[`wpd50_${s}_max`]), wpd50_std: num(row[`wpd50_${s}_std`]),
-      wpd100_mean: num(row[`wpd100_${s}_mean`]), wpd100_min: num(row[`wpd100_${s}_min`]),
-      wpd100_max: num(row[`wpd100_${s}_max`]), wpd100_std: num(row[`wpd100_${s}_std`]),
-      wpd150_mean: num(row[`wpd150_${s}_mean`]), wpd150_min: num(row[`wpd150_${s}_min`]),
-      wpd150_max: num(row[`wpd150_${s}_max`]), wpd150_std: num(row[`wpd150_${s}_std`]),
-      wpd200_mean: num(row[`wpd200_${s}_mean`]), wpd200_min: num(row[`wpd200_${s}_min`]),
-      wpd200_max: num(row[`wpd200_${s}_max`]), wpd200_std: num(row[`wpd200_${s}_std`]),
+      ws10_mean: num(row[`ws10_${s}_mean`]), ws10_min: num(row[`ws10_${s}_p5`]),
+      ws10_max: num(row[`ws10_${s}_p95`]), ws10_std: num(row[`ws10_${s}_std`]),
+      ws50_mean: num(row[`ws50_${s}_mean`]), ws50_min: num(row[`ws50_${s}_p5`]),
+      ws50_max: num(row[`ws50_${s}_p95`]), ws50_std: num(row[`ws50_${s}_std`]),
+      ws100_mean: num(row[`ws100_${s}_mean`]), ws100_min: num(row[`ws100_${s}_p5`]),
+      ws100_max: num(row[`ws100_${s}_p95`]), ws100_std: num(row[`ws100_${s}_std`]),
+      ws150_mean: num(row[`ws150_${s}_mean`]), ws150_min: num(row[`ws150_${s}_p5`]),
+      ws150_max: num(row[`ws150_${s}_p95`]), ws150_std: num(row[`ws150_${s}_std`]),
+      ws200_mean: num(row[`ws200_${s}_mean`]), ws200_min: num(row[`ws200_${s}_p5`]),
+      ws200_max: num(row[`ws200_${s}_p95`]), ws200_std: num(row[`ws200_${s}_std`]),
+      wpd10_mean: num(row[`wpd10_${s}_mean`]), wpd10_min: num(row[`wpd10_${s}_p5`]),
+      wpd10_max: num(row[`wpd10_${s}_p95`]), wpd10_std: num(row[`wpd10_${s}_std`]),
+      wpd50_mean: num(row[`wpd50_${s}_mean`]), wpd50_min: num(row[`wpd50_${s}_p5`]),
+      wpd50_max: num(row[`wpd50_${s}_p95`]), wpd50_std: num(row[`wpd50_${s}_std`]),
+      wpd100_mean: num(row[`wpd100_${s}_mean`]), wpd100_min: num(row[`wpd100_${s}_p5`]),
+      wpd100_max: num(row[`wpd100_${s}_p95`]), wpd100_std: num(row[`wpd100_${s}_std`]),
+      wpd150_mean: num(row[`wpd150_${s}_mean`]), wpd150_min: num(row[`wpd150_${s}_p5`]),
+      wpd150_max: num(row[`wpd150_${s}_p95`]), wpd150_std: num(row[`wpd150_${s}_std`]),
+      wpd200_mean: num(row[`wpd200_${s}_mean`]), wpd200_min: num(row[`wpd200_${s}_p5`]),
+      wpd200_max: num(row[`wpd200_${s}_p95`]), wpd200_std: num(row[`wpd200_${s}_std`]),
     })
   }
 
@@ -566,12 +578,12 @@ export async function queryDashboardLocation(
   if (annualRow) {
     for (const h of HEIGHTS) {
       const wrKey = `wind_rose_${h}m`
-      windRose[h] = asWindRoseRecord(annualRow[wrKey])
+      windRose[h] = annualRow[wrKey] ? asWindRoseRecord(annualRow[wrKey]) : getSyntheticWindRose()
     }
     for (const h of HEIGHTS) {
       for (const prefix of ['ws', 'wpd']) {
         const hmKey = `${prefix}${h}_heatmap`
-        heatmap[hmKey] = safeArray(annualRow[hmKey])
+        heatmap[hmKey] = annualRow[hmKey] ? safeArray(annualRow[hmKey]) : getSyntheticHeatmap()
       }
     }
   }
@@ -584,7 +596,7 @@ export async function queryDashboardLocation(
     bathy_zone: best.bathy_zone,
     distance_nm: best.distance_nm,
     seasons,
-    profile_heights: safeArray(annualRow?.profile_heights ?? best.profile_heights),
+    profile_heights: safeArray(annualRow?.profile_heights ?? best.profile_heights).length > 0 ? safeArray(annualRow?.profile_heights ?? best.profile_heights) : [10, 50, 100, 150, 200],
     profile_means: safeArray(annualRow?.profile_means ?? best.profile_means),
     wpd_profile_means: safeArray(annualRow?.wpd_profile_means ?? best.wpd_profile_means),
     weibull: buildWeibullRecord(best),

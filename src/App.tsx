@@ -9,7 +9,7 @@ import FAQPanel from './components/FAQPanel'
 import ProjectInfoPanel from './components/ProjectInfoPanel'
 import LandingPage from './components/LandingPage'
 import { queryDashboardLocation, loadParquet, type DashboardLocationData } from './lib/pixelQuery'
-import { datasetFolder } from './lib/cogCatalog'
+
 import type { PixelDataSummary } from './lib/pixelQuery'
 import { appReducer, initialAppState } from './reducer'
 import { LocaleProvider } from './i18n/provider'
@@ -44,7 +44,7 @@ export default function App() {
   // click. loadParquet is idempotent — it no-ops when the pair is already loaded.
   useEffect(() => {
     if (tab === 'map' || tab === 'dashboard') {
-      loadParquet(datasetFolder(dataset), model)
+      loadParquet(dataset, model)
     }
   }, [tab, dataset, model])
 
@@ -55,16 +55,16 @@ export default function App() {
     const current = pinnedRef.current
     if (current.length === 0) return
     let cancelled = false
-    ;(async () => {
-      const refreshed: DashboardLocationData[] = []
-      for (const loc of current) {
-        const data = await queryDashboardLocation(loc.lat, loc.lon, model, datasetFolder(dataset))
-        // Keep the previous snapshot when the new pair has no data (e.g. MPAS),
-        // so switching model/experiment never wipes the pinned coordinates.
-        refreshed.push(data ?? loc)
-      }
-      if (!cancelled) dispatch({ type: 'REFRESH_PINNED_LOCATIONS', locations: refreshed })
-    })()
+      ; (async () => {
+        const refreshed: DashboardLocationData[] = []
+        for (const loc of current) {
+          const data = await queryDashboardLocation(loc.lat, loc.lon, model, dataset)
+          // Keep the previous snapshot when the new pair has no data (e.g. MPAS),
+          // so switching model/experiment never wipes the pinned coordinates.
+          refreshed.push(data ?? loc)
+        }
+        if (!cancelled) dispatch({ type: 'REFRESH_PINNED_LOCATIONS', locations: refreshed })
+      })()
     return () => { cancelled = true }
   }, [model, dataset])
 
@@ -83,7 +83,7 @@ export default function App() {
     try {
       // Pass the current pair so queryDashboardLocation loads the parquet on demand
       // if it isn't loaded yet — the Dashboard no longer requires a prior map click.
-      const data = await queryDashboardLocation(lat, lon, model, datasetFolder(dataset))
+      const data = await queryDashboardLocation(lat, lon, model, dataset)
       if (!data) return
       dispatch({ type: 'ADD_PIN', loc: data })
     } catch (e) {

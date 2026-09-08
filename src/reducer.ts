@@ -29,7 +29,7 @@ export interface AppState {
 export const initialAppState: AppState = {
   tab: 'home',
   model: 'wrf',
-  dataset: 'ERA5_atlas_historico',
+  dataset: 'era5',
   variable: 'ws',
   height: 100,
   season: 'annual',

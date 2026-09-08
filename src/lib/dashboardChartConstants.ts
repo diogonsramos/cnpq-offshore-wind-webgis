@@ -34,9 +34,10 @@ export const WS_LEGEND_GRADIENT = `linear-gradient(to right, rgb(${WS_LOW_COLOR.
 // Matches the bathy_zone categories actually present in the per-pixel GeoParquet
 // data (not the COG raster's BathyBand crop regions, which include '0_100').
 export const BATHY_ZONE_OPTIONS: { val: string; label: string }[] = [
-  { val: '0_20', label: '0 – 20 m' },
-  { val: '20_50', label: '20 – 50 m' },
-  { val: '50_100', label: '50 – 100 m' },
+  { val: '0 a -20 m', label: '0 – 20 m' },
+  { val: '-20 a -50 m', label: '20 – 50 m' },
+  { val: '-50 a -100 m', label: '50 – 100 m' },
+  { val: 'out_of_range', label: 'Sem Batimetria (Erro ETL Python)' },
 ]
 
 export const DISTANCE_MAX_NM = 400
