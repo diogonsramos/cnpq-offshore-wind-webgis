@@ -53,7 +53,7 @@ O gerador de GeoParquet no HPC deverá produzir arquivos otimizados com os segui
 
 ### 3.1. Requisitos de Colunas e Variáveis (Frontend Contract)
 Ao clicar em qualquer pixel do mapa, o painel do WebGIS necessita exibir:
-- **Metadados do Pixel:** `pixel_id` (int32), `lat` (float32), `lon` (float32), `state` (string), `bathy_zone` (string), `distance_nm` (float32).
+- **Metadados do Pixel:** `pixel_id` (int32), `lat` (float32), `lon` (float32), `state` (string), `bathy_zone` (string). *(Nota: a propriedade `distance_nm` foi desativada no frontend e postergada para uma feature futura, não sendo necessário o seu cálculo nesta fase)*.
 - **Estatísticas por Altura (10m, 50m, 100m, 150m, 200m):**
   - Média (`mean`), Mínimo (`min`), Máximo (`max`), Mediana (`p50`), Desvio Padrão (`std`).
   - Percentis: `p5`, `p50`, `p95`, `p99` para velocidade do vento (`ws`) e densidade de potência (`wpd`).
