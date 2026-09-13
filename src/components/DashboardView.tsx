@@ -313,9 +313,7 @@ function DashboardViewInner({
             {locError && <span className="dv-error">{locError}</span>}
           </div>
 
-          <div style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '10px', fontSize: '0.85rem', borderRadius: '4px', margin: '0 20px 10px 20px', display: dvTab === 'simple' ? 'block' : 'none' }}>
-            <strong>Aviso:</strong> Weibull, Rosa dos Ventos e Perfis Climatológicos utilizam dados <strong>sintéticos/provísórios</strong> enquanto o servidor finaliza o processamento oficial do WRF/MPAS.
-          </div>
+
 
           <div className="dv-chips">
             {pinnedLocations.map((loc, i) => (
