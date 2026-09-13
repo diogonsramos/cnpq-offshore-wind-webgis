@@ -32,8 +32,8 @@ test.describe('Dashboard — Visão Simples: novos gráficos (f02)', () => {
     const panel = page.locator('.dv-tab-panel').nth(0)
     const wpdCard = panel.locator('[data-testid="chart-wpd-profile"]')
     await expect(wpdCard).toBeVisible()
-    await expect(wpdCard.locator('.chart-empty')).toBeVisible()
-    await expect(wpdCard.locator('.chart-empty')).toContainText('não disponíveis')
+    await expect(wpdCard.locator('.chart-empty')).toHaveCount(0)
+    await expect(wpdCard.locator('.js-plotly-plot')).toHaveCount(1)
   })
 
   test('T74 — card de Distribuição Direcional (heatmap) aparece por local fixado, com estado vazio (dado ainda não publicado)', async ({ page }) => {
