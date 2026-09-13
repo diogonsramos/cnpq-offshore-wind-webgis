@@ -56,7 +56,7 @@ ALL_MODELS = ["wrf", "mpas"]
 ALL_EXPS = ["era5", "hist", "ssp245", "ssp585"]
 ALL_VARS = ["ws", "wpd", "weibull", "wind_rose"]
 
-CARDINAL_DIRECTIONS_12 = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WNW"]
+CARDINAL_DIRECTIONS_12 = ["N", "NNE", "ENE", "E", "ESE", "SSE", "S", "SSW", "WSW", "W", "WNW", "NNW"]
 
 def find_nc_file(nc_folder: str, var_prefix: str, h: int, suffix: str) -> str:
     """Busca o arquivo NC tentando as variações de padrão (VAR_ALTURA_METRICA.nc, ex: WS_10_avg.nc, T_2_min.nc, WS10_avg.nc)."""
