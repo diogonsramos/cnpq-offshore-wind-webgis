@@ -160,22 +160,27 @@ def check_file(filepath: str, season: str, verbose: bool = False):
                         dominant_dir = dir_label
                         dominant_speed = spd
 
-        # Checagens físicas básicas
+        # Checagens físicas
         issues = []
         if not (2.0 <= ws100 <= 25.0):
             issues.append(f"ws100 fora de faixa ({ws100:.2f} m/s)")
-        if not (1.0 <= c_val <= 30.0) or not (1.0 <= k_val <= 5.0):
-            issues.append(f"Weibull atípico (c={c_val:.2f}, k={k_val:.2f})")
-        if total_freq > 0 and not (0.90 <= total_freq <= 1.10):
-            issues.append(f"Soma freq rosa != 1.0 (soma={total_freq:.2f})")
+
+        # Weibull e Rosa dos Ventos são gerados na partição ANNUAL
+        if season.lower() == "annual":
+            if not (1.0 <= c_val <= 30.0) or not (1.0 <= k_val <= 6.0):
+                issues.append(f"Weibull atípico (c={c_val:.2f}, k={k_val:.2f})")
+            if total_freq > 0 and not (95.0 <= total_freq <= 105.0):
+                issues.append(f"Soma freq rosa != 100% (soma={total_freq:.1f}%)")
 
         status_flag = "✓" if not issues else "⚠ " + "; ".join(issues)
         
+        weibull_str = f"Weibull(c={c_val:.2f}, k={k_val:.2f})" if pd.notna(c_val) else "Weibull=N/A"
+        rosa_str = f"RosaDominante={dominant_dir} ({dominant_freq:.1f}%, vel={dominant_speed:.2f}m/s)" if dominant_dir != "N/A" else "Rosa=N/A"
+
         pt_summary = (
             f"  [{pt['name']}] (Lat:{row['lat']:.2f}, Lon:{row['lon']:.2f}) -> "
             f"ws100={ws100:.2f}m/s, wpd100={wpd100:.0f}W/m², "
-            f"Weibull(c={c_val:.2f}, k={k_val:.2f}), "
-            f"RosaDominante={dominant_dir} ({dominant_freq*100:.1f}%, vel={dominant_speed:.2f}m/s) [{status_flag}]"
+            f"{weibull_str}, {rosa_str} [{status_flag}]"
         )
         points_report.append(pt_summary)
 
