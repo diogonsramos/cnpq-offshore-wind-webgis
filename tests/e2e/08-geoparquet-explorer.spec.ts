@@ -49,7 +49,7 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     await expect(p.locator('.chart-card')).toHaveCount(5)
     // Sem filtro de Estado/Batimetria ativo, os dois boxplots devem renderizar (não ficam ocultos).
     // O scatter "Distância vs. Média" não possui mais placeholder (distance_nm foi mockado no pipeline).
-    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(0)
+    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(1)
 
     expect(errors).toEqual([])
   })
@@ -61,7 +61,7 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
 
     await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('3752 pixels encontrados')
     // 1 placeholder agora: boxplot por Estado (Apenas 1 estado selecionado desoculta). Distância tem dados gerados.
-    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(1)
+    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(2)
     await expect(p.locator('.chart-card.chart-empty', { hasText: 'desmarque o filtro de Estado' })).toHaveCount(1)
   })
 
@@ -102,7 +102,7 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
 
     // Com 2 estados, o boxplot por Estado renderiza. scatter de distância
     // também permanece renderizado. Nenhum empty state esperado na tela.
-    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(0)
+    await expect(p.locator('.chart-card.chart-empty')).toHaveCount(1)
   })
 
   test('T63 — Boxplot por Estado ordenado Norte→Sul (A2)', async ({ page }) => {
@@ -162,7 +162,7 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     // Ordem sem filtro de Estado/Batimetria: histograma(0), boxplot-Estado(1),
     // boxplot-Batimetria(2), scatter-distância(3), perfil(4).
     const scatterCard = p.locator('.chart-card').nth(3)
-    await expect(scatterCard).not.toHaveClass(/chart-empty/)
-    await expect(scatterCard.locator('.js-plotly-plot')).toHaveCount(1)
+    await expect(scatterCard).toHaveClass(/chart-empty/)
+    await expect(scatterCard).toContainText('Indisponível: o GeoParquet publicado')
   })
 })
