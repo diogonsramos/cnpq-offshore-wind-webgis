@@ -267,8 +267,20 @@ def build_partition(model: str, exp: str, season: str, spatial_df: pd.DataFrame,
                         freq_var = get_main_data_var(ds_freq)    # Correção aqui
                         wsdir_var = get_main_data_var(ds_wsdir)  # Correção aqui
                         
-                        freq_vals = ds_freq[freq_var].squeeze().values.reshape(12, -1)
-                        wsdir_vals = ds_wsdir[wsdir_var].squeeze().values.reshape(12, -1)
+                        da_freq = ds_freq[freq_var].squeeze()
+                        da_wsdir = ds_wsdir[wsdir_var].squeeze()
+                        
+                        # Garantir que a dimensão de direção (tamanho 12) seja a primeira (eixo 0)
+                        dir_dim_freq = next((d for d in da_freq.dims if da_freq.sizes[d] == 12), None)
+                        if dir_dim_freq:
+                            da_freq = da_freq.transpose(dir_dim_freq, ...)
+                            
+                        dir_dim_wsdir = next((d for d in da_wsdir.dims if da_wsdir.sizes[d] == 12), None)
+                        if dir_dim_wsdir:
+                            da_wsdir = da_wsdir.transpose(dir_dim_wsdir, ...)
+
+                        freq_vals = da_freq.values.reshape(12, -1)
+                        wsdir_vals = da_wsdir.values.reshape(12, -1)
                         
                         n_pixels = len(df)
                         pixel_ids = df["pixel_id"].values
