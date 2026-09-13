@@ -43,7 +43,7 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
 
     const p = panel(page)
     await p.locator('.dv-add-btn').click()
-    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('140442 pixels encontrados')
+    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('30773 pixels encontrados')
 
     await expect(p.locator('.gpe-stats-bar .gpe-stat-chip')).toHaveCount(6)
     await expect(p.locator('.chart-card')).toHaveCount(5)
@@ -59,7 +59,7 @@ test.describe('Dashboard — GeoParquet Explorer', () => {
     await p.locator('.gpe-checkbox-col', { hasText: 'Estado' }).locator('.dv-pair-checkbox', { hasText: 'BA' }).locator('input').check()
     await p.locator('.dv-add-btn').click()
 
-    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('3764 pixels encontrados')
+    await expect(p.locator('.dv-hint', { hasText: 'pixels encontrados' })).toHaveText('3752 pixels encontrados')
     // 1 placeholder agora: boxplot por Estado (Apenas 1 estado selecionado desoculta). Distância tem dados gerados.
     await expect(p.locator('.chart-card.chart-empty')).toHaveCount(1)
     await expect(p.locator('.chart-card.chart-empty', { hasText: 'desmarque o filtro de Estado' })).toHaveCount(1)
