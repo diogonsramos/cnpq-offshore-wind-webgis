@@ -87,8 +87,8 @@ export async function renderCog(
 
     const [raster] = await img.readRasters({
       window: [x0, y0, x1, y1],
-      width: cw,
-      height: ch,
+      width: sw,
+      height: sh,
       interleave: false,
     })
     const band = raster as Float32Array
@@ -102,10 +102,28 @@ export async function renderCog(
     const id = ctx.createImageData(cw, ch)
     const pix = id.data
 
+    const lonW = w + x0 * pxW
+    const lonE = w + x1 * pxW
+    const latN = n - y0 * pxH
+    const latS = n - y1 * pxH
+
+    const latToMercY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360))
+    const mercN = latToMercY(latN)
+    const mercS = latToMercY(latS)
+    const mercDiff = mercN - mercS
+
     for (let r = 0; r < ch; r++) {
+      const v = (r + 0.5) / ch
+      const yMerc = mercN - v * mercDiff
+      const lat = (Math.atan(Math.exp(yMerc)) - Math.PI / 4) * 360 / Math.PI
+      const rasterY = Math.max(0, Math.min(sh - 1, Math.floor((latN - lat) / pxH)))
+
       for (let c = 0; c < cw; c++) {
-        const i = r * cw + c
-        const off = i * 4
+        const u = (c + 0.5) / cw
+        const rasterX = Math.max(0, Math.min(sw - 1, Math.floor(u * sw)))
+        
+        const i = rasterY * sw + rasterX
+        const off = (r * cw + c) * 4
         const v = band[i]
         if (v === -9999 || isNaN(v)) {
           pix[off + 3] = 0
@@ -119,11 +137,6 @@ export async function renderCog(
       }
     }
     ctx.putImageData(id, 0, 0)
-
-    const lonW = w + x0 * pxW
-    const lonE = w + x1 * pxW
-    const latN = n - y0 * pxH
-    const latS = n - y1 * pxH
 
     return {
       dataUrl: canvas.toDataURL('image/png'),

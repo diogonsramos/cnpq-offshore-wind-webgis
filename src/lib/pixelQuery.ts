@@ -306,6 +306,7 @@ async function loadSeasonData(experiment: string, season: string, model: string)
   const url = parquetUrl(experiment, season, model)
   const arrowTable = await fetchAndParseParquet(url, ck)
 
+  const cols = arrowTable.schema.fields.map(f => ({ name: f.name, vec: arrowTable.getChild(f.name)! }))
   for (let i = 0; i < arrowTable.numRows; i++) {
     const row = arrowTable.get(i)
     if (!row) continue
@@ -314,8 +315,8 @@ async function loadSeasonData(experiment: string, season: string, model: string)
     const sm = allSeasonMap.get(pixel_id)
     if (!sm) continue
     const raw: Record<string, unknown> = {}
-    for (const key of Object.keys(row)) {
-      raw[key] = (row as Record<string, unknown>)[key]
+    for (const col of cols) {
+      raw[col.name] = col.vec.get(i)
     }
     sm.set(season, raw)
   }
@@ -344,7 +345,7 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
     const recordsMap = new Map<number, RawPixel>()
     const seasonMap = new Map<number, Map<string, Record<string, unknown>>>()
 
-    const keys = arrowTable.schema.fields.map(f => f.name)
+    const cols = arrowTable.schema.fields.map(f => ({ name: f.name, vec: arrowTable.getChild(f.name)! }))
     let lastYield = performance.now()
     for (let i = 0; i < arrowTable.numRows; i++) {
       // Yield dinâmico: evita starvation da UI, mas extrai o max de fps possível
@@ -363,8 +364,8 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
       let sm = seasonMap.get(pixel_id)
       if (!sm) { sm = new Map(); seasonMap.set(pixel_id, sm) }
       const raw: Record<string, unknown> = {}
-      for (const key of keys) {
-        raw[key] = row[key]
+      for (const col of cols) {
+        raw[col.name] = col.vec.get(i)
       }
       sm.set(season, raw)
 
