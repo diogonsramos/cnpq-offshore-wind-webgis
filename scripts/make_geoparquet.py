@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
 """
 ==============================================================================
-CNPq WebGIS Offshore - HPC GeoParquet Generator v2 (Otimizado)
+CNPq WebGIS Offshore - HPC GeoParquet Generator v3 (Reescrito)
 ==============================================================================
 Este script realiza o processamento dos arquivos NetCDF de alta resolução (WRF e MPAS)
 e gera arquivos GeoParquet otimizados para o WebGIS/Dashboard.
 
-Destaques da Reestruturação v2:
- 1. Ordenação Espacial por Curva de Hilbert (Hilbert Spatial Indexing) para Row Group pruning.
- 2. Cálculo de Distância à Costa (distance_nm em milhas náuticas via Spatial Join/Geodesia).
- 3. Compatibilidade exata com o contrato de dados do frontend (pixelQuery.ts):
-    - Weibull com chaves {"c": scale, "k": shape} para 10m, 50m, 100m, 150m, 200m.
-    - Rosa dos Ventos (12 ou 16 setores) com chaves legíveis de frequência e velocidade média.
-    - Percentis p5, p50, p95, p99 para ws e wpd em todas as 5 alturas.
-    - Perfis verticais profile_means e wpd_profile_means.
- 4. Compressão ZSTD nível 6 + Row Group size de 5.000 a 10.000 linhas.
- 5. Exportação simultânea da versão Completa e da versão Camada Leve (Core/Summary).
+Novidades v3:
+ 1. Filtragem Antecipada (Offshore): Descarta pixels onshore (NaNs) na primeira etapa (~140k -> ~30k).
+ 2. Rosa dos Ventos Vetorizada: Cálculo de 16 setores a partir da série U e V horária (time_series_uvws.nc).
+ 3. Ajuste Weibull Paralelizado: Maximum Likelihood nativo via scipy, rodando em multiprocessing pool.
+ 4. Percentis: Consome os percentis p5, p50, p95, p99 gerados pelo novo run_stats_cdo.sh.
 ==============================================================================
 """
 
@@ -24,7 +19,6 @@ import sys
 import glob
 import logging
 import argparse
-import math
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -33,10 +27,10 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from shapely.geometry import Point
 from tqdm import tqdm
-import scipy.special as sp
-
-# Desabilitar avisos não críticos
+import multiprocessing
+from scipy.stats import weibull_min
 import warnings
+
 warnings.filterwarnings('ignore')
 
 # ==============================================================================
@@ -56,16 +50,19 @@ ALL_MODELS = ["wrf", "mpas"]
 ALL_EXPS = ["era5", "hist", "ssp245", "ssp585"]
 ALL_VARS = ["ws", "wpd", "weibull", "wind_rose"]
 
-CARDINAL_DIRECTIONS_12 = ["N", "NNE", "ENE", "E", "ESE", "SSE", "S", "SSW", "WSW", "W", "WNW", "NNW"]
+CARDINAL_DIRECTIONS_16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
 
-def find_nc_file(nc_folder: str, var_prefix: str, h: int, suffix: str) -> str:
-    """Busca o arquivo NC tentando as variações de padrão (VAR_ALTURA_METRICA.nc, ex: WS_10_avg.nc, T_2_min.nc, WS10_avg.nc)."""
-    candidates = [
-        f"{var_prefix}_{h}_{suffix}.nc",
-        f"{var_prefix}{h}_{suffix}.nc",
-        f"{var_prefix}_{h}m_{suffix}.nc",
-        f"{var_prefix}_{h}_{suffix}.nc.nc"
-    ]
+def find_nc_file(nc_folder: str, var_prefix: str, h, suffix: str) -> str:
+    """Busca o arquivo NC tentando as variações de padrão."""
+    if h is None:
+        candidates = [f"{var_prefix}_{suffix}.nc"]
+    else:
+        candidates = [
+            f"{var_prefix}_{h}_{suffix}.nc",
+            f"{var_prefix}{h}_{suffix}.nc",
+            f"{var_prefix}_{h}m_{suffix}.nc",
+            f"{var_prefix}_{h}_{suffix}.nc.nc"
+        ]
     for c in candidates:
         p = os.path.join(nc_folder, c)
         if os.path.exists(p):
@@ -73,7 +70,6 @@ def find_nc_file(nc_folder: str, var_prefix: str, h: int, suffix: str) -> str:
     return ""
 
 def get_main_data_var(ds: xr.Dataset) -> str:
-    """Identifica a variável principal do Dataset ignorando metadados e coordenadas auxiliares."""
     ignore = {"spatial_ref", "crs", "lat_bnds", "lon_bnds", "time_bnds", "height", "grid_mapping"}
     candidates = [v for v in ds.data_vars if v not in ignore and not v.endswith("_bnds")]
     if not candidates:
@@ -81,10 +77,9 @@ def get_main_data_var(ds: xr.Dataset) -> str:
     return max(candidates, key=lambda v: ds[v].size)
 
 # ==============================================================================
-# HILBERT CURVE & ORDENAÇÃO ESPACIAL
+# HILBERT CURVE
 # ==============================================================================
 def hilbert_index_2d(x: int, y: int, order: int = 16) -> int:
-    """Calcula o índice na curva de Hilbert 2D para coordenadas inteiras discretizadas."""
     d = 0
     s = 1 << (order - 1)
     while s > 0:
@@ -100,7 +95,6 @@ def hilbert_index_2d(x: int, y: int, order: int = 16) -> int:
     return d
 
 def compute_spatial_sorting_key(lats: np.ndarray, lons: np.ndarray, order: int = 16) -> np.ndarray:
-    """Mapeia lats e lons para a Curva de Hilbert 2D para manter proximidade espacial no Parquet."""
     min_lat, max_lat = -35.0, 10.0
     min_lon, max_lon = -55.0, -25.0
     
@@ -115,59 +109,155 @@ def compute_spatial_sorting_key(lats: np.ndarray, lons: np.ndarray, order: int =
     return keys
 
 # ==============================================================================
-# SPATIAL JOIN & CÁLCULO DE DISTÂNCIA À COSTA (DISTANCE_NM)
+# SPATIAL JOIN E FILTRAGEM OFFSHORE
 # ==============================================================================
-def load_and_join_spatial_metadata(lats: np.ndarray, lons: np.ndarray) -> pd.DataFrame:
-    """Realiza Spatial Join com ZEE/Batimetria e calcula a distância até a costa em milhas náuticas."""
+def load_and_filter_spatial_metadata(lats: np.ndarray, lons: np.ndarray, sample_nc: str) -> pd.DataFrame:
+    """Filtra os NaNs (onshore) prematuramente, reduzindo a carga, e faz o join."""
+    with xr.open_dataset(sample_nc) as ds:
+        var_name = get_main_data_var(ds)
+        # O arquivo de amostra é uma matriz estática (avg), extraimos a máscara
+        valid_mask = ~np.isnan(ds[var_name].squeeze().values.flatten())
+    
     grid_df = pd.DataFrame({
         "pixel_id": np.arange(len(lats), dtype=np.int32),
         "lat": lats.astype(np.float32),
-        "lon": lons.astype(np.float32)
+        "lon": lons.astype(np.float32),
+        "valid": valid_mask
     })
     
+    # Descarta pixels onshore
+    grid_df = grid_df[grid_df["valid"]].drop(columns=["valid"]).reset_index(drop=True)
+    logging.info(f"Filtro Offshore: Manteve {len(grid_df)} pixels de um total de {len(lats)}.")
+
     geometry = [Point(xy) for xy in zip(grid_df["lon"], grid_df["lat"])]
     pixels_gdf = gpd.GeoDataFrame(grid_df, geometry=geometry, crs="EPSG:4326")
 
-    # Carregar limites territoriais
     bathy_gdf = gpd.read_file(BATHY_GEOJSON).to_crs("EPSG:4326")
     zee_gdf = gpd.read_file(ZEE_GEOJSON).to_crs("EPSG:4326")
 
-    # Spatial Join - Batimetria
     joined_bathy = gpd.sjoin(pixels_gdf, bathy_gdf[["geometry", "estado", "profundidade"]], how="left", predicate="intersects")
     joined_bathy = joined_bathy.drop_duplicates(subset=["pixel_id"]).drop(columns=["index_right"]).rename(columns={
         "estado": "state_bathy",
         "profundidade": "bathy_zone"
     })
 
-    # Spatial Join - ZEE
     joined_zee = gpd.sjoin(joined_bathy, zee_gdf[["geometry", "estado"]], how="left", predicate="intersects")
     joined_zee = joined_zee.drop_duplicates(subset=["pixel_id"]).drop(columns=["index_right"]).rename(columns={
         "estado": "state_zee"
     })
 
-    # Consolidação de atributos
     joined_zee["state"] = joined_zee["state_zee"].fillna(joined_zee["state_bathy"]).fillna("")
     joined_zee["bathy_zone"] = joined_zee["bathy_zone"].fillna("out_of_range")
-
-    # NOTA: O cálculo de distance_nm foi adiado para uma feature futura do projeto.
-    # Definindo valor padrão 0.0 para economizar tempo de processamento no HPC.
     joined_zee["distance_nm"] = np.float32(0.0)
 
-    # Adicionar chave espacial de Hilbert
-    hilbert_keys = compute_spatial_sorting_key(lats, lons)
+    hilbert_keys = compute_spatial_sorting_key(joined_zee["lat"].values, joined_zee["lon"].values)
     joined_zee["hilbert_key"] = hilbert_keys
-
-    # Ordenar o dataframe espacial por proximidade geográfica (Hilbert)
     joined_zee = joined_zee.sort_values("hilbert_key").reset_index(drop=True)
 
     return joined_zee[["pixel_id", "lat", "lon", "state", "bathy_zone", "distance_nm", "hilbert_key"]]
 
 # ==============================================================================
-# CONSTRUÇÃO DO GEOPARQUET POR PARTIÇÃO
+# WEIBULL PARALELO
+# ==============================================================================
+def fit_weibull_pixel(ws_series):
+    data = ws_series[~np.isnan(ws_series) & (ws_series > 0)]
+    if len(data) < 10:
+        return 0.0, 0.0
+    try:
+        # floc=0 forca a distribuicao 2-par, retorna (shape, loc, scale)
+        shape, loc, scale = weibull_min.fit(data, floc=0)
+        return float(scale), float(shape)
+    except:
+        return 0.0, 0.0
+
+# ==============================================================================
+# WEIBULL & ROSA DOS VENTOS VETORIZADA A PARTIR DA SÉRIE TEMPORAL
+# ==============================================================================
+def process_wind_rose_and_weibull(df: pd.DataFrame, nc_folder: str, target_vars: list):
+    time_series_file = os.path.join(nc_folder, "time_series_uvws.nc")
+    
+    if not os.path.exists(time_series_file):
+        logging.warning(f"Série temporal não encontrada, ignorando Rosa/Weibull: {time_series_file}")
+        return df
+
+    pixel_ids = df["pixel_id"].values
+    n_pixels = len(pixel_ids)
+
+    with xr.open_dataset(time_series_file) as ds:
+        for h in HEIGHTS:
+            u_var = f"U_{h}_OUT" if f"U_{h}_OUT" in ds.data_vars else f"U{h}" if f"U{h}" in ds.data_vars else None
+            v_var = f"V_{h}_OUT" if f"V_{h}_OUT" in ds.data_vars else f"V{h}" if f"V{h}" in ds.data_vars else None
+            ws_var = f"WS_{h}_OUT" if f"WS_{h}_OUT" in ds.data_vars else f"WS{h}" if f"WS{h}" in ds.data_vars else None
+
+            if not (u_var and v_var and ws_var):
+                logging.warning(f"Variáveis U, V ou WS ausentes para {h}m em {time_series_file}")
+                continue
+                
+            logging.info(f"Processando Rosa e Weibull para {h}m...")
+
+            # Ler apenas os pixels offshore desejados, achatando a dimensão espacial
+            u_da = ds[u_var].squeeze()
+            v_da = ds[v_var].squeeze()
+            ws_da = ds[ws_var].squeeze()
+
+            # Achatar o mapa e extrair índices: resultando em shape (time, n_pixels)
+            # Como a grade pode ser 2D (time, lat, lon) ou 1D (time, cell), reshapar p/ 2D (time, -1)
+            u_vals = u_da.values.reshape(u_da.shape[0], -1)[:, pixel_ids]
+            v_vals = v_da.values.reshape(v_da.shape[0], -1)[:, pixel_ids]
+            ws_vals = ws_da.values.reshape(ws_da.shape[0], -1)[:, pixel_ids]
+
+            # -----------------------------------------------------
+            # ROSA DOS VENTOS (16 SETORES)
+            # -----------------------------------------------------
+            if "wind_rose" in target_vars:
+                # Modulação Meteorológica (graus a partir do Norte, horário)
+                theta = np.mod(270.0 - (180.0 / np.pi) * np.arctan2(v_vals, u_vals), 360.0)
+                sectors = np.floor((theta + 11.25) / 22.5).astype(int) % 16
+
+                valid_ws = ~np.isnan(ws_vals)
+                total_valid_per_pixel = valid_ws.sum(axis=0)
+                
+                sector_metrics = {s_name: {"freq": np.zeros(n_pixels, dtype=np.float32), 
+                                           "mean_ws": np.zeros(n_pixels, dtype=np.float32)} 
+                                  for s_name in CARDINAL_DIRECTIONS_16}
+
+                for s_idx, s_name in enumerate(CARDINAL_DIRECTIONS_16):
+                    mask_s = (sectors == s_idx) & valid_ws
+                    count_s = mask_s.sum(axis=0)
+                    
+                    freq_s = np.where(total_valid_per_pixel > 0, count_s / total_valid_per_pixel, 0.0)
+                    sum_ws_s = np.where(mask_s, ws_vals, 0.0).sum(axis=0)
+                    mean_ws_s = np.where(count_s > 0, sum_ws_s / np.maximum(count_s, 1), 0.0)
+                    
+                    sector_metrics[s_name]["freq"] = freq_s
+                    sector_metrics[s_name]["mean_ws"] = mean_ws_s
+
+                wind_rose_list = [
+                    {s_name: {"freq": float(sector_metrics[s_name]["freq"][p]), 
+                              "mean_ws": float(sector_metrics[s_name]["mean_ws"][p])} 
+                     for s_name in CARDINAL_DIRECTIONS_16}
+                    for p in range(n_pixels)
+                ]
+                df[f"wind_rose_{h}m"] = wind_rose_list
+
+            # -----------------------------------------------------
+            # WEIBULL PARAL সাংস্কৃতিক
+            # -----------------------------------------------------
+            if "weibull" in target_vars:
+                ws_list = [ws_vals[:, p] for p in range(n_pixels)]
+                with multiprocessing.Pool(processes=min(16, multiprocessing.cpu_count())) as pool:
+                    results = pool.map(fit_weibull_pixel, ws_list)
+                
+                df[f"weibull_{h}m"] = [{"c": c, "k": k} for c, k in results]
+
+    return df
+
+# ==============================================================================
+# CONSTRUÇÃO DA PARTIÇÃO GEOPARQUET
 # ==============================================================================
 def build_partition(model: str, exp: str, season: str, spatial_df: pd.DataFrame, target_vars: list, dry_run: bool = False):
     season_lc = season.lower()
-    nc_folder = os.path.join(BASE_NC_DIR, model, exp, "anual" if season == "ANNUAL" else "sazonal")
+    nc_folder = os.path.join(BASE_NC_DIR, model, exp, "anual" if season == "ANNUAL" else f"sazonal/{season_lc}")
     out_dir = os.path.join(OUT_GEOPARQUET_DIR, model, exp)
     out_path = os.path.join(out_dir, f"season={season_lc}.parquet")
 
@@ -178,54 +268,49 @@ def build_partition(model: str, exp: str, season: str, spatial_df: pd.DataFrame,
     df = spatial_df.copy()
     df["season"] = season
 
-    # Mapeamento de estatísticas (Anual inclui percentis p5, p50, p95, p99)
-    if season == "ANNUAL":
-        stats_map = [
-            ("mean", "avg"),
-            ("std", "std"),
-            ("min", "min"),
-            ("max", "max"),
-            ("p5", "p5"),
-            ("p50", "p50"),
-            ("p95", "p95"),
-            ("p99", "p99")
-        ]
-    else:
-        stats_map = [
-            ("mean", "avg"),
-            ("std", "std")
-        ]
+    # Mapeamento estendido com percentis
+    stats_map = [
+        ("mean", "avg"),
+        ("std", "std"),
+        ("min", "min"),
+        ("max", "max"),
+        ("p5", "p5"),
+        ("p50", "p50"),
+        ("p95", "p95"),
+        ("p99", "p99")
+    ]
 
-    # 1. Leitura de Estatísticas de Vento (WS e WPD)
-    for h in HEIGHTS:
-        for var_key, nc_prefix in [("ws", "WS"), ("wpd", "WPD")]:
+    # 1. CDO STATS (Todas as variáveis)
+    all_var_prefixes = [
+        ("ws", "WS", HEIGHTS),
+        ("wpd", "WPD", HEIGHTS),
+        ("p", "P", HEIGHTS),
+        ("t", "T", [2, 50, 100, 150, 200]),
+        ("rho", "RHO", HEIGHTS),
+        ("theta", "THETA", HEIGHTS),
+        ("g_10_200", "G_10_200", [None]),
+        ("n2_10_200", "N2_10_200", [None]),
+        ("alpha_10_100", "ALPHA_10_100", [None]),
+        ("alpha_10_200", "ALPHA_10_200", [None]),
+    ]
+    
+    for key_name, nc_prefix, h_list in all_var_prefixes:
+        for h in h_list:
             for stat_name, suffix in stats_map:
-                col_name = f"{var_key}{h}_{season}_{stat_name}"
+                col_name = f"{key_name}{h}_{season}_{stat_name}" if h is not None else f"{key_name}_{season}_{stat_name}"
                 nc_file = find_nc_file(nc_folder, nc_prefix, h, suffix)
                 
                 if nc_file:
                     with xr.open_dataset(nc_file) as ds:
-                        data_var = get_main_data_var(ds)  # Correção aqui
+                        data_var = get_main_data_var(ds)
                         da = ds[data_var]
                         
-                        if season != "ANNUAL":
-                            season_idx = ["DJF", "MAM", "JJA", "SON"].index(season)
-                            time_dim = next((d for d in ["Time", "time"] if d in da.dims), None)
-                            if time_dim:
-                                da = da.isel({time_dim: season_idx})
-                        
                         values = da.squeeze().values.flatten()
-                        # Garantir alinhamento com os pixels ordenados por Hilbert
-                        if "pixel_id" in df.columns:
-                            # Reordenar valores conforme o índice dos pixels
-                            df[col_name] = values[df["pixel_id"].values].astype(np.float32)
-                        else:
-                            df[col_name] = values.astype(np.float32)
+                        df[col_name] = values[df["pixel_id"].values].astype(np.float32)
                 else:
-                    logging.warning(f"Arquivo NC ausente: {nc_prefix}_{h}_{suffix}.nc em {nc_folder}")
+                    logging.debug(f"Arquivo NC ausente: {nc_prefix}_{h}_{suffix}.nc em {nc_folder}")
 
-    # 2. Processamento das Estruturas Especiais (Perfis, Weibull e Rosa dos Ventos para TODAS as estações)
-    # Perfis Verticais
+    # 2. PERFIS VERTICAIS
     if "ws" in target_vars and all(f"ws{h}_{season}_mean" in df.columns for h in HEIGHTS):
         ws_cols = [f"ws{h}_{season}_mean" for h in HEIGHTS]
         df["profile_heights"] = [HEIGHTS] * len(df)
@@ -235,102 +320,21 @@ def build_partition(model: str, exp: str, season: str, spatial_df: pd.DataFrame,
         wpd_cols = [f"wpd{h}_{season}_mean" for h in HEIGHTS]
         df["wpd_profile_means"] = df[wpd_cols].values.tolist()
 
-    # Weibull (Ajuste exato para {"c": float, "k": float})
-    if "weibull" in target_vars:
-        for h in HEIGHTS:
-            wb_a_file = os.path.join(nc_folder, f"WEIBULL_A_{h}_avg.nc")
-            wb_k_file = os.path.join(nc_folder, f"WEIBULL_K_{h}_avg.nc")
-            
-            if os.path.exists(wb_a_file) and os.path.exists(wb_k_file):
-                with xr.open_dataset(wb_a_file) as ds_a, xr.open_dataset(wb_k_file) as ds_k:
-                    a_var = get_main_data_var(ds_a)
-                    k_var = get_main_data_var(ds_k)
-                    da_a = ds_a[a_var]
-                    da_k = ds_k[k_var]
-
-                    if season != "ANNUAL":
-                        season_idx = ["DJF", "MAM", "JJA", "SON"].index(season)
-                        t_dim_a = next((d for d in ["Time", "time", "season"] if d in da_a.dims), None)
-                        if t_dim_a:
-                            da_a = da_a.isel({t_dim_a: season_idx})
-                        t_dim_k = next((d for d in ["Time", "time", "season"] if d in da_k.dims), None)
-                        if t_dim_k:
-                            da_k = da_k.isel({t_dim_k: season_idx})
-
-                    a_vals = da_a.squeeze().values.flatten()[df["pixel_id"].values]
-                    k_vals = da_k.squeeze().values.flatten()[df["pixel_id"].values]
-                    
-                    df[f"weibull_{h}m"] = [
-                        {"c": float(c), "k": float(k)} for c, k in zip(a_vals, k_vals)
-                    ]
-            else:
-                logging.info(f"Dados Weibull para {h}m ausentes em {nc_folder}.")
-
-    # Rosa dos Ventos (12 Setores)
-    if "wind_rose" in target_vars:
-        for h in HEIGHTS:
-            dir_freq_file = os.path.join(nc_folder, f"DIR_FREQ_{h}_avg.nc")
-            ws_dir_file = os.path.join(nc_folder, f"WS_DIR_{h}_avg.nc")
-            
-            if os.path.exists(dir_freq_file) and os.path.exists(ws_dir_file):
-                with xr.open_dataset(dir_freq_file) as ds_freq, xr.open_dataset(ws_dir_file) as ds_wsdir:
-                    freq_var = get_main_data_var(ds_freq)
-                    wsdir_var = get_main_data_var(ds_wsdir)
-                    
-                    da_freq = ds_freq[freq_var].squeeze()
-                    da_wsdir = ds_wsdir[wsdir_var].squeeze()
-
-                    if season != "ANNUAL":
-                        season_idx = ["DJF", "MAM", "JJA", "SON"].index(season)
-                        t_dim_f = next((d for d in ["Time", "time", "season"] if d in da_freq.dims), None)
-                        if t_dim_f:
-                            da_freq = da_freq.isel({t_dim_f: season_idx})
-                        t_dim_w = next((d for d in ["Time", "time", "season"] if d in da_wsdir.dims), None)
-                        if t_dim_w:
-                            da_wsdir = da_wsdir.isel({t_dim_w: season_idx})
-                    
-                    # Garantir que a dimensão de direção (tamanho 12) seja a primeira (eixo 0)
-                    dir_dim_freq = next((d for d in da_freq.dims if da_freq.sizes[d] == 12), None)
-                    if dir_dim_freq:
-                        da_freq = da_freq.transpose(dir_dim_freq, ...)
-                        
-                    dir_dim_wsdir = next((d for d in da_wsdir.dims if da_wsdir.sizes[d] == 12), None)
-                    if dir_dim_wsdir:
-                        da_wsdir = da_wsdir.transpose(dir_dim_wsdir, ...)
-
-                    freq_vals = da_freq.values.reshape(12, -1)
-                    wsdir_vals = da_wsdir.values.reshape(12, -1)
-                    
-                    n_pixels = len(df)
-                    pixel_ids = df["pixel_id"].values
-                    wind_rose_list = [
-                        {
-                            CARDINAL_DIRECTIONS_12[s]: {
-                                "freq": float(freq_vals[s, pixel_ids[p]]),
-                                "mean_ws": float(wsdir_vals[s, pixel_ids[p]])
-                            }
-                            for s in range(12)
-                        }
-                        for p in range(n_pixels)
-                    ]
-                    df[f"wind_rose_{h}m"] = wind_rose_list
-            else:
-                logging.info(f"Dados Rosa dos Ventos para {h}m ausentes em {nc_folder}.")
+    # 3. WEIBULL E ROSA DOS VENTOS VETORIZADA
+    if "weibull" in target_vars or "wind_rose" in target_vars:
+        df = process_wind_rose_and_weibull(df, nc_folder, target_vars)
 
     os.makedirs(out_dir, exist_ok=True)
-
-    # Remover colunas temporárias de ordenação
     if "hilbert_key" in df.columns:
         df = df.drop(columns=["hilbert_key"])
 
-    # Remover os pixels onshore (onde o vento médio a 100m é NaN)
+    # Tratamento final: certificar de remover nulos
     ref_col = f"ws100_{season}_mean"
     if ref_col in df.columns:
         df = df.dropna(subset=[ref_col]).reset_index(drop=True)
 
     table = pa.Table.from_pandas(df)
     
-    # Gravando Parquet Otimizado com ZSTD e Row Groups de 10.000 linhas
     pq.write_table(
         table,
         out_path,
@@ -342,67 +346,51 @@ def build_partition(model: str, exp: str, season: str, spatial_df: pd.DataFrame,
     )
     logging.info(f"Salvo: {out_path} ({os.path.getsize(out_path) / (1024*1024):.2f} MB)")
 
-    # 3. Exportar versão levinha Summary (Core) para Carga Inicial Rápida do Mapa
+    # 4. EXPORTAR SUMMARY CORE
     if season == "ANNUAL":
         summary_cols = ["pixel_id", "lat", "lon", "state", "bathy_zone", "distance_nm", "ws100_ANNUAL_mean", "wpd100_ANNUAL_mean"]
         available_summary_cols = [c for c in summary_cols if c in df.columns]
         summary_df = df[available_summary_cols]
-        summary_table = pa.Table.from_pandas(summary_df)
-        summary_path = os.path.join(out_dir, "summary_annual.parquet")
         pq.write_table(
-            summary_table,
-            summary_path,
+            pa.Table.from_pandas(summary_df),
+            os.path.join(out_dir, "summary_annual.parquet"),
             compression="ZSTD",
             compression_level=6,
             use_dictionary=["state", "bathy_zone"],
             row_group_size=10_000,
             write_statistics=True
         )
-        logging.info(f"Salvo (Summary Core): {summary_path} ({os.path.getsize(summary_path) / (1024*1024):.2f} MB)")
+        logging.info(f"Salvo (Summary Core): {os.path.join(out_dir, 'summary_annual.parquet')}")
 
 # ==============================================================================
-# MAIN & EXECUÇÃO
+# MAIN
 # ==============================================================================
 def main():
-    parser = argparse.ArgumentParser(description="Gerador GeoParquet v2 Otimizado - CNPq WebGIS Offshore")
+    parser = argparse.ArgumentParser(description="Gerador GeoParquet v3 Otimizado")
     parser.add_argument("-m", "--model", default="all", choices=["wrf", "mpas", "all"])
     parser.add_argument("-e", "--exp", default="all", choices=["era5", "hist", "ssp245", "ssp585", "all"])
-    parser.add_argument("-v", "--vars", default="all", help="Lista de variáveis separadas por vírgula (ws,wpd,weibull,wind_rose ou 'all')")
-    parser.add_argument("-d", "--dry-run", action="store_true", help="Simula a execução sem gravar arquivos")
-    parser.add_argument("--log-file", default="build_geoparquet_v2.log", help="Arquivo de destino dos logs")
+    parser.add_argument("-v", "--vars", default="all", help="ws,wpd,weibull,wind_rose ou 'all'")
+    parser.add_argument("-d", "--dry-run", action="store_true")
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler(args.log_file, mode="w"),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", stream=sys.stdout)
 
     models = ALL_MODELS if args.model == "all" else [args.model]
     exps = ALL_EXPS if args.exp == "all" else [args.exp]
     target_vars = ALL_VARS if args.vars == "all" else [v.strip().lower() for v in args.vars.split(",")]
 
-    logging.info("==========================================================")
-    logging.info("🚀 INICIANDO GERAÇÃO DE GEOPARQUET V2 OTIMIZADO")
-    logging.info(f"Modelos: {models} | Experimentos: {exps}")
-    logging.info(f"Variáveis alvo: {target_vars} | Dry Run: {args.dry_run}")
-    logging.info("==========================================================")
-
     spatial_cache = {}
 
-    for model in tqdm(models, desc="Modelos"):
-        for exp in tqdm(exps, desc=f"Experimentos [{model.upper()}]", leave=False):
-            
+    for model in models:
+        for exp in exps:
             if model not in spatial_cache and not args.dry_run:
-                sample_nc_list = glob.glob(f"{BASE_NC_DIR}/{model}/{exp}/anual/WS_10_avg.nc")
+                # Usa um arquivo avg de amostra para definir offshore/onshore
+                sample_nc_list = glob.glob(f"{BASE_NC_DIR}/{model}/{exp}/anual/WS_100_avg.nc")
                 if not sample_nc_list:
                     sample_nc_list = glob.glob(f"{BASE_NC_DIR}/{model}/{exp}/**/*.nc", recursive=True)
                 
                 if not sample_nc_list:
-                    logging.error(f"Grade de amostra não encontrada para {model}/{exp}")
+                    logging.error(f"Grade não encontrada para {model}/{exp}")
                     continue
                 
                 with xr.open_dataset(sample_nc_list[0]) as ds_grid:
@@ -411,15 +399,15 @@ def main():
                     lats = ds_grid[lat_key].values.flatten()
                     lons = ds_grid[lon_key].values.flatten()
                 
-                logging.info(f"Calculando Spatial Join & Hilbert Keys para {model.upper()}...")
-                spatial_cache[model] = load_and_join_spatial_metadata(lats, lons)
+                logging.info(f"Calculando Spatial Join & Filtro Offshore para {model.upper()}...")
+                spatial_cache[model] = load_and_filter_spatial_metadata(lats, lons, sample_nc_list[0])
 
             spatial_df = spatial_cache.get(model, pd.DataFrame())
-
-            for season in tqdm(SEASONS, desc=f"Estações [{exp.upper()}]", leave=False):
+            
+            for season in SEASONS:
                 build_partition(model, exp, season, spatial_df, target_vars, dry_run=args.dry_run)
 
-    logging.info("🎉 Processamento v2 concluído com sucesso!")
+    logging.info("🎉 Processamento v3 concluído!")
 
 if __name__ == "__main__":
     main()
