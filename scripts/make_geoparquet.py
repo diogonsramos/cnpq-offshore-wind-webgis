@@ -224,79 +224,98 @@ def build_partition(model: str, exp: str, season: str, spatial_df: pd.DataFrame,
                 else:
                     logging.warning(f"Arquivo NC ausente: {nc_prefix}_{h}_{suffix}.nc em {nc_folder}")
 
-    # 2. Processamento das Estruturas Especiais (Partição ANNUAL)
-    if season == "ANNUAL":
-        # Perfis Verticais
-        if "ws" in target_vars and all(f"ws{h}_ANNUAL_mean" in df.columns for h in HEIGHTS):
-            ws_cols = [f"ws{h}_ANNUAL_mean" for h in HEIGHTS]
-            df["profile_heights"] = [HEIGHTS] * len(df)
-            df["profile_means"] = df[ws_cols].values.tolist()
+    # 2. Processamento das Estruturas Especiais (Perfis, Weibull e Rosa dos Ventos para TODAS as estações)
+    # Perfis Verticais
+    if "ws" in target_vars and all(f"ws{h}_{season}_mean" in df.columns for h in HEIGHTS):
+        ws_cols = [f"ws{h}_{season}_mean" for h in HEIGHTS]
+        df["profile_heights"] = [HEIGHTS] * len(df)
+        df["profile_means"] = df[ws_cols].values.tolist()
 
-        if "wpd" in target_vars and all(f"wpd{h}_ANNUAL_mean" in df.columns for h in HEIGHTS):
-            wpd_cols = [f"wpd{h}_ANNUAL_mean" for h in HEIGHTS]
-            df["wpd_profile_means"] = df[wpd_cols].values.tolist()
+    if "wpd" in target_vars and all(f"wpd{h}_{season}_mean" in df.columns for h in HEIGHTS):
+        wpd_cols = [f"wpd{h}_{season}_mean" for h in HEIGHTS]
+        df["wpd_profile_means"] = df[wpd_cols].values.tolist()
 
-        # Weibull (Ajuste exato para {"c": float, "k": float})
-        if "weibull" in target_vars:
-            for h in HEIGHTS:
-                wb_a_file = os.path.join(nc_folder, f"WEIBULL_A_{h}_avg.nc")
-                wb_k_file = os.path.join(nc_folder, f"WEIBULL_K_{h}_avg.nc")
-                
-                if os.path.exists(wb_a_file) and os.path.exists(wb_k_file):
-                    with xr.open_dataset(wb_a_file) as ds_a, xr.open_dataset(wb_k_file) as ds_k:
-                        a_var = get_main_data_var(ds_a)  # Correção aqui
-                        k_var = get_main_data_var(ds_k)  # Correção aqui
-                        a_vals = ds_a[a_var].squeeze().values.flatten()[df["pixel_id"].values]
-                        k_vals = ds_k[k_var].squeeze().values.flatten()[df["pixel_id"].values]
-                        
-                        # Chave "c" conforme esperado pelo pixelQuery.ts!
-                        df[f"weibull_{h}m"] = [
-                            {"c": float(c), "k": float(k)} for c, k in zip(a_vals, k_vals)
-                        ]
-                else:
-                    logging.info(f"Dados Weibull para {h}m ausentes em {nc_folder}.")
+    # Weibull (Ajuste exato para {"c": float, "k": float})
+    if "weibull" in target_vars:
+        for h in HEIGHTS:
+            wb_a_file = os.path.join(nc_folder, f"WEIBULL_A_{h}_avg.nc")
+            wb_k_file = os.path.join(nc_folder, f"WEIBULL_K_{h}_avg.nc")
+            
+            if os.path.exists(wb_a_file) and os.path.exists(wb_k_file):
+                with xr.open_dataset(wb_a_file) as ds_a, xr.open_dataset(wb_k_file) as ds_k:
+                    a_var = get_main_data_var(ds_a)
+                    k_var = get_main_data_var(ds_k)
+                    da_a = ds_a[a_var]
+                    da_k = ds_k[k_var]
 
-        # Rosa dos Ventos (12 Setores)
-        if "wind_rose" in target_vars:
-            for h in HEIGHTS:
-                dir_freq_file = os.path.join(nc_folder, f"DIR_FREQ_{h}_avg.nc")
-                ws_dir_file = os.path.join(nc_folder, f"WS_DIR_{h}_avg.nc")
-                
-                if os.path.exists(dir_freq_file) and os.path.exists(ws_dir_file):
-                    with xr.open_dataset(dir_freq_file) as ds_freq, xr.open_dataset(ws_dir_file) as ds_wsdir:
-                        freq_var = get_main_data_var(ds_freq)    # Correção aqui
-                        wsdir_var = get_main_data_var(ds_wsdir)  # Correção aqui
-                        
-                        da_freq = ds_freq[freq_var].squeeze()
-                        da_wsdir = ds_wsdir[wsdir_var].squeeze()
-                        
-                        # Garantir que a dimensão de direção (tamanho 12) seja a primeira (eixo 0)
-                        dir_dim_freq = next((d for d in da_freq.dims if da_freq.sizes[d] == 12), None)
-                        if dir_dim_freq:
-                            da_freq = da_freq.transpose(dir_dim_freq, ...)
-                            
-                        dir_dim_wsdir = next((d for d in da_wsdir.dims if da_wsdir.sizes[d] == 12), None)
-                        if dir_dim_wsdir:
-                            da_wsdir = da_wsdir.transpose(dir_dim_wsdir, ...)
+                    if season != "ANNUAL":
+                        season_idx = ["DJF", "MAM", "JJA", "SON"].index(season)
+                        t_dim_a = next((d for d in ["Time", "time", "season"] if d in da_a.dims), None)
+                        if t_dim_a:
+                            da_a = da_a.isel({t_dim_a: season_idx})
+                        t_dim_k = next((d for d in ["Time", "time", "season"] if d in da_k.dims), None)
+                        if t_dim_k:
+                            da_k = da_k.isel({t_dim_k: season_idx})
 
-                        freq_vals = da_freq.values.reshape(12, -1)
-                        wsdir_vals = da_wsdir.values.reshape(12, -1)
+                    a_vals = da_a.squeeze().values.flatten()[df["pixel_id"].values]
+                    k_vals = da_k.squeeze().values.flatten()[df["pixel_id"].values]
+                    
+                    df[f"weibull_{h}m"] = [
+                        {"c": float(c), "k": float(k)} for c, k in zip(a_vals, k_vals)
+                    ]
+            else:
+                logging.info(f"Dados Weibull para {h}m ausentes em {nc_folder}.")
+
+    # Rosa dos Ventos (12 Setores)
+    if "wind_rose" in target_vars:
+        for h in HEIGHTS:
+            dir_freq_file = os.path.join(nc_folder, f"DIR_FREQ_{h}_avg.nc")
+            ws_dir_file = os.path.join(nc_folder, f"WS_DIR_{h}_avg.nc")
+            
+            if os.path.exists(dir_freq_file) and os.path.exists(ws_dir_file):
+                with xr.open_dataset(dir_freq_file) as ds_freq, xr.open_dataset(ws_dir_file) as ds_wsdir:
+                    freq_var = get_main_data_var(ds_freq)
+                    wsdir_var = get_main_data_var(ds_wsdir)
+                    
+                    da_freq = ds_freq[freq_var].squeeze()
+                    da_wsdir = ds_wsdir[wsdir_var].squeeze()
+
+                    if season != "ANNUAL":
+                        season_idx = ["DJF", "MAM", "JJA", "SON"].index(season)
+                        t_dim_f = next((d for d in ["Time", "time", "season"] if d in da_freq.dims), None)
+                        if t_dim_f:
+                            da_freq = da_freq.isel({t_dim_f: season_idx})
+                        t_dim_w = next((d for d in ["Time", "time", "season"] if d in da_wsdir.dims), None)
+                        if t_dim_w:
+                            da_wsdir = da_wsdir.isel({t_dim_w: season_idx})
+                    
+                    # Garantir que a dimensão de direção (tamanho 12) seja a primeira (eixo 0)
+                    dir_dim_freq = next((d for d in da_freq.dims if da_freq.sizes[d] == 12), None)
+                    if dir_dim_freq:
+                        da_freq = da_freq.transpose(dir_dim_freq, ...)
                         
-                        n_pixels = len(df)
-                        pixel_ids = df["pixel_id"].values
-                        wind_rose_list = [
-                            {
-                                CARDINAL_DIRECTIONS_12[s]: {
-                                    "freq": float(freq_vals[s, pixel_ids[p]]),
-                                    "mean_ws": float(wsdir_vals[s, pixel_ids[p]])
-                                }
-                                for s in range(12)
+                    dir_dim_wsdir = next((d for d in da_wsdir.dims if da_wsdir.sizes[d] == 12), None)
+                    if dir_dim_wsdir:
+                        da_wsdir = da_wsdir.transpose(dir_dim_wsdir, ...)
+
+                    freq_vals = da_freq.values.reshape(12, -1)
+                    wsdir_vals = da_wsdir.values.reshape(12, -1)
+                    
+                    n_pixels = len(df)
+                    pixel_ids = df["pixel_id"].values
+                    wind_rose_list = [
+                        {
+                            CARDINAL_DIRECTIONS_12[s]: {
+                                "freq": float(freq_vals[s, pixel_ids[p]]),
+                                "mean_ws": float(wsdir_vals[s, pixel_ids[p]])
                             }
-                            for p in range(n_pixels)
-                        ]
-                        df[f"wind_rose_{h}m"] = wind_rose_list
-                else:
-                    logging.info(f"Dados Rosa dos Ventos para {h}m ausentes em {nc_folder}.")
+                            for s in range(12)
+                        }
+                        for p in range(n_pixels)
+                    ]
+                    df[f"wind_rose_{h}m"] = wind_rose_list
+            else:
+                logging.info(f"Dados Rosa dos Ventos para {h}m ausentes em {nc_folder}.")
 
     os.makedirs(out_dir, exist_ok=True)
 

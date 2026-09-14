@@ -165,12 +165,11 @@ def check_file(filepath: str, season: str, verbose: bool = False):
         if not (2.0 <= ws100 <= 25.0):
             issues.append(f"ws100 fora de faixa ({ws100:.2f} m/s)")
 
-        # Weibull e Rosa dos Ventos são gerados na partição ANNUAL
-        if season.lower() == "annual":
-            if not (1.0 <= c_val <= 30.0) or not (1.0 <= k_val <= 6.0):
-                issues.append(f"Weibull atípico (c={c_val:.2f}, k={k_val:.2f})")
-            if total_freq > 0 and not (95.0 <= total_freq <= 105.0):
-                issues.append(f"Soma freq rosa != 100% (soma={total_freq:.1f}%)")
+        # Checagens de Weibull e Rosa dos Ventos para todas as estações
+        if not (1.0 <= c_val <= 30.0) or not (1.0 <= k_val <= 6.0):
+            issues.append(f"Weibull atípico (c={c_val:.2f}, k={k_val:.2f})")
+        if total_freq > 0 and not (95.0 <= total_freq <= 105.0):
+            issues.append(f"Soma freq rosa != 100% (soma={total_freq:.1f}%)")
 
         status_flag = "✓" if not issues else "⚠ " + "; ".join(issues)
         
