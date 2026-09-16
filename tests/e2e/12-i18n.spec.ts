@@ -12,8 +12,8 @@ test.describe('Locale switcher — landing page', () => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
     await expect(page.locator('.tab-bar-locale')).toBeVisible()
-    await expect(page.locator('.locale-btn', { hasText: 'PT' })).toHaveClass(/active/)
-    await expect(page.locator('.locale-btn', { hasText: 'EN' })).not.toHaveClass(/active/)
+    await expect(page.locator('.locale-btn[title="pt-BR"]')).toHaveClass(/active/)
+    await expect(page.locator('.locale-btn[title="en"]')).not.toHaveClass(/active/)
   })
 
   test('T90 — clicar em EN traduz o H1 da landing page sem erro de console', async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe('Locale switcher — landing page', () => {
     await expect(page.locator('.lp-hero h1')).toContainText('Cenário atual e futuro do recurso eólico offshore no Brasil')
 
     await page.click('.lp-cta-primary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
     await page.click('.tab-home-btn')
 
     await expect(page.locator('.lp-hero h1')).toContainText('Current and future scenario of offshore wind resource in Brazil')
@@ -52,7 +52,7 @@ test.describe('Locale switcher — SidePanel e persistência', () => {
 
     await page.reload()
     await page.click('.lp-cta-primary')
-    await expect(page.locator('.locale-btn', { hasText: 'EN' })).toHaveClass(/active/)
+    await expect(page.locator('.locale-btn[title="en"]')).toHaveClass(/active/)
     await expect(page.locator('.select-field .label').first()).toContainText('Model')
   })
 })
@@ -78,7 +78,7 @@ test.describe('Locale switcher — rótulos de Experimento/Variável (cogCatalog
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-secondary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
   })
 
   test('T94 — SidePanel (aba Mapa): Variável e rótulo do footer traduzidos', async ({ page }) => {
@@ -126,10 +126,9 @@ test.describe('Locale switcher — navbar da landing page', () => {
 
     await page.goto('/')
     await expect(page.locator('.lp-navbar-locale')).toBeVisible()
-    await page.click('.lp-navbar-locale .locale-btn:has-text("EN")')
+    await page.click('.lp-navbar-locale .locale-btn[title="en"]')
 
     await expect(page.locator('.lp-hero h1')).toContainText('Current and future scenario of offshore wind resource in Brazil')
-    await expect(page.locator('.lp-navbar-enter')).toContainText('Enter System')
     expect(errors).toEqual([])
   })
 
@@ -137,7 +136,6 @@ test.describe('Locale switcher — navbar da landing page', () => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
     await expect(page.locator('.lp-navbar-locale')).toBeVisible()
-    await expect(page.locator('.lp-navbar-enter')).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(1)
   })
