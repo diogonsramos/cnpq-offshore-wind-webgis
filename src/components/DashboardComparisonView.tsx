@@ -254,42 +254,6 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset, pinn
         <div className="dv-main">
           <Suspense fallback={<DashboardSkeleton />}>
             <div className="dv-chart-grid">
-              {readyEntries.every(e => e.pair.dataset === 'era5' || e.pair.dataset === 'hist') && (
-                <div className="chart-card" data-testid="chart-seasonal">
-                  <Plot
-                    data={readyEntries.map(e => ({
-                      x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
-                      y: SEASON_ORDER.map(s => seasonStat(e.data, variable, height, s, 'mean')),
-                      type: 'bar',
-                      name: e.label,
-                      marker: { color: e.style.color, pattern: e.style.dash === 'dash' ? { shape: '/' } : undefined },
-                      hovertemplate: '%{y:.2f}<extra></extra>',
-                    }))}
-                    layout={{
-                      title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(variable, t).label, height: `${height}m` }) },
-                      xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
-                      yaxis: {
-                        title: { text: `${varLabel(variable, t).label} (${varUnit})`, standoff: 10 },
-                        range: variable === 'ws' ? [0, 25] : [0, 1500],
-                        zeroline: false,
-                        hoverformat: '.2f',
-                      },
-                      height: 260,
-                      margin: { t: 40, b: 40, l: 55, r: 20 },
-                      paper_bgcolor: 'transparent',
-                      plot_bgcolor: 'transparent',
-                      font: CHART_FONT,
-                      showlegend: false,
-                      hovermode: 'x unified',
-                      hoverlabel: HOVER_LABEL_STYLE,
-                    }}
-                    config={PLOT_CONFIG}
-                    style={{ width: '100%' }}
-                    useResizeHandler
-                  />
-                </div>
-              )}
-
               <div className="chart-card" data-testid="chart-weibull">
                 <Plot
                   data={readyEntries.map(e => {

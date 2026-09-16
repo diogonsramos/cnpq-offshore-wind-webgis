@@ -346,42 +346,6 @@ function DashboardViewInner({
             <div className="dv-main">
               <Suspense fallback={<DashboardSkeleton />}>
                 <div className="dv-chart-grid">
-                  {(dataset === 'era5' || dataset === 'hist') && (
-                    <ChartCard id="seasonal" testId="chart-seasonal" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                      <Plot
-                        data={seasonChartData.datasets.map((ds, i) => ({
-                          x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
-                          y: ds.data,
-                          type: 'bar',
-                          name: ds.label,
-                          marker: { color: COLORS[i % COLORS.length] },
-                          hovertemplate: '%{y:.2f}<extra></extra>',
-                        }))}
-                        layout={{
-                          title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(dashboardVar, t).label, height: `${dashboardHeight}m` }) },
-                          xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
-                          yaxis: {
-                            title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 },
-                            range: dashboardVar === 'ws' ? [0, 20] : [0, 1200],
-                            zeroline: false,
-                            hoverformat: '.2f',
-                          },
-                          height: plotHeight('seasonal'),
-                          margin: { t: 40, b: 40, l: 55, r: 20 },
-                          paper_bgcolor: 'transparent',
-                          plot_bgcolor: 'transparent',
-                          font: CHART_FONT,
-                          showlegend: false,
-                          hovermode: 'x unified',
-                          hoverlabel: HOVER_LABEL_STYLE,
-                        }}
-                        config={PLOT_CONFIG}
-                        style={{ width: '100%' }}
-                        useResizeHandler
-                      />
-                    </ChartCard>
-                  )}
-
                   <ChartCard id="weibull" testId="chart-weibull" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                     <Plot
                       data={pinnedLocations.map((loc, i) => {
