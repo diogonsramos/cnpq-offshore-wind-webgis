@@ -127,22 +127,30 @@
 }
 
 .lp-video-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(26, 26, 46, 0.4);
+  backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
+  font-size: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 16px;
+  transition: background 0.2s, transform 0.2s;
 }
 
 .lp-video-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.lp-video-volume-slider {
+  width: 80px;
+  cursor: pointer;
+  accent-color: #4a90d9;
 }
 
 .lp-video-modal-overlay {

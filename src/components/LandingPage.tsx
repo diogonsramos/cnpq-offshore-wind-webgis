@@ -126,7 +126,7 @@ const BIAS_CORRECTED_VARS = [
 ]
 
 export default function LandingPage({ onNavigate }: Props) {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [activeSection, setActiveSection] = useState('')
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null)
@@ -134,7 +134,14 @@ export default function LandingPage({ onNavigate }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoPlaying, setVideoPlaying] = useState(true)
   const [videoMuted, setVideoMuted] = useState(false)
+  const [videoVolume, setVideoVolume] = useState(0.2)
   const [showVideoModal, setShowVideoModal] = useState(false)
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = videoVolume
+    }
+  }, [videoVolume])
 
   useEffect(() => {
     const OFFSETS = NAV_SECTIONS.map(s => s.id)
@@ -236,6 +243,19 @@ export default function LandingPage({ onNavigate }: Props) {
           >
             {videoMuted ? '🔇' : '🔊'}
           </button>
+          <input 
+            type="range" 
+            className="lp-video-volume-slider" 
+            min="0" 
+            max="1" 
+            step="0.05" 
+            value={videoVolume} 
+            onChange={(e) => {
+              setVideoVolume(parseFloat(e.target.value))
+              if (videoMuted && parseFloat(e.target.value) > 0) setVideoMuted(false)
+            }}
+            title="Volume"
+          />
           <button 
             className="lp-video-btn" 
             onClick={() => setShowVideoModal(true)}
@@ -270,7 +290,7 @@ export default function LandingPage({ onNavigate }: Props) {
             <p>{t('landing.tech.p3')}</p>
             <p>{t('landing.tech.p4')}</p>
             <figure className="lp-tech-figure">
-              <img src={`${import.meta.env.BASE_URL}images/fluxograma.svg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
+              <img src={`${import.meta.env.BASE_URL}images/fluxograma_${locale === 'pt-BR' ? 'br' : locale === 'en' ? 'en' : 'sp'}.svg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
             </figure>
             <p>{t('landing.tech.p5')}</p>
           </div>
