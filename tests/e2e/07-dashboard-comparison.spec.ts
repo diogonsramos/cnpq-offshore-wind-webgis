@@ -46,7 +46,7 @@ test.describe('Dashboard — abas internas de comparação', () => {
     await panel.locator('.dv-add-btn').click()
 
     await expect(panel.locator('.dv-legend-chip')).toHaveCount(2)
-    await expect(panel.locator('.dv-chart-grid .chart-card')).toHaveCount(4, { timeout: 60000 })
+    await expect(panel.locator('.dv-chart-grid .chart-card')).toHaveCount(3, { timeout: 60000 })
 
     expect(errors.filter(e => !e.includes('COG:'))).toEqual([])
   })

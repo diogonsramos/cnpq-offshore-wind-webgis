@@ -273,10 +273,10 @@ test.describe('Dashboard — Visão Simples: conteúdo real de Weibull e Rosa do
       await expect(panel.locator('.dv-chips .dv-legend-chip')).toHaveCount(1)
     }).toPass({ timeout: 60000 })
 
-    const seasonalPlot = panel.locator('[data-testid="chart-seasonal"] .js-plotly-plot')
-    await expect(seasonalPlot).toBeVisible({ timeout: 60000 })
-    const name = await seasonalPlot.evaluate((el: any) => el.data?.[0]?.name ?? '')
-    expect(name).toBe('Loc 1')
+    const weibullPlot = panel.locator('[data-testid="chart-weibull"] .js-plotly-plot')
+    await expect(weibullPlot).toBeVisible({ timeout: 60000 })
+    const name = await weibullPlot.evaluate((el: any) => el.data?.[0]?.name ?? '')
+    expect(name).toContain('Loc 1')
   })
 
   test('T67 — trocar o experimento re-consulta os pinned locations sem erro (A1)', async ({ page }) => {

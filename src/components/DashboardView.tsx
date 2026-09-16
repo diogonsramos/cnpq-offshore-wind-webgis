@@ -449,7 +449,7 @@ function DashboardViewInner({
                     )}
                   </ChartCard>
 
-                  <ChartCard id="ws-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                  <ChartCard id="ws-profile" testId="chart-ws-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                     <Plot
                       data={wsProfileData.datasets.map((ds, i) => ({
                         x: ds.data,
