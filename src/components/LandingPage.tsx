@@ -9,43 +9,28 @@ interface Props {
   onNavigate: (tab: TabId) => void
 }
 
-type ScenarioKind = 'historical' | 'future'
+type ScenarioKind = 'era5' | 'cmip6'
 
 const SCENARIOS = [
   {
-    icon: '🔵', name: 'ERA5 Histórico', forcing: 'ERA5',
-    period: '2004–2014', kind: 'historical' as const,
-    desc: 'Downscaling WRF/MPAS forçado pela reanálise ERA5 — referência observacional para o período histórico',
+    icon: '🔵', name: 'ERA5', forcing: 'ERA5',
+    period: '2004–2024', kind: 'era5' as const,
+    desc: 'Downscaling WRF/MPAS forçado pela reanálise ERA5 — referência observacional',
   },
   {
-    icon: '📊', name: 'CMIP6 BC Histórico', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2004–2014', kind: 'historical' as const,
+    icon: '📊', name: 'CMIP6 Histórico', forcing: 'CMIP6 BC (18 modelos)',
+    period: '2004–2014', kind: 'cmip6' as const,
     desc: 'Downscaling WRF/MPAS forçado pelo CMIP6 bias corrected (Xu et al. 2021) — período histórico',
   },
   {
-    icon: '🔵', name: 'ERA5 Presente', forcing: 'ERA5',
-    period: '2015–2023', kind: 'future' as const,
-    desc: 'Downscaling WRF/MPAS forçado pela reanálise ERA5 — período presente de referência',
+    icon: '🟡', name: 'CMIP6 SSP2-4.5', forcing: 'CMIP6 BC (18 modelos)',
+    period: '2015–2050', kind: 'cmip6' as const,
+    desc: 'Downscaling WRF/MPAS — cenário de mitigação moderada (~4,5 W/m²)',
   },
   {
-    icon: '🟡', name: 'CMIP6 BC SSP2-4.5 Presente', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2015–2023', kind: 'future' as const,
-    desc: 'Downscaling WRF/MPAS — cenário de mitigação moderada (~4,5 W/m²) para o período presente',
-  },
-  {
-    icon: '🔴', name: 'CMIP6 BC SSP5-8.5 Presente', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2015–2023', kind: 'future' as const,
-    desc: 'Downscaling WRF/MPAS — cenário de emissões elevadas (~8,5 W/m²) para o período presente',
-  },
-  {
-    icon: '🟡', name: 'CMIP6 BC SSP2-4.5 Futuro', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2030–2050', kind: 'future' as const,
-    desc: 'Downscaling WRF/MPAS — cenário de mitigação moderada (~4,5 W/m²) para o período futuro',
-  },
-  {
-    icon: '🔴', name: 'CMIP6 BC SSP5-8.5 Futuro', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2030–2050', kind: 'future' as const,
-    desc: 'Downscaling WRF/MPAS — cenário de emissões elevadas (~8,5 W/m²) para o período futuro',
+    icon: '🔴', name: 'CMIP6 SSP5-8.5', forcing: 'CMIP6 BC (18 modelos)',
+    period: '2015–2050', kind: 'cmip6' as const,
+    desc: 'Downscaling WRF/MPAS — cenário de emissões elevadas (~8,5 W/m²)',
   },
 ]
 
@@ -78,6 +63,7 @@ const TEAM: {
 // Citações bibliográficas — reproduzidas verbatim (não traduzidas) nos dois
 // idiomas, como qualquer lista de referências científicas.
 const PUBLICATIONS = [
+  <>AYLAS, G. Y. R. et al. <strong>Simulation of an anomalously high wind gust event in São Paulo: A comparative analysis between WRF and MPAS-A models.</strong> Theor Appl Climatol 157, 644 (2026).</>,
   <>WEYLL, A. L. C. et al. <strong>Mapeamento eólico offshore histórico e futuro usando Quantile Delta Mapping com ajuste de erros do downscaling CMIP6-WRF.</strong> In: XI SAPCT e X ICPAD, 2026, Salvador.</>,
   <>RAMOS, D. N. S. et al. <strong>MPAS-A OR WRF: WHICH IS THE BETTER WIND DOWNSCALING TOOL FOR WIND POTENTIAL MAPPING IN BRAZIL?</strong> In: I SIEME, 2025, Maceió.</>,
   <>AYLAS, G. Y. R. et al. <strong>ANALYZING HEAT WAVE IMPACTS ON ELECTRICITY DEMAND AND THERMAL STRESS: A STUDY WITH MPAS-A MODEL IN BAURU-SP.</strong> In: I SIEME, 2025, Maceió.</>,
@@ -93,7 +79,6 @@ const PUBLICATIONS = [
 const NAV_SECTIONS: { id: string; labelKey: TranslationKey }[] = [
   { id: 'metodologia', labelKey: 'landing.nav.methodology' },
   { id: 'cenarios', labelKey: 'landing.nav.scenarios' },
-  { id: 'interface', labelKey: 'landing.nav.interface' },
   { id: 'equipe', labelKey: 'landing.nav.team' },
   { id: 'publicacoes', labelKey: 'landing.nav.publications' },
   { id: 'faq', labelKey: 'landing.nav.faq' },
@@ -138,7 +123,7 @@ export default function LandingPage({ onNavigate }: Props) {
     { value: 'WRF v4.6.0 · MPAS v8.1.0', label: 'Modelos atmosféricos' },
     { value: '9 km', label: 'Resolução horizontal' },
     { value: 'ERA5 · CMIP6', label: 'Base de dados' },
-    { value: 'Histórico · Presente · Futuro', label: 'Períodos' },
+    { value: '2004–2050', label: 'Períodos' },
     { value: '10 · 50 · 100 · 150 · 200 m', label: 'Alturas de saída' },
   ]
 
@@ -151,7 +136,7 @@ export default function LandingPage({ onNavigate }: Props) {
     ['Níveis verticais', '51 níveis (sigma/pressão híbrida)'],
     ['Alturas pós-processadas', '10, 50, 100, 150, 200 m (obtidas pela lei da potência com parâmetros atmosféricos do modelo)'],
     ['Variáveis (frontend)', 'Velocidade do vento — ws (m/s); Densidade de potência — wpd (W/m²)'],
-    ['Períodos', 'Histórico (2004–2014), Presente (2015–2023), Futuro (2030–2050)'],
+    ['Períodos', 'Observacional (2004–2024) e Projeções CMIP6 (2015–2050)'],
     ['Volume bruto de entrada', '~20 TB (ERA5: 15 TB; CMIP6 BC: 5,4 TB)'],
     ['Produtos processados', '700 COGs; GeoParquet por experimento e modelo'],
   ]
@@ -168,6 +153,7 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="lp-navbar-logos">
           <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-navbar-logo" />
           <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-navbar-logo" />
+          <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-navbar-logo" />
         </div>
         <div className="lp-navbar-anchors" role="navigation" aria-label={t('landing.nav.sections_aria')}>
           {NAV_SECTIONS.map(s => (
@@ -181,9 +167,6 @@ export default function LandingPage({ onNavigate }: Props) {
           ))}
         </div>
         <LocaleToggle className="lp-navbar-locale" />
-        <button className="lp-navbar-enter" onClick={() => onNavigate('map')}>
-          {t('landing.navbar_enter')}
-        </button>
       </nav>
 
       {/* Hero */}
@@ -257,8 +240,8 @@ export default function LandingPage({ onNavigate }: Props) {
           <p className="lp-section-label">{t('landing.scenarios.eyebrow')}</p>
           <h2 className="lp-section-title">{t('landing.scenarios.title')}</h2>
           <div className="lp-scenarios-legend">
-            <span className="lp-legend-item lp-legend-item--historical">ERA5 (observacional)</span>
-            <span className="lp-legend-item lp-legend-item--future">CMIP6 BC (climático)</span>
+            <span className="lp-legend-item lp-legend-item--era5">ERA5 (observacional)</span>
+            <span className="lp-legend-item lp-legend-item--cmip6">CMIP6 BC (climático)</span>
           </div>
           <div className="lp-scenarios-grid">
             {SCENARIOS.map(s => (
@@ -270,6 +253,26 @@ export default function LandingPage({ onNavigate }: Props) {
                 <p className="lp-scenario-desc">{s.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Dados */}
+      <section id="dados" className="lp-tech">
+        <div className="lp-tech-inner">
+          <p className="lp-section-label">{t('landing.data.eyebrow')}</p>
+          <h2 className="lp-section-title">{t('landing.data.title')}</h2>
+          <div className="lp-tech-text">
+            <p>{t('landing.data.desc_era5')}</p>
+            <p>{t('landing.data.desc_cmip6')}</p>
+            <div style={{ margin: '2rem 0', textAlign: 'center' }}>
+              <img src={`${import.meta.env.BASE_URL}images/docs/cmip6-table.png`} alt="CMIP6 Models Table" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+            </div>
+            <p>{t('landing.data.desc_bias_correction')}</p>
+            <div style={{ margin: '2rem 0', textAlign: 'center' }}>
+              <img src={`${import.meta.env.BASE_URL}images/docs/bias-correction.png`} alt="Bias Correction Equation" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+            </div>
+            <p className="lp-citation">{t('landing.data.citation')}</p>
           </div>
         </div>
       </section>
@@ -301,46 +304,7 @@ export default function LandingPage({ onNavigate }: Props) {
         </div>
       </section>
 
-      {/* Gallery */}
-      <section id="interface" className="lp-gallery">
-        <p className="lp-section-label">{t('landing.gallery.eyebrow')}</p>
-        <h2 className="lp-section-title">{t('landing.gallery.title')}</h2>
-        <div className="lp-gallery-grid">
-          <button
-            className="lp-gallery-card"
-            onClick={() => onNavigate('map')}
-            aria-label={t('landing.hero.cta_primary')}
-          >
-            <img src={`${import.meta.env.BASE_URL}images/screenshots/screenshot-01-webgis-map.webp`} alt="WebGIS Map screenshot" className="lp-gallery-screenshot" loading="lazy" />
-            <div className="lp-gallery-card-overlay">
-              <span className="lp-gallery-card-title">{t('landing.gallery.map_title')}</span>
-              <span className="lp-gallery-card-desc">{t('landing.gallery.map_desc')}</span>
-            </div>
-          </button>
-          <button
-            className="lp-gallery-card"
-            onClick={() => onNavigate('dashboard')}
-            aria-label={t('landing.gallery.dashboard_profile_aria')}
-          >
-            <img src={`${import.meta.env.BASE_URL}images/screenshots/screenshot-04-dashboard-bars.webp`} alt="Dashboard Bars screenshot" className="lp-gallery-screenshot" loading="lazy" />
-            <div className="lp-gallery-card-overlay">
-              <span className="lp-gallery-card-title">{t('landing.gallery.dashboard_profile_title')}</span>
-              <span className="lp-gallery-card-desc">{t('landing.gallery.dashboard_profile_desc')}</span>
-            </div>
-          </button>
-          <button
-            className="lp-gallery-card"
-            onClick={() => onNavigate('dashboard')}
-            aria-label={t('landing.gallery.dashboard_weibull_aria')}
-          >
-            <img src={`${import.meta.env.BASE_URL}images/screenshots/screenshot-05-dashboard-all.webp`} alt="Dashboard Charts screenshot" className="lp-gallery-screenshot" loading="lazy" />
-            <div className="lp-gallery-card-overlay">
-              <span className="lp-gallery-card-title">{t('landing.gallery.dashboard_weibull_title')}</span>
-              <span className="lp-gallery-card-desc">{t('landing.gallery.dashboard_weibull_desc')}</span>
-            </div>
-          </button>
-        </div>
-      </section>
+
 
       {/* Team */}
       <section id="equipe" className="lp-team">
@@ -422,6 +386,39 @@ export default function LandingPage({ onNavigate }: Props) {
               <div className="lp-pub-content">{pub}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Releases */}
+      <section id="releases" className="lp-tech">
+        <div className="lp-tech-inner">
+          <p className="lp-section-label">Histórico de Versões</p>
+          <h2 className="lp-section-title">Releases do Sistema</h2>
+          <div className="lp-tech-text">
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.4rem', color: '#4a90d9', marginBottom: '0.5rem' }}>v1.0 — Setembro de 2026 (Atual)</h3>
+              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+                <li>Interface otimizada e responsiva para WebGIS e Dashboard.</li>
+                <li>Inclusão de cenários observacionais ERA5 e climáticos CMIP6 (SSP2-4.5, SSP5-8.5).</li>
+                <li>Dados anuais otimizados via COG e GeoParquet.</li>
+                <li>Internacionalização completa: Português, Inglês e Espanhol.</li>
+              </ul>
+            </div>
+            <div style={{ marginBottom: '2rem', opacity: 0.7 }}>
+              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>v1.1 — Previsto para o final de 2026</h3>
+              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+                <li>Reativação das funcionalidades sazonais (DJF, MAM, JJA, SON) no WebGIS e Dashboard.</li>
+                <li>Suporte a download em lote de séries temporais.</li>
+              </ul>
+            </div>
+            <div style={{ opacity: 0.7 }}>
+              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>v1.2 — Previsto para 2027</h3>
+              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+                <li>Inclusão de mapas de calor direcionais interativos no WebGIS.</li>
+                <li>Novas variáveis: cisalhamento do vento e estimativa de produção energética (AEP).</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 

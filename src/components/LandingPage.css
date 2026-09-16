@@ -357,12 +357,28 @@
   gap: 6px;
 }
 
-.lp-legend-item--historical {
-  color: #1a7a4a;
+.lp-legend-item--era5 {
+  color: #4a90d9;
+}
+.lp-legend-item--era5::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4a90d9;
 }
 
-.lp-legend-item--future {
-  color: #b04020;
+.lp-legend-item--cmip6 {
+  color: #d94a4a;
+}
+.lp-legend-item--cmip6::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d94a4a;
 }
 
 .lp-scenarios-grid {
@@ -382,12 +398,12 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.lp-scenario-card--historical {
-  border-top-color: #2a9a60;
+.lp-scenario-card--era5 {
+  border-top: 4px solid #4a90d9;
 }
 
-.lp-scenario-card--future {
-  border-top-color: #d05030;
+.lp-scenario-card--cmip6 {
+  border-top: 4px solid #d94a4a;
 }
 
 .lp-scenario-card:hover {

@@ -7,40 +7,21 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Navegação: Landing → Sistema', () => {
-  test('T04 — CTA primário "Abrir WebGIS Map" abre o mapa', async ({ page }) => {
+  test('T04 — CTA primário "Abrir Mapa" abre o mapa', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
     await expect(page.locator('.tab-bar')).toBeVisible()
     await expect(page.locator('.landing')).not.toBeVisible()
   })
 
-  test('T05 — CTA secundário "Abrir Analytical Dashboard" abre o dashboard', async ({ page }) => {
+  test('T05 — CTA secundário "Abrir Dashboard" abre o dashboard', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-secondary')
     await expect(page.locator('.tab-bar')).toBeVisible()
     await expect(page.locator('.dashboard-view')).toBeVisible()
   })
 
-  test('T06 — Botão "Entrar no Sistema" na navbar abre o mapa', async ({ page }) => {
-    await page.goto('/')
-    await page.click('.lp-navbar-enter')
-    await expect(page.locator('.tab-bar')).toBeVisible()
-    await expect(page.locator('.landing')).not.toBeVisible()
-  })
 
-  test('T12 — gallery card "WebGIS Map" abre o mapa', async ({ page }) => {
-    await page.goto('/')
-    await page.click('.lp-gallery-card[aria-label="Abrir WebGIS Map"]')
-    await expect(page.locator('.tab-bar')).toBeVisible()
-    await expect(page.locator('.landing')).not.toBeVisible()
-  })
-
-  test('T13 — gallery card "Dashboard" abre o dashboard', async ({ page }) => {
-    await page.goto('/')
-    await page.locator('.lp-gallery-card[aria-label*="Dashboard"]').first().click()
-    await expect(page.locator('.tab-bar')).toBeVisible()
-    await expect(page.locator('.dashboard-view')).toBeVisible()
-  })
 })
 
 test.describe('Navegação: Sistema → Landing (botão ← Home)', () => {
