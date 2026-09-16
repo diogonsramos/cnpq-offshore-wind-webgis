@@ -9,8 +9,6 @@ interface Props {
   onNavigate: (tab: TabId) => void
 }
 
-type ScenarioKind = 'era5' | 'cmip6'
-
 const SCENARIOS = [
   {
     icon: '🔵', name: 'ERA5', forcing: 'ERA5',
@@ -85,7 +83,6 @@ const NAV_SECTIONS: { id: string; labelKey: TranslationKey }[] = [
 ]
 
 const FAQ_COUNT = 20
-const TECH_ROW_COUNT = 8
 
 const logoBase = import.meta.env.BASE_URL + 'images/logos/'
 const teamBase = import.meta.env.BASE_URL + 'images/team/'

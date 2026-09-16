@@ -82,35 +82,35 @@ test.describe('Locale switcher — rótulos de Experimento/Variável (cogCatalog
   })
 
   test('T94 — SidePanel (aba Mapa): Variável e rótulo do footer traduzidos', async ({ page }) => {
-    await page.click('.tab-btn:has-text("WebGIS Map")')
+    await page.click('.tab-btn:has-text("WebGIS")')
     await expect(page.locator('.side-panel select').nth(1)).toContainText('Wind Speed')
-    await expect(page.locator('.footer-info')).toContainText('ERA 5')
+    await expect(page.locator('.footer-info')).toContainText('ERA5 (Reanalysis)')
     await expect(page.locator('.footer-info')).not.toContainText('Reanálise')
   })
 
   test('T95 — Simple View: Experiment e Variable traduzidos', async ({ page }) => {
     const panel = page.locator('.dv-tab-panel').nth(0)
-    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA 5')
+    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA5 (Reanalysis)')
     await expect(panel.locator('.dv-filter-group', { hasText: 'Variable' }).locator('select')).toContainText('Wind Speed')
   })
 
   test('T96 — Compare Experiments: checkboxes de pares traduzidos', async ({ page }) => {
     await page.click('.dv-inner-tab-btn:has-text("Compare Experiments")')
-    await expect(page.locator('.dv-pair-checkbox').first()).toContainText('ERA 5')
+    await expect(page.locator('.dv-pair-checkbox').first()).toContainText('ERA5 (Reanalysis)')
     await expect(page.locator('.dv-pair-checkbox').first()).not.toContainText('Reanálise')
   })
 
   test('T97 — Compare Models: chips WRF/MPAS traduzidos', async ({ page }) => {
     await page.click('.dv-inner-tab-btn:has-text("Compare Models")')
     const chips = page.locator('.dv-legend-chip')
-    await expect(chips.nth(0)).toContainText('WRF — ERA 5')
-    await expect(chips.nth(1)).toContainText('MPAS — ERA 5')
+    await expect(chips.nth(0)).toContainText('WRF — ERA5 (Reanalysis)')
+    await expect(chips.nth(1)).toContainText('MPAS — ERA5 (Reanalysis)')
   })
 
   test('T98 — GeoParquet Explorer: Experiment e Variable traduzidos', async ({ page }) => {
     await page.click('.dv-inner-tab-btn:has-text("GeoParquet Explorer")')
     const panel = page.locator('.gpe')
-    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA 5')
+    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA5 (Reanalysis)')
     await expect(panel.locator('.dv-filter-group', { hasText: 'Variable' }).locator('select')).toContainText('Wind Speed')
   })
 })

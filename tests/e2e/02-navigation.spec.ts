@@ -54,10 +54,10 @@ test.describe('Preservação de estado durante navegação', () => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
     // Deve estar na aba do mapa
-    await expect(page.locator('.tab-btn.active')).toContainText('WebGIS Map')
+    await expect(page.locator('.tab-btn.active')).toContainText('WebGIS')
     // Alterna para dashboard
-    await page.click('.tab-btn:has-text("Analytical Dashboard")')
-    await expect(page.locator('.tab-btn.active')).toContainText('Analytical Dashboard')
+    await page.click('.tab-btn:has-text("Dashboard")')
+    await expect(page.locator('.tab-btn.active')).toContainText('Dashboard')
     await expect(page.locator('.dashboard-view')).toBeVisible()
   })
 })

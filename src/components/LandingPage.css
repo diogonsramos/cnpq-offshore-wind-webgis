@@ -252,6 +252,7 @@
   cursor: pointer;
   transition: all 0.2s;
   letter-spacing: 0.2px;
+  scroll-margin-top: 70px;
 }
 
 .lp-cta-primary:hover {
@@ -276,6 +277,7 @@
   cursor: pointer;
   transition: all 0.2s;
   letter-spacing: 0.2px;
+  scroll-margin-top: 70px;
 }
 
 .lp-cta-secondary:hover {
@@ -1022,7 +1024,14 @@ abbr[title] {
 
 @media (max-width: 768px) {
   .lp-hero {
-    padding: 48px 24px 56px;
+    padding: 48px 24px 80px;
+  }
+
+  .lp-hero-video-controls {
+    bottom: 12px;
+    right: 12px;
+    padding: 6px;
+    gap: 6px;
   }
 
   .lp-tech,
@@ -1073,6 +1082,20 @@ abbr[title] {
 }
 
 @media (max-width: 480px) {
+  .lp-hero {
+    padding: 40px 16px 88px;
+  }
+
+  .lp-hero-video-controls {
+    bottom: 10px;
+    right: 10px;
+    padding: 4px 6px;
+  }
+
+  .lp-video-volume-slider {
+    width: 60px;
+  }
+
   .lp-hero-ctas {
     flex-direction: column;
     align-items: center;
