@@ -15,7 +15,7 @@ import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
 import MiniMap from './MiniMap'
 import DashboardComparisonView from './DashboardComparisonView'
 import GeoParquetExplorer from './GeoParquetExplorer'
-import DirectionalHeatmap from './DirectionalHeatmap'
+
 import DashboardSkeleton from './DashboardSkeleton'
 import { useLocale } from '../i18n/provider'
 import './DashboardView.css'
@@ -525,16 +525,7 @@ function DashboardViewInner({
                     )}
                   </ChartCard>
 
-                  {pinnedLocations.map((loc, i) => (
-                    <ChartCard key={i} id={`heatmap-${i}`} wide testId="chart-heatmap" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                      <div className="heatmap-loc-label" style={{ borderLeftColor: COLORS[i] }}>{locLabel(loc, i)}</div>
-                      <DirectionalHeatmap
-                        data={loc.heatmap[`${dashboardVar}${dashboardHeight}_heatmap`]}
-                        variable={dashboardVar}
-                        height={dashboardHeight}
-                      />
-                    </ChartCard>
-                  ))}
+
                 </div>
               </Suspense>
             </div>
