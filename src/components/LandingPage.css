@@ -398,121 +398,6 @@
   white-space: nowrap;
 }
 
-/* ── Scenarios ────────────────────────────────── */
-.lp-scenarios {
-  background: #f0f2f5;
-  padding: 72px 48px;
-}
-
-.lp-scenarios-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.lp-scenarios-legend {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-}
-
-.lp-legend-item {
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.lp-legend-item--era5 {
-  color: #4a90d9;
-}
-.lp-legend-item--era5::before {
-  content: '';
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #4a90d9;
-}
-
-.lp-legend-item--cmip6 {
-  color: #d94a4a;
-}
-.lp-legend-item--cmip6::before {
-  content: '';
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #d94a4a;
-}
-
-.lp-scenarios-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-}
-
-.lp-scenario-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 24px;
-  border: 2px solid #e0e0e0;
-  border-top-width: 4px;
-  transition: all 0.2s;
-  cursor: default;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.lp-scenario-card--era5 {
-  border-top: 4px solid #4a90d9;
-}
-
-.lp-scenario-card--cmip6 {
-  border-top: 4px solid #d94a4a;
-}
-
-.lp-scenario-card:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  transform: translateY(-3px);
-}
-
-.lp-scenario-icon {
-  font-size: 28px;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.lp-scenario-name {
-  font-size: 16px;
-  font-weight: 800;
-  color: #1a1a2e;
-  margin-bottom: 6px;
-  font-family: 'Courier New', monospace;
-}
-
-.lp-scenario-forcing {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #4a90d9;
-  margin-bottom: 8px;
-}
-
-.lp-scenario-period {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.lp-scenario-desc {
-  font-size: 13px;
-  color: #555;
-  line-height: 1.6;
-}
 
 /* ── Gallery ──────────────────────────────────── */
 .lp-gallery {
@@ -1043,7 +928,6 @@ abbr[title] {
     padding-right: 20px;
   }
 
-  .lp-scenarios,
   .lp-team {
     padding-left: 20px;
     padding-right: 20px;

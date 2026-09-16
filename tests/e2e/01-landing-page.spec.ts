@@ -42,10 +42,6 @@ test.describe('Landing Page — seções de conteúdo', () => {
   })
 
 
-  test('T08 — ScenariosSection — 4 cards de experimentos visíveis', async ({ page }) => {
-    const cards = page.locator('.lp-scenario-card')
-    await expect(cards).toHaveCount(4)
-  })
 
   test('TeamSection — 17 pesquisadores listados', async ({ page }) => {
     const cards = page.locator('.lp-team-card')

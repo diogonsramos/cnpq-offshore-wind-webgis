@@ -9,28 +9,6 @@ interface Props {
   onNavigate: (tab: TabId) => void
 }
 
-const SCENARIOS = [
-  {
-    icon: '🔵', name: 'ERA5', forcing: 'ERA5',
-    period: '2004–2024', kind: 'era5' as const,
-    desc: 'Downscaling WRF/MPAS forçado pela reanálise ERA5 — referência observacional',
-  },
-  {
-    icon: '📊', name: 'CMIP6 Histórico', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2004–2014', kind: 'cmip6' as const,
-    desc: 'Downscaling WRF/MPAS forçado pelo CMIP6 bias corrected (Xu et al. 2021) — período histórico',
-  },
-  {
-    icon: '🟡', name: 'CMIP6 SSP2-4.5', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2015–2050', kind: 'cmip6' as const,
-    desc: 'Downscaling WRF/MPAS — cenário de mitigação moderada (~4,5 W/m²)',
-  },
-  {
-    icon: '🔴', name: 'CMIP6 SSP5-8.5', forcing: 'CMIP6 BC (18 modelos)',
-    period: '2015–2050', kind: 'cmip6' as const,
-    desc: 'Downscaling WRF/MPAS — cenário de emissões elevadas (~8,5 W/m²)',
-  },
-]
 
 const TEAM: {
   name: string
@@ -76,7 +54,6 @@ const PUBLICATIONS = [
 
 const NAV_SECTIONS: { id: string; labelKey: TranslationKey }[] = [
   { id: 'metodologia', labelKey: 'landing.nav.methodology' },
-  { id: 'cenarios', labelKey: 'landing.nav.scenarios' },
   { id: 'equipe', labelKey: 'landing.nav.team' },
   { id: 'publicacoes', labelKey: 'landing.nav.publications' },
   { id: 'faq', labelKey: 'landing.nav.faq' },
@@ -312,28 +289,6 @@ export default function LandingPage({ onNavigate }: Props) {
         </div>
       </section>
 
-      {/* Scenarios */}
-      <section id="cenarios" className="lp-scenarios">
-        <div className="lp-scenarios-inner">
-          <p className="lp-section-label">{t('landing.scenarios.eyebrow')}</p>
-          <h2 className="lp-section-title">{t('landing.scenarios.title')}</h2>
-          <div className="lp-scenarios-legend">
-            <span className="lp-legend-item lp-legend-item--era5">ERA5 (observacional)</span>
-            <span className="lp-legend-item lp-legend-item--cmip6">CMIP6 BC (climático)</span>
-          </div>
-          <div className="lp-scenarios-grid">
-            {SCENARIOS.map(s => (
-              <div className={`lp-scenario-card lp-scenario-card--${s.kind}`} key={s.name}>
-                <span className="lp-scenario-icon" aria-hidden="true">{s.icon}</span>
-                <div className="lp-scenario-name">{s.name}</div>
-                <div className="lp-scenario-forcing">{s.forcing}</div>
-                <div className="lp-scenario-period">{s.period}</div>
-                <p className="lp-scenario-desc">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Dados */}
       <section id="dados" className="lp-tech">
