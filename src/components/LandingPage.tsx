@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { TabId } from '../types'
 import { useLocale } from '../i18n/provider'
 import type { TranslationKey } from '../i18n/types'
@@ -91,11 +91,50 @@ const logoBase = import.meta.env.BASE_URL + 'images/logos/'
 const teamBase = import.meta.env.BASE_URL + 'images/team/'
 const defaultPhoto = teamBase + 'default_image.png'
 
+const CMIP6_MODELS = [
+  { id: 1, name: 'ACCESS-CM2', inst: 'Commonwealth Scientific and Industrial Research Organisation (Australia)', res: '1.875° × 1.25°' },
+  { id: 2, name: 'ACCESS-ESM1-5', inst: 'Commonwealth Scientific and Industrial Research Organisation (Australia)', res: '1.875° × 1.25°' },
+  { id: 3, name: 'CanESM5', inst: 'Canadian Centre for Climate Modelling and Analysis (Canada)', res: '2.81° × 2.81°' },
+  { id: 4, name: 'BCC-CSM2-MR', inst: 'Beijing Climate Center (China)', res: '1.125° × 1.125°' },
+  { id: 5, name: 'FGOALS-f3-L', inst: 'Institute of Atmospheric Physics, Chinese Academy of Sciences (China)', res: '1.25° × 1°' },
+  { id: 6, name: 'FGOALS-g3', inst: 'Institute of Atmospheric Physics, Chinese Academy of Sciences (China)', res: '2° × 2.25°' },
+  { id: 7, name: 'EC-Earth3', inst: 'European EC-Earth Consortium (Europe)', res: '0.70° × 0.70°' },
+  { id: 8, name: 'EC-Earth3-Veg', inst: 'European EC-Earth Consortium (Europe)', res: '0.70° × 0.70°' },
+  { id: 9, name: 'IPSL-CM6A-LR', inst: 'Institute Pierre Simon Laplace (France)', res: '2.5° × 1.26°' },
+  { id: 10, name: 'AWI-CM-1-1-MR', inst: 'Alfred Wegener Institute, Helmholtz Centre for Polar and Marine Research (Germany)', res: '0.94° × 0.94°' },
+  { id: 11, name: 'MPI-ESM1-2-HR', inst: 'Max Planck Institute for Meteorology (Germany)', res: '0.94° × 0.94°' },
+  { id: 12, name: 'MPI-ESM1-2-LR', inst: 'Max Planck Institute for Meteorology (Germany)', res: '1.875° × 1.875°' },
+  { id: 13, name: 'MIROC6', inst: 'Japan Agency for Marine-Earth Science and Technology (Japan)', res: '1.41° × 1.41°' },
+  { id: 14, name: 'MRI-ESM2-0', inst: 'Meteorological Research Institute, Japan Meteorological Agency (Japan)', res: '1.125° × 1.125°' },
+  { id: 15, name: 'NorESM2-LM', inst: 'Norwegian Climate Center (Norway)', res: '2.5° × 1.875°' },
+  { id: 16, name: 'CESM2', inst: 'Climate and Global Dynamics Laboratory, National Center for Atmospheric Research (USA)', res: '1.25° × 0.94°' },
+  { id: 17, name: 'CESM2-WACCM', inst: 'Climate and Global Dynamics Laboratory, National Center for Atmospheric Research (USA)', res: '1.25° × 0.94°' },
+  { id: 18, name: 'GFDL-ESM4', inst: 'Geophysical Fluid Dynamics Laboratory, National Oceanic and Atmospheric Administration (USA)', res: '1.25° × 1.0°' }
+]
+
+const BIAS_CORRECTED_VARS = [
+  { name: 'Sea surface temperature', acronym: 'tos', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Sea-level pressure', acronym: 'psl', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Surface pressure', acronym: 'ps', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Air temperature', acronym: 'ta', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Zonal wind', acronym: 'ua', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Meridional wind', acronym: 'va', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Relative humidity', acronym: 'hur', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Geopotential height', acronym: 'zg', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Soil moisture', acronym: 'tsl', levels: '4', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { name: 'Soil temperature', acronym: 'mrsol', levels: '4', hist: '✓', ssp245: '✓', ssp585: '✓' }
+]
+
 export default function LandingPage({ onNavigate }: Props) {
   const { t } = useLocale()
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [activeSection, setActiveSection] = useState('')
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null)
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoPlaying, setVideoPlaying] = useState(true)
+  const [videoMuted, setVideoMuted] = useState(false)
+  const [showVideoModal, setShowVideoModal] = useState(false)
 
   useEffect(() => {
     const OFFSETS = NAV_SECTIONS.map(s => s.id)
@@ -120,25 +159,22 @@ export default function LandingPage({ onNavigate }: Props) {
   }, [])
 
   const STATS = [
-    { value: 'WRF v4.6.0 · MPAS v8.1.0', label: 'Modelos atmosféricos' },
-    { value: '9 km', label: 'Resolução horizontal' },
-    { value: 'ERA5 · CMIP6', label: 'Base de dados' },
-    { value: '2004–2050', label: 'Períodos' },
-    { value: '10 · 50 · 100 · 150 · 200 m', label: 'Alturas de saída' },
+    { value: 'WRF v4.6.0 · MPAS v8.1.0', label: t('landing.stats.models') },
+    { value: '9 km', label: t('landing.stats.resolution') },
+    { value: 'ERA5 · CMIP6', label: t('landing.stats.database') },
+    { value: '2004–2050', label: t('landing.stats.periods') },
+    { value: '10 · 50 · 100 · 150 · 200 m', label: t('landing.stats.heights') },
   ]
 
-  const TECH_TABLE_ROWS = [
-    ['Modelos atmosféricos', 'WRF-ARW v4.6.0 (Weather Research and Forecasting) e MPAS v8.1.0 (Model for Prediction Across Scales)'],
-    ['Domínios aninhados (WRF)', 'D01: 27 km (América do Sul); D02: 9 km (costa brasileira)'],
-    ['Grade MPAS', 'Malha global com refinamento regional para ~9 km sobre a costa brasileira'],
-    ['Pontos de grade (frontend)', '~250.000 pontos após regridagem para grade lat/lon ~0,08°'],
-    ['Condições de contorno', 'ERA5 (reanálise ECMWF, ~31 km) e CMIP6 BC (Xu et al. 2021, ~139 km, 18 modelos) bias corrected'],
-    ['Níveis verticais', '51 níveis (sigma/pressão híbrida)'],
-    ['Alturas pós-processadas', '10, 50, 100, 150, 200 m (obtidas pela lei da potência com parâmetros atmosféricos do modelo)'],
-    ['Variáveis (frontend)', 'Velocidade do vento — ws (m/s); Densidade de potência — wpd (W/m²)'],
-    ['Períodos', 'Observacional (2004–2024) e Projeções CMIP6 (2015–2050)'],
-    ['Volume bruto de entrada', '~20 TB (ERA5: 15 TB; CMIP6 BC: 5,4 TB)'],
-    ['Produtos processados', '700 COGs; GeoParquet por experimento e modelo'],
+  const TECH_TABLE_ROWS: [string, string][] = [
+    [t('landing.tech.row1_label'), t('landing.tech.row1_value')],
+    [t('landing.tech.row2_label'), t('landing.tech.row2_value')],
+    [t('landing.tech.row3_label'), t('landing.tech.row3_value')],
+    [t('landing.tech.row4_label'), t('landing.tech.row4_value')],
+    [t('landing.tech.row5_label'), t('landing.tech.row5_value')],
+    [t('landing.tech.row6_label'), t('landing.tech.row6_value')],
+    [t('landing.tech.row7_label'), t('landing.tech.row7_value')],
+    [t('landing.tech.row8_label'), t('landing.tech.row8_value')],
   ]
 
   const faqs = Array.from({ length: FAQ_COUNT }, (_, i) => ({
@@ -171,19 +207,62 @@ export default function LandingPage({ onNavigate }: Props) {
 
       {/* Hero */}
       <section id="inicio" className="lp-hero">
-        <p className="lp-hero-eyebrow">{t('landing.hero.eyebrow')}</p>
-        <h1>{t('landing.hero.title')}</h1>
-        <p className="lp-hero-subtitle">{t('landing.hero.subtitle')}</p>
-        <p className="lp-hero-description">
-          Downscaling dinâmico WRF v4.6.0 e MPAS v8.1.0 (~9 km) forçado por ERA5 e CMIP6 BC (SSP2-4.5 e SSP5-8.5) para mapear vento e densidade de potência eólica em 5 altitudes (10, 50, 100, 150, 200 m) na costa brasileira.
-        </p>
-        <div className="lp-hero-ctas">
+        <video 
+          ref={videoRef}
+          autoPlay 
+          playsInline
+          muted={videoMuted}
+          src={`${import.meta.env.BASE_URL}video/background.mp4`}
+          className="lp-hero-video"
+          onTimeUpdate={(e) => {
+            if (e.currentTarget.currentTime >= 8) {
+              e.currentTarget.currentTime = 0;
+              e.currentTarget.play().catch(() => {});
+            }
+          }}
+        />
+
+        <div className="lp-hero-video-controls">
+          <button 
+            className="lp-video-btn" 
+            onClick={() => {
+              if (videoRef.current) {
+                if (videoPlaying) videoRef.current.pause()
+                else videoRef.current.play()
+                setVideoPlaying(!videoPlaying)
+              }
+            }}
+            title={videoPlaying ? 'Pause' : 'Play'}
+          >
+            {videoPlaying ? '⏸' : '▶️'}
+          </button>
+          <button 
+            className="lp-video-btn" 
+            onClick={() => setVideoMuted(!videoMuted)}
+            title={videoMuted ? 'Unmute' : 'Mute'}
+          >
+            {videoMuted ? '🔇' : '🔊'}
+          </button>
+          <button 
+            className="lp-video-btn" 
+            onClick={() => setShowVideoModal(true)}
+            title="Ver Vídeo Completo"
+          >
+            ⛶
+          </button>
+        </div>
+
+        <div className="lp-hero-content">
+          <p className="lp-hero-eyebrow">{t('landing.hero.eyebrow')}</p>
+          <h1>{t('landing.hero.title')}</h1>
+          <div className="lp-hero-ctas">
           <button className="lp-cta-primary" onClick={() => onNavigate('map')}>
             {t('landing.hero.cta_primary')}
           </button>
           <button className="lp-cta-secondary" onClick={() => onNavigate('dashboard')}>
             {t('landing.hero.cta_secondary')}
           </button>
+        </div>
         </div>
       </section>
 
@@ -206,12 +285,11 @@ export default function LandingPage({ onNavigate }: Props) {
         <h2 className="lp-section-title">{t('landing.tech.title')}</h2>
         <div className="lp-tech-grid">
           <div className="lp-tech-text">
-            <p>O projeto realiza o mapeamento do potencial eólico offshore brasileiro utilizando simulações climáticas regionais de alta resolução com dois modelos atmosféricos distintos, considerando cenários atuais e futuros de mudanças climáticas. O conjunto de dados cobre três períodos — histórico (2004–2014), presente (2015–2023) e futuro (2030–2050) — forçados pela reanálise ERA5 (ECMWF) e pelo CMIP6 BC (Xu et al. 2021, doi: 10.1038/s41597-021-01079-3), um conjunto bias corrected de 18 modelos climáticos globais.</p>
-            <p>A energia eólica offshore é uma fronteira estratégica para a transição energética brasileira. No entanto, a avaliação precisa do recurso eólico requer dados de alta resolução espacial e temporal que capturem a complexidade da circulação atmosférica na costa brasileira, incluindo fenômenos como brisas marítimas, jatos de baixos níveis e interações com a topografia costeira.</p>
-            <p>As simulações foram conduzidas com os modelos WRF-ARW v4.6.0 (Weather Research and Forecasting) e MPAS v8.1.0 (Model for Prediction Across Scales). O WRF utiliza dois domínios aninhados: D01 (27 km) cobrindo a América do Sul e D02 (9 km) focado na costa brasileira, abrangendo os 17 estados costeiros. O MPAS opera com malha global de resolução variável, com refinamento para ~9 km sobre a região de interesse, eliminando a necessidade de domínios aninhados e permitindo a representação consistente de teleconexões atmosféricas.</p>
-            <p>As condições de contorno provêm de duas bases: ERA5 (reanálise global do ECMWF, resolução original de ~31 km) e CMIP6 BC (Xu et al. 2021), que fornece dados bias corrected de 18 modelos CMIP6 para os cenários SSP2-4.5 (mitigação moderada) e SSP5-8.5 (emissões elevadas) com resolução original de ~1,25°. Ambos os conjuntos de entrada foram padronizados para ~9 km após o downscaling dinâmico.</p>
-            <p>O conjunto de dados abrange três períodos: histórico (2004–2014, forçado por ERA5 e CMIP6 BC HIST), presente (2015–2023, forçado por ERA5 e CMIP6 BC SSP2-4.5/SSP5-8.5) e futuro (2030–2050, forçado por CMIP6 BC SSP2-4.5/SSP5-8.5). O período 2015–2023 foi simulado para fins de treinamento dos modelos de machine learning para bias correction ajustado à costa brasileira (processamento em andamento).</p>
-            <p>As variáveis disponíveis no frontend — velocidade do vento (ws, m/s) e densidade de potência eólica (wpd, W/m²) — são servidas em formato COG (Cloud Optimized GeoTIFF) para visualização no mapa interativo e GeoParquet para consultas espaciais eficientes. O sistema permite consultar estatísticas por pixel (média, mínimo, máximo, desvio padrão, parâmetros de Weibull, rosa dos ventos e perfil vertical em 5 altitudes), comparar até 3 localizações no dashboard analítico e exportar dados. Futuras atualizações incluirão a versão com bias correction QDM (Quantile Delta Mapping) dos resultados.</p>
+            <p>{t('landing.tech.p1')}</p>
+            <p>{t('landing.tech.p2')}</p>
+            <p>{t('landing.tech.p3')}</p>
+            <p>{t('landing.tech.p4')}</p>
+            <p>{t('landing.tech.p5')}</p>
           </div>
           <div className="lp-tech-table-wrap">
             <table className="lp-tech-table">
@@ -265,12 +343,54 @@ export default function LandingPage({ onNavigate }: Props) {
           <div className="lp-tech-text">
             <p>{t('landing.data.desc_era5')}</p>
             <p>{t('landing.data.desc_cmip6')}</p>
-            <div style={{ margin: '2rem 0', textAlign: 'center' }}>
-              <img src={`${import.meta.env.BASE_URL}images/docs/cmip6-table.png`} alt="CMIP6 Models Table" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+            <div style={{ margin: '2rem 0', overflowX: 'auto' }}>
+              <table className="lp-tech-table" style={{ width: '100%', minWidth: '700px', margin: '0 auto', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr>
+                    <th>{t('landing.data.table_no')}</th>
+                    <th>{t('landing.data.table_model')}</th>
+                    <th>{t('landing.data.table_institution')}</th>
+                    <th>{t('landing.data.table_resolution')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CMIP6_MODELS.map(m => (
+                    <tr key={m.id}>
+                      <td>{m.id}</td>
+                      <td>{m.name}</td>
+                      <td>{m.inst}</td>
+                      <td>{m.res}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             <p>{t('landing.data.desc_bias_correction')}</p>
-            <div style={{ margin: '2rem 0', textAlign: 'center' }}>
-              <img src={`${import.meta.env.BASE_URL}images/docs/bias-correction.png`} alt="Bias Correction Equation" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+            <div style={{ margin: '2rem 0', overflowX: 'auto' }}>
+              <table className="lp-tech-table" style={{ width: '100%', minWidth: '700px', margin: '0 auto', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr>
+                    <th>{t('landing.data.table_variables')}</th>
+                    <th>{t('landing.data.table_acronym')}</th>
+                    <th>{t('landing.data.table_levels')}</th>
+                    <th>{t('landing.data.table_historical')}</th>
+                    <th>{t('landing.data.table_ssp245')}</th>
+                    <th>{t('landing.data.table_ssp585')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {BIAS_CORRECTED_VARS.map(v => (
+                    <tr key={v.acronym}>
+                      <td>{v.name}</td>
+                      <td>{v.acronym}</td>
+                      <td>{v.levels}</td>
+                      <td>{v.hist}</td>
+                      <td>{v.ssp245}</td>
+                      <td>{v.ssp585}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             <p className="lp-citation">{t('landing.data.citation')}</p>
           </div>
@@ -280,24 +400,24 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* Parametrizações Físicas */}
       <section className="lp-tech">
         <div className="lp-tech-inner">
-          <p className="lp-section-label">Parâmetros Internos</p>
-          <h2 className="lp-section-title">Configurações Físicas Compartilhadas</h2>
+          <p className="lp-section-label">{t('landing.params.eyebrow')}</p>
+          <h2 className="lp-section-title">{t('landing.params.title')}</h2>
           <div className="lp-tech-table-wrap" style={{ margin: '3rem auto' }}>
             <table className="lp-tech-table">
               <thead>
                 <tr>
-                  <th scope="col">Componente</th>
-                  <th scope="col">Configuração</th>
+                  <th scope="col">{t('landing.params.col_component')}</th>
+                  <th scope="col">{t('landing.params.col_config')}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Microfísica</td><td>WRF Single-Moment 6-class (WSM6)</td></tr>
-                <tr><td>Convecção</td><td>New Tiedtke</td></tr>
-                <tr><td>Radiação de Onda Longa</td><td>RRTMG</td></tr>
-                <tr><td>Radiação de Onda Curta</td><td>RRTMG shortwave</td></tr>
-                <tr><td>Camada Limite Planetária (PBL)</td><td>YSU</td></tr>
-                <tr><td>Camada de Superfície</td><td>Revised MM5 Monin-Obukhov</td></tr>
-                <tr><td>Física de Superfície (LSM)</td><td>Noah Land Surface Model</td></tr>
+                <tr><td>{t('landing.params.microphysics')}</td><td>WRF Single-Moment 6-class (WSM6)</td></tr>
+                <tr><td>{t('landing.params.convection')}</td><td>New Tiedtke</td></tr>
+                <tr><td>{t('landing.params.longwave')}</td><td>RRTMG</td></tr>
+                <tr><td>{t('landing.params.shortwave')}</td><td>RRTMG shortwave</td></tr>
+                <tr><td>{t('landing.params.pbl')}</td><td>YSU</td></tr>
+                <tr><td>{t('landing.params.surface')}</td><td>Revised MM5 Monin-Obukhov</td></tr>
+                <tr><td>{t('landing.params.lsm')}</td><td>Noah Land Surface Model</td></tr>
               </tbody>
             </table>
           </div>
@@ -362,14 +482,6 @@ export default function LandingPage({ onNavigate }: Props) {
                 <li><a href="https://cpaia.senaicimatec.com.br/pt" target="_blank" rel="noopener noreferrer">CPA-IA (Centro de Pesquisa Aplicada em Inteligência Artificial)</a></li>
               </ul>
             </div>
-            <div>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Instituições Parceiras</h3>
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                <li>Instituto Nacional de Pesquisas Espaciais — INPE</li>
-                <li>NVIDIA</li>
-                <li>NCAR/EUA — National Center for Atmospheric Research</li>
-              </ul>
-            </div>
           </div>
         </div>
       </section>
@@ -392,30 +504,30 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* Releases */}
       <section id="releases" className="lp-tech">
         <div className="lp-tech-inner">
-          <p className="lp-section-label">Histórico de Versões</p>
-          <h2 className="lp-section-title">Releases do Sistema</h2>
+          <p className="lp-section-label">{t('landing.releases.eyebrow')}</p>
+          <h2 className="lp-section-title">{t('landing.releases.title')}</h2>
           <div className="lp-tech-text">
             <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#4a90d9', marginBottom: '0.5rem' }}>v1.0 — Setembro de 2026 (Atual)</h3>
+              <h3 style={{ fontSize: '1.4rem', color: '#4a90d9', marginBottom: '0.5rem' }}>{t('landing.releases.v1_0.title')}</h3>
               <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                <li>Interface otimizada e responsiva para WebGIS e Dashboard.</li>
-                <li>Inclusão de cenários observacionais ERA5 e climáticos CMIP6 (SSP2-4.5, SSP5-8.5).</li>
-                <li>Dados anuais otimizados via COG e GeoParquet.</li>
-                <li>Internacionalização completa: Português, Inglês e Espanhol.</li>
+                <li>{t('landing.releases.v1_0.li1')}</li>
+                <li>{t('landing.releases.v1_0.li2')}</li>
+                <li>{t('landing.releases.v1_0.li3')}</li>
+                <li>{t('landing.releases.v1_0.li4')}</li>
               </ul>
             </div>
             <div style={{ marginBottom: '2rem', opacity: 0.7 }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>v1.1 — Previsto para o final de 2026</h3>
+              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>{t('landing.releases.v1_1.title')}</h3>
               <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                <li>Reativação das funcionalidades sazonais (DJF, MAM, JJA, SON) no WebGIS e Dashboard.</li>
-                <li>Suporte a download em lote de séries temporais.</li>
+                <li>{t('landing.releases.v1_1.li1')}</li>
+                <li>{t('landing.releases.v1_1.li2')}</li>
               </ul>
             </div>
             <div style={{ opacity: 0.7 }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>v1.2 — Previsto para 2027</h3>
+              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>{t('landing.releases.v1_2.title')}</h3>
               <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                <li>Inclusão de mapas de calor direcionais interativos no WebGIS.</li>
-                <li>Novas variáveis: cisalhamento do vento e estimativa de produção energética (AEP).</li>
+                <li>{t('landing.releases.v1_2.li1')}</li>
+                <li>{t('landing.releases.v1_2.li2')}</li>
               </ul>
             </div>
           </div>
@@ -455,6 +567,20 @@ export default function LandingPage({ onNavigate }: Props) {
       </section>
 
       {/* Footer */}
+      {showVideoModal && (
+        <div className="lp-video-modal-overlay" onClick={() => setShowVideoModal(false)}>
+          <div className="lp-video-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="lp-video-modal-close" onClick={() => setShowVideoModal(false)}>✕</button>
+            <video 
+              autoPlay 
+              controls 
+              src={`${import.meta.env.BASE_URL}video/background.mp4`} 
+              className="lp-video-modal-player"
+            />
+          </div>
+        </div>
+      )}
+
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div className="lp-footer-logos">
@@ -466,9 +592,6 @@ export default function LandingPage({ onNavigate }: Props) {
             {t('landing.footer.citation_line1')}<br />
             {t('landing.footer.citation_line2')}<br />
             {t('landing.footer.citation_line3')}
-          </div>
-          <div className="lp-footer-disclaimer">
-            {t('landing.footer.disclaimer_before')}<strong>{t('landing.footer.disclaimer_bold')}</strong>{t('landing.footer.disclaimer_after')}
           </div>
           <div className="lp-footer-copyright">
             {t('landing.footer.copyright')}
