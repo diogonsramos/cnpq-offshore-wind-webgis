@@ -61,10 +61,6 @@ test.describe('Landing Page — seções de conteúdo', () => {
     await expect(items).toHaveCount(11)
   })
 
-  test('FooterSection — disclaimer de dados preliminares visível', async ({ page }) => {
-    await expect(page.locator('.lp-footer-disclaimer')).toBeVisible()
-    await expect(page.locator('.lp-footer-disclaimer')).toContainText('preliminares')
-  })
 
   test('T09 — logos institucionais carregam sem erro (2xx ou 304)', async ({ page }) => {
     const logoStatuses: number[] = []

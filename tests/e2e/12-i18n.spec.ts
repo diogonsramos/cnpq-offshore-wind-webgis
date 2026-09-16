@@ -38,14 +38,14 @@ test.describe('Locale switcher — SidePanel e persistência', () => {
     await page.click('.lp-cta-primary')
 
     await expect(page.locator('.select-field .label').first()).toContainText('Modelo')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
     await expect(page.locator('.select-field .label').first()).toContainText('Model')
   })
 
   test('T92 — escolha de idioma persiste no localStorage após reload', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
 
     const stored = await page.evaluate(() => localStorage.getItem('cnpq-webgis-locale'))
     expect(stored).toBe('en')
@@ -61,7 +61,7 @@ test.describe('Locale switcher — FAQ', () => {
   test('T93 — FAQ do drawer exibe perguntas em inglês após trocar para EN', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
 
     await page.click('.footer-icon-btn[title="FAQ"]')
     await expect(page.locator('.drawer-header')).toContainText('FAQ — Frequently Asked Questions')
