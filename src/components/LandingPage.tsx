@@ -215,7 +215,7 @@ export default function LandingPage({ onNavigate }: Props) {
           src={`${import.meta.env.BASE_URL}video/background.mp4`}
           className="lp-hero-video"
           onTimeUpdate={(e) => {
-            if (e.currentTarget.currentTime >= 8) {
+            if (e.currentTarget.currentTime >= 8.04) {
               e.currentTarget.currentTime = 0;
               e.currentTarget.play().catch(() => {});
             }
@@ -576,6 +576,12 @@ export default function LandingPage({ onNavigate }: Props) {
               controls 
               src={`${import.meta.env.BASE_URL}video/background.mp4`} 
               className="lp-video-modal-player"
+              onTimeUpdate={(e) => {
+                if (e.currentTarget.currentTime >= 8.04) {
+                  e.currentTarget.currentTime = 0;
+                  e.currentTarget.play().catch(() => {});
+                }
+              }}
             />
           </div>
         </div>
