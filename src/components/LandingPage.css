@@ -282,62 +282,6 @@
 }
 
 /* ── Stats Strip ──────────────────────────────── */
-.lp-stats {
-  background: #f0f2f5;
-  padding: 40px 32px;
-}
-
-.lp-stats-title {
-  text-align: center;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #888;
-  margin-bottom: 24px;
-}
-
-.lp-stats-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.lp-stat-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px 28px;
-  border-top: 3px solid #4a90d9;
-  text-align: center;
-  min-width: 160px;
-  flex: 1;
-  max-width: 220px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-  transition: box-shadow 0.2s;
-}
-
-.lp-stat-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-.lp-stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  line-height: 1.2;
-  margin-bottom: 6px;
-}
-
-.lp-stat-label {
-  font-size: 14px;
-  color: #888;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
 
 /* ── Section labels (shared) ──────────────────── */
 .lp-section-label {
@@ -377,6 +321,20 @@
   line-height: 1.6;
   margin-bottom: 18px;
   width: 100%;
+}
+
+.lp-tech-figure {
+  margin: 32px 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.lp-pipeline-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .lp-tech-text strong {

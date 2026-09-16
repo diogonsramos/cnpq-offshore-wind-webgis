@@ -158,13 +158,6 @@ export default function LandingPage({ onNavigate }: Props) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const STATS = [
-    { value: 'WRF v4.6.0 · MPAS v8.1.0', label: t('landing.stats.models') },
-    { value: '9 km', label: t('landing.stats.resolution') },
-    { value: 'ERA5 · CMIP6', label: t('landing.stats.database') },
-    { value: '2004–2050', label: t('landing.stats.periods') },
-    { value: '10 · 50 · 100 · 150 · 200 m', label: t('landing.stats.heights') },
-  ]
 
   const TECH_TABLE_ROWS: [string, string][] = [
     [t('landing.tech.row1_label'), t('landing.tech.row1_value')],
@@ -266,19 +259,6 @@ export default function LandingPage({ onNavigate }: Props) {
         </div>
       </section>
 
-      {/* Stats Strip */}
-      <section className="lp-stats" aria-label={t('landing.stats.aria')}>
-        <p className="lp-stats-title">{t('landing.stats.title')}</p>
-        <div className="lp-stats-grid">
-          {STATS.map(s => (
-            <div className="lp-stat-card" key={s.label}>
-              <div className="lp-stat-value">{s.value}</div>
-              <div className="lp-stat-label">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Tech Summary */}
       <section id="metodologia" className="lp-tech">
         <p className="lp-section-label">{t('landing.tech.eyebrow')}</p>
@@ -289,6 +269,9 @@ export default function LandingPage({ onNavigate }: Props) {
             <p>{t('landing.tech.p2')}</p>
             <p>{t('landing.tech.p3')}</p>
             <p>{t('landing.tech.p4')}</p>
+            <figure className="lp-tech-figure">
+              <img src={`${import.meta.env.BASE_URL}images/fluxograma.svg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
+            </figure>
             <p>{t('landing.tech.p5')}</p>
           </div>
           <div className="lp-tech-table-wrap">

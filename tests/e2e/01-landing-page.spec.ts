@@ -41,10 +41,6 @@ test.describe('Landing Page — seções de conteúdo', () => {
     await expect(page.locator('.lp-cta-secondary')).toContainText('Abrir Dashboard')
   })
 
-  test('StatsStrip — 5 cards de indicadores visíveis', async ({ page }) => {
-    const cards = page.locator('.lp-stat-card')
-    await expect(cards).toHaveCount(5)
-  })
 
   test('T08 — ScenariosSection — 4 cards de experimentos visíveis', async ({ page }) => {
     const cards = page.locator('.lp-scenario-card')
