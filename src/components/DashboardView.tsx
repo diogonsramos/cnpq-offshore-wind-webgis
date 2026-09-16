@@ -15,7 +15,7 @@ import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
 import MiniMap from './MiniMap'
 import DashboardComparisonView from './DashboardComparisonView'
 import GeoParquetExplorer from './GeoParquetExplorer'
-import DirectionalHeatmap from './DirectionalHeatmap'
+
 import DashboardSkeleton from './DashboardSkeleton'
 import { useLocale } from '../i18n/provider'
 import './DashboardView.css'
@@ -114,9 +114,10 @@ function DashboardViewInner({
   const handleDownloadCsv = () => {
     const header = ['location', 'variable', 'height', 'season', 'mean', 'min', 'max', 'std']
     const rows: string[] = [header.join(',')]
+    const seasonsToExport = (dataset === 'era5' || dataset === 'hist') ? SEASON_ORDER : ['ANNUAL']
     pinnedLocations.forEach((loc, i) => {
       const label = locLabel(loc, i)
-      SEASON_ORDER.forEach(season => {
+      seasonsToExport.forEach(season => {
         ; (['ws', 'wpd'] as const).forEach(v => {
           HEIGHTS.forEach(h => {
             const mean = seasonStat(loc, v, h, season, 'mean')
@@ -313,9 +314,7 @@ function DashboardViewInner({
             {locError && <span className="dv-error">{locError}</span>}
           </div>
 
-          <div style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '10px', fontSize: '0.85rem', borderRadius: '4px', margin: '0 20px 10px 20px', display: dvTab === 'simple' ? 'block' : 'none' }}>
-            <strong>Aviso:</strong> Weibull, Rosa dos Ventos e Perfis Climatológicos utilizam dados <strong>sintéticos/provísórios</strong> enquanto o servidor finaliza o processamento oficial do WRF/MPAS.
-          </div>
+
 
           <div className="dv-chips">
             {pinnedLocations.map((loc, i) => (
@@ -347,40 +346,6 @@ function DashboardViewInner({
             <div className="dv-main">
               <Suspense fallback={<DashboardSkeleton />}>
                 <div className="dv-chart-grid">
-                  <ChartCard id="seasonal" testId="chart-seasonal" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                    <Plot
-                      data={seasonChartData.datasets.map((ds, i) => ({
-                        x: SEASON_ORDER.map(s => SEASON_LABELS[s]),
-                        y: ds.data,
-                        type: 'bar',
-                        name: ds.label,
-                        marker: { color: COLORS[i % COLORS.length] },
-                        hovertemplate: '%{y:.2f}<extra></extra>',
-                      }))}
-                      layout={{
-                        title: { text: t('dashboard.chart.seasonal_title', { variable: varLabel(dashboardVar, t).label, height: `${dashboardHeight}m` }) },
-                        xaxis: { title: { text: t('dashboard.chart.season_axis'), standoff: 10 } },
-                        yaxis: {
-                          title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 },
-                          range: dashboardVar === 'ws' ? [0, 20] : [0, 1200],
-                          zeroline: false,
-                          hoverformat: '.2f',
-                        },
-                        height: plotHeight('seasonal'),
-                        margin: { t: 40, b: 40, l: 55, r: 20 },
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent',
-                        font: CHART_FONT,
-                        showlegend: false,
-                        hovermode: 'x unified',
-                        hoverlabel: HOVER_LABEL_STYLE,
-                      }}
-                      config={PLOT_CONFIG}
-                      style={{ width: '100%' }}
-                      useResizeHandler
-                    />
-                  </ChartCard>
-
                   <ChartCard id="weibull" testId="chart-weibull" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                     <Plot
                       data={pinnedLocations.map((loc, i) => {
@@ -484,7 +449,7 @@ function DashboardViewInner({
                     )}
                   </ChartCard>
 
-                  <ChartCard id="ws-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
+                  <ChartCard id="ws-profile" testId="chart-ws-profile" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                     <Plot
                       data={wsProfileData.datasets.map((ds, i) => ({
                         x: ds.data,
@@ -560,16 +525,7 @@ function DashboardViewInner({
                     )}
                   </ChartCard>
 
-                  {pinnedLocations.map((loc, i) => (
-                    <ChartCard key={i} id={`heatmap-${i}`} wide testId="chart-heatmap" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                      <div className="heatmap-loc-label" style={{ borderLeftColor: COLORS[i] }}>{locLabel(loc, i)}</div>
-                      <DirectionalHeatmap
-                        data={loc.heatmap[`${dashboardVar}${dashboardHeight}_heatmap`]}
-                        variable={dashboardVar}
-                        height={dashboardHeight}
-                      />
-                    </ChartCard>
-                  ))}
+
                 </div>
               </Suspense>
             </div>

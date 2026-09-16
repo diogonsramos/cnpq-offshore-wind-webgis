@@ -306,6 +306,7 @@ async function loadSeasonData(experiment: string, season: string, model: string)
   const url = parquetUrl(experiment, season, model)
   const arrowTable = await fetchAndParseParquet(url, ck)
 
+  const cols = arrowTable.schema.fields.map(f => ({ name: f.name, vec: arrowTable.getChild(f.name)! }))
   for (let i = 0; i < arrowTable.numRows; i++) {
     const row = arrowTable.get(i)
     if (!row) continue
@@ -314,8 +315,8 @@ async function loadSeasonData(experiment: string, season: string, model: string)
     const sm = allSeasonMap.get(pixel_id)
     if (!sm) continue
     const raw: Record<string, unknown> = {}
-    for (const key of Object.keys(row)) {
-      raw[key] = (row as Record<string, unknown>)[key]
+    for (const col of cols) {
+      raw[col.name] = col.vec.get(i)
     }
     sm.set(season, raw)
   }
@@ -326,8 +327,8 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
   const myGen = ++loadGen
   if (myGen !== loadGen) return
 
+  if (loading) await loading
   if (loaded && currentExperiment === experiment && currentModel === model && loadedSeasons.has('ANNUAL')) return
-  if (loading) return loading
 
   loading = (async () => {
     try {
@@ -344,17 +345,27 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
     const recordsMap = new Map<number, RawPixel>()
     const seasonMap = new Map<number, Map<string, Record<string, unknown>>>()
 
+    const cols = arrowTable.schema.fields.map(f => ({ name: f.name, vec: arrowTable.getChild(f.name)! }))
+    let lastYield = performance.now()
     for (let i = 0; i < arrowTable.numRows; i++) {
+      // Yield dinâmico: evita starvation da UI, mas extrai o max de fps possível
+      if (i > 0 && i % 1000 === 0) {
+        if (performance.now() - lastYield > 30) {
+          await new Promise(r => setTimeout(r, 0))
+          lastYield = performance.now()
+        }
+      }
+
       const row = arrowTable.get(i)
       if (!row) continue
       const pixel_id = Number(row.pixel_id as number | bigint)
-      const season = String(row.season || 'ANNUAL')
+      const season = String(row.season || 'ANNUAL').toUpperCase()
 
       let sm = seasonMap.get(pixel_id)
       if (!sm) { sm = new Map(); seasonMap.set(pixel_id, sm) }
       const raw: Record<string, unknown> = {}
-      for (const key of Object.keys(row)) {
-        raw[key] = (row as Record<string, unknown>)[key]
+      for (const col of cols) {
+        raw[col.name] = col.vec.get(i)
       }
       sm.set(season, raw)
 
@@ -517,7 +528,7 @@ export async function queryDashboardLocation(
   if (model && experiment) {
     await loadParquet(experiment, model)
   }
-  if (records.length === 0) return null
+  if (records.length === 0) { console.warn('QDL null: records 0'); return null; }
 
   try {
     await ensureSeasonalLoaded()
@@ -525,7 +536,7 @@ export async function queryDashboardLocation(
     console.warn('PixelQuery: ensureSeasonalLoaded failed:', e)
   }
 
-  if (!allSeasonMap) return null
+  if (!allSeasonMap) { console.warn('QDL null: no season map'); return null; }
 
   let best: RawPixel | null = null
   let bestDist = Infinity
@@ -538,10 +549,10 @@ export async function queryDashboardLocation(
       best = r
     }
   }
-  if (!best) return null
+  if (!best) { console.warn('QDL null: no best pixel'); return null; }
 
   const seasonRows = allSeasonMap.get(best.pixel_id)
-  if (!seasonRows) return null
+  if (!seasonRows) { console.warn(`QDL null: no seasonRows for pixel ${best.pixel_id}`); return null; }
 
   const seasons: SeasonalStats[] = []
   for (const s of SEASONS) {
@@ -575,20 +586,18 @@ export async function queryDashboardLocation(
   const annualRow = seasonRows.get('ANNUAL')
   const windRose: Record<number, Record<string, { freq: number; mean_ws: number }> | null> = {}
   const heatmap: Record<string, number[] | null> = {}
-  if (annualRow) {
-    for (const h of HEIGHTS) {
-      const wrKey = `wind_rose_${h}m`
-      windRose[h] = annualRow[wrKey] ? asWindRoseRecord(annualRow[wrKey]) : getSyntheticWindRose()
-    }
-    for (const h of HEIGHTS) {
-      for (const prefix of ['ws', 'wpd']) {
-        const hmKey = `${prefix}${h}_heatmap`
-        heatmap[hmKey] = annualRow[hmKey] ? safeArray(annualRow[hmKey]) : getSyntheticHeatmap()
-      }
+  if (!annualRow) { console.warn(`QDL null: no ANNUAL for pixel ${best.pixel_id}`); return null; }
+  for (const h of HEIGHTS) {
+    const wrKey = `wind_rose_${h}m`
+    windRose[h] = annualRow[wrKey] ? asWindRoseRecord(annualRow[wrKey]) : getSyntheticWindRose()
+  }
+  for (const h of HEIGHTS) {
+    for (const prefix of ['ws', 'wpd']) {
+      const hmKey = `${prefix}${h}_heatmap`
+      heatmap[hmKey] = annualRow[hmKey] ? safeArray(annualRow[hmKey]) : getSyntheticHeatmap()
     }
   }
-
-  return {
+  const res = {
     pixel_id: best.pixel_id,
     lat: best.lat,
     lon: best.lon,
@@ -603,6 +612,7 @@ export async function queryDashboardLocation(
     wind_rose: windRose,
     heatmap,
   }
+  return res
 }
 
 // Reads a stat directly from an already-captured DashboardLocationData snapshot,
