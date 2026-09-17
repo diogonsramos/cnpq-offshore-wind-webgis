@@ -160,27 +160,29 @@ export default function LandingPage({ onNavigate }: Props) {
     <div className="landing">
       {/* Navbar */}
       <nav className="lp-navbar" aria-label={t('landing.nav.aria')}>
-        <div className="lp-navbar-logos">
-          <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-navbar-logo" />
-          <a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer">
-            <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-navbar-logo" />
-          </a>
-          <a href="https://www.senaicimatec.com.br" target="_blank" rel="noopener noreferrer">
-            <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-navbar-logo" />
-          </a>
-        </div>
-        <div className="lp-navbar-anchors" role="navigation" aria-label={t('landing.nav.sections_aria')}>
-          {NAV_SECTIONS.map(s => (
-            <a
-              key={s.id}
-              href={`#${s.id}`}
-              className={`lp-nav-anchor${activeSection === s.id ? ' active' : ''}`}
-            >
-              {t(s.labelKey)}
+        <div className="lp-navbar-inner">
+          <div className="lp-navbar-logos">
+            <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-navbar-logo" />
+            <a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer">
+              <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-navbar-logo" />
             </a>
-          ))}
+            <a href="https://www.senaicimatec.com.br" target="_blank" rel="noopener noreferrer">
+              <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-navbar-logo" />
+            </a>
+          </div>
+          <div className="lp-navbar-anchors" role="navigation" aria-label={t('landing.nav.sections_aria')}>
+            {NAV_SECTIONS.map(s => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className={`lp-nav-anchor${activeSection === s.id ? ' active' : ''}`}
+              >
+                {t(s.labelKey)}
+              </a>
+            ))}
+          </div>
+          <LocaleToggle className="lp-navbar-locale" />
         </div>
-        <LocaleToggle className="lp-navbar-locale" />
       </nav>
 
       {/* Hero */}

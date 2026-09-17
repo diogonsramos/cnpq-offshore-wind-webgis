@@ -13,11 +13,19 @@
   z-index: 100;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   height: 56px;
   padding: 0 32px;
   background: #1a1a2e;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lp-navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
   gap: 16px;
 }
 
@@ -295,7 +303,7 @@
 
 /* ── Section labels (shared) ──────────────────── */
 .lp-section-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -326,9 +334,9 @@
 }
 
 .lp-tech-text p {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: #444;
-  line-height: 1.6;
+  line-height: 1.7;
   margin-bottom: 18px;
   width: 100%;
 }
@@ -358,7 +366,7 @@
 .lp-tech-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .lp-tech-table th {
@@ -648,7 +656,7 @@
 }
 
 .lp-pub-content {
-  font-size: 13px;
+  font-size: 14px;
   color: #444;
   line-height: 1.75;
 }
@@ -714,7 +722,7 @@
   border: none;
   cursor: pointer;
   text-align: left;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #1a1a2e;
   line-height: 1.5;
@@ -751,7 +759,7 @@
 
 .lp-faq-answer {
   padding: 16px 20px;
-  font-size: 13px;
+  font-size: 14px;
   color: #555;
   line-height: 1.8;
   border-top: 1px solid #e8eaed;
@@ -788,7 +796,7 @@
 
 .lp-footer-citation {
   text-align: center;
-  font-size: 13px;
+  font-size: 14px;
   color: #888;
   line-height: 1.8;
   margin-bottom: 24px;
@@ -855,7 +863,7 @@ abbr[title] {
 
 /* ── Section intro paragraph ─────────────────── */
 .lp-section-intro {
-  font-size: 14px;
+  font-size: 15px;
   color: #666;
   line-height: 1.75;
   margin-top: -24px;
