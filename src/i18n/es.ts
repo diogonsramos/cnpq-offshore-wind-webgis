@@ -164,6 +164,7 @@ export const es = {
   'faq.a20': 'WRF utiliza la suite \'tropical\' y MPAS la suite \'mesoscale_reference\', ambas compartiendo las mismas opciones de configuraciones físicas: microfísica WSM6, convección New Tiedtke, radiación RRTMG (larga y corta), PBL YSU, capa superficial Revised MM5 Monin-Obukhov y LSM Noah.',
   'faq.q21': '¿Cómo citar este proyecto?',
   'faq.a21': 'ESCENARIO ACTUAL Y FUTURO DEL RECURSO EÓLICO OFFSHORE EN BRASIL. WebGIS de Energía Eólica Offshore. Brasilia: CNPq, 2026. Disponible en: [URL de la aplicación]. Consultado el: [fecha de acceso].',
+  'tabbar.home': '← Inicio',
   'tabbar.home_title': 'Volver a la página de inicio',
   'tabbar.map': 'WebGIS',
   'tabbar.dashboard': 'Dashboard',
