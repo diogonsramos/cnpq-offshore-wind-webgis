@@ -162,8 +162,12 @@ export default function LandingPage({ onNavigate }: Props) {
       <nav className="lp-navbar" aria-label={t('landing.nav.aria')}>
         <div className="lp-navbar-logos">
           <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-navbar-logo" />
-          <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-navbar-logo" />
-          <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-navbar-logo" />
+          <a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer">
+            <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-navbar-logo" />
+          </a>
+          <a href="https://www.senaicimatec.com.br" target="_blank" rel="noopener noreferrer">
+            <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-navbar-logo" />
+          </a>
         </div>
         <div className="lp-navbar-anchors" role="navigation" aria-label={t('landing.nav.sections_aria')}>
           {NAV_SECTIONS.map(s => (
@@ -469,20 +473,6 @@ export default function LandingPage({ onNavigate }: Props) {
                 <li>{t('landing.releases.v1_0.li2')}</li>
                 <li>{t('landing.releases.v1_0.li3')}</li>
                 <li>{t('landing.releases.v1_0.li4')}</li>
-              </ul>
-            </div>
-            <div style={{ marginBottom: '2rem', opacity: 0.7 }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>{t('landing.releases.v1_1.title')}</h3>
-              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                <li>{t('landing.releases.v1_1.li1')}</li>
-                <li>{t('landing.releases.v1_1.li2')}</li>
-              </ul>
-            </div>
-            <div style={{ opacity: 0.7 }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#666', marginBottom: '0.5rem' }}>{t('landing.releases.v1_2.title')}</h3>
-              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                <li>{t('landing.releases.v1_2.li1')}</li>
-                <li>{t('landing.releases.v1_2.li2')}</li>
               </ul>
             </div>
           </div>
