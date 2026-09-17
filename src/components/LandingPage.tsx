@@ -87,16 +87,16 @@ const CMIP6_MODELS = [
 ]
 
 const BIAS_CORRECTED_VARS = [
-  { name: 'Sea surface temperature', acronym: 'tos', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Sea-level pressure', acronym: 'psl', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Surface pressure', acronym: 'ps', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Air temperature', acronym: 'ta', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Zonal wind', acronym: 'ua', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Meridional wind', acronym: 'va', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Relative humidity', acronym: 'hur', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Geopotential height', acronym: 'zg', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Soil moisture', acronym: 'tsl', levels: '4', hist: '✓', ssp245: '✓', ssp585: '✓' },
-  { name: 'Soil temperature', acronym: 'mrsol', levels: '4', hist: '✓', ssp245: '✓', ssp585: '✓' }
+  { nameKey: 'landing.data.var_tos' as const, acronym: 'tos', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_psl' as const, acronym: 'psl', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_ps' as const, acronym: 'ps', levels: '1', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_ta' as const, acronym: 'ta', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_ua' as const, acronym: 'ua', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_va' as const, acronym: 'va', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_hur' as const, acronym: 'hur', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_zg' as const, acronym: 'zg', levels: '14', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_tsl' as const, acronym: 'tsl', levels: '4', hist: '✓', ssp245: '✓', ssp585: '✓' },
+  { nameKey: 'landing.data.var_mrsol' as const, acronym: 'mrsol', levels: '4', hist: '✓', ssp245: '✓', ssp585: '✓' }
 ]
 
 export default function LandingPage({ onNavigate }: Props) {
@@ -336,7 +336,7 @@ export default function LandingPage({ onNavigate }: Props) {
                 <tbody>
                   {BIAS_CORRECTED_VARS.map(v => (
                     <tr key={v.acronym}>
-                      <td>{v.name}</td>
+                      <td>{t(v.nameKey)}</td>
                       <td>{v.acronym}</td>
                       <td>{v.levels}</td>
                       <td>{v.hist}</td>
@@ -426,15 +426,15 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* Parceiros */}
       <section className="lp-tech">
         <div className="lp-tech-inner" style={{ textAlign: 'center' }}>
-          <p className="lp-section-label">Apoio e Infraestrutura</p>
-          <h2 className="lp-section-title">Instituições Parceiras</h2>
+          <p className="lp-section-label">{t('landing.partners.eyebrow')}</p>
+          <h2 className="lp-section-title">{t('landing.partners.title')}</h2>
           <div style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center' }}>
             <div>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Centro de Ciências Atmosféricas — SENAI CIMATEC</h3>
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{t('landing.partners.cca_title')}</h3>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                <li><a href="https://senaicimatec.com.br/servico/supercomputacao-cloud-e-ciberseguranca/" target="_blank" rel="noopener noreferrer">Supercomputação, cloud e cibersegurança</a></li>
-                <li><a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer">Grupo de Pesquisa CNPq</a></li>
-                <li><a href="https://cpaia.senaicimatec.com.br/pt" target="_blank" rel="noopener noreferrer">CPA-IA (Centro de Pesquisa Aplicada em Inteligência Artificial)</a></li>
+                <li><a href="https://senaicimatec.com.br/servico/supercomputacao-cloud-e-ciberseguranca/" target="_blank" rel="noopener noreferrer">{t('landing.partners.link_hpc')}</a></li>
+                <li><a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer">{t('landing.partners.link_cnpq_group')}</a></li>
+                <li><a href="https://cpaiai.senaicimatec.com.br/pt/acoes/centro-ciencias-atmosfericas" target="_blank" rel="noopener noreferrer">{t('landing.partners.link_cpaia')}</a></li>
               </ul>
             </div>
           </div>
