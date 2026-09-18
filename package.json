@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:types": "tsc -b",
+    "test:full": "pnpm lint && pnpm lint:security && pnpm test:types && pnpm build && pnpm test:e2e",
     "lint": "eslint src",
     "lint:security": "eslint src"
   },
