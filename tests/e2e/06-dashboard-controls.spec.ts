@@ -20,7 +20,7 @@ test.describe('Dashboard — seletores de Experimento e Modelo', () => {
 
     await experimentSelect.selectOption('ssp245')
 
-    await page.click('.tab-btn:has-text("WebGIS Map")')
+    await page.click('.tab-btn:has-text("WebGIS")')
     const combobox = page.locator('.select-field', { hasText: 'Experimento' }).locator('.combobox-input')
     await expect(combobox).toHaveAttribute('placeholder', /CMIP6 SSP2-4\.5/)
   })
@@ -32,7 +32,7 @@ test.describe('Dashboard — seletores de Experimento e Modelo', () => {
 
     await modelSelect.selectOption('mpas')
 
-    await page.click('.tab-btn:has-text("WebGIS Map")')
+    await page.click('.tab-btn:has-text("WebGIS")')
     const sidePanelModelSelect = page.locator('.select-field', { hasText: 'Modelo' }).locator('select')
     await expect(sidePanelModelSelect).toHaveValue('mpas')
   })
@@ -80,7 +80,7 @@ test.describe('SidePanel — opacidade do COG', () => {
     await slider.press('ArrowRight')
     await slider.press('ArrowLeft')
 
-    await page.click('.tab-btn:has-text("Analytical Dashboard")')
+    await page.click('.tab-btn:has-text("Dashboard")')
     await expect(page.locator('.dashboard-view')).toBeVisible()
 
     expect(errors.filter(e => !e.includes('COG:'))).toEqual([])

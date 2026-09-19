@@ -22,10 +22,15 @@ html, body, #root {
 }
 
 /* landing-mode: desabilita overflow:hidden global para que a página role normalmente */
-html.landing-mode,
+html.landing-mode {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: auto;
+  min-height: 100vh;
+}
 html.landing-mode body,
 html.landing-mode #root {
-  overflow: auto;
+  overflow: visible;
   height: auto;
   min-height: 100vh;
 }

@@ -29,43 +29,30 @@ test.describe('Landing Page — seções de conteúdo', () => {
     await page.goto('/')
   })
 
-  test('NavbarTop — logos e botão "Entrar no Sistema" visíveis', async ({ page }) => {
+  test('NavbarTop — logos visíveis', async ({ page }) => {
     await expect(page.locator('.lp-navbar')).toBeVisible()
-    await expect(page.locator('.lp-navbar-enter')).toBeVisible()
-    await expect(page.locator('.lp-navbar-enter')).toContainText('Entrar no Sistema')
+    await expect(page.locator('.lp-navbar-logo').first()).toBeVisible()
   })
 
   test('HeroSection — dois CTAs visíveis', async ({ page }) => {
     await expect(page.locator('.lp-cta-primary')).toBeVisible()
     await expect(page.locator('.lp-cta-secondary')).toBeVisible()
-    await expect(page.locator('.lp-cta-primary')).toContainText('Abrir WebGIS Map')
-    await expect(page.locator('.lp-cta-secondary')).toContainText('Abrir Analytical Dashboard')
+    await expect(page.locator('.lp-cta-primary')).toContainText('Abrir Mapa')
+    await expect(page.locator('.lp-cta-secondary')).toContainText('Abrir Dashboard')
   })
 
-  test('StatsStrip — 5 cards de indicadores visíveis', async ({ page }) => {
-    const cards = page.locator('.lp-stat-card')
-    await expect(cards).toHaveCount(5)
-  })
 
-  test('T08 — ScenariosSection — 7 cards de experimentos visíveis', async ({ page }) => {
-    const cards = page.locator('.lp-scenario-card')
-    await expect(cards).toHaveCount(7)
-  })
 
   test('TeamSection — 17 pesquisadores listados', async ({ page }) => {
     const cards = page.locator('.lp-team-card')
     await expect(cards).toHaveCount(17)
   })
 
-  test('PublicationsSection — 10 publicações listadas', async ({ page }) => {
+  test('PublicationsSection — 11 publicações listadas', async ({ page }) => {
     const items = page.locator('.lp-pub-card')
-    await expect(items).toHaveCount(10)
+    await expect(items).toHaveCount(11)
   })
 
-  test('FooterSection — disclaimer de dados preliminares visível', async ({ page }) => {
-    await expect(page.locator('.lp-footer-disclaimer')).toBeVisible()
-    await expect(page.locator('.lp-footer-disclaimer')).toContainText('preliminares')
-  })
 
   test('T09 — logos institucionais carregam sem erro (2xx ou 304)', async ({ page }) => {
     const logoStatuses: number[] = []

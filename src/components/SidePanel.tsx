@@ -162,6 +162,7 @@ export default function SidePanel({
             value={String(height)}
             onChange={v => dispatch({ type: 'SET_HEIGHT', height: Number(v) as Height })}
           />
+          {/* Seasonality Temporarily Disabled
           {(dataset === 'era5' || dataset === 'hist') && (
             <SelectField
               label={t('sidepanel.season_label')}
@@ -170,6 +171,7 @@ export default function SidePanel({
               onChange={v => dispatch({ type: 'SET_SEASON', season: v as Season })}
             />
           )}
+          */}
         </AccordionSection>
 
         <AccordionSection title={t('sidepanel.section.bathy')} defaultOpen={false}>

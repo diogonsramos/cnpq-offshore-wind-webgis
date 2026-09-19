@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ptBR } from './pt-BR'
 import { en } from './en'
+import { es } from './es'
 import type { Locale, TranslationKey } from './types'
 
-const DICTIONARIES: Record<Locale, Record<TranslationKey, string>> = { 'pt-BR': ptBR, en }
+const DICTIONARIES: Record<Locale, Record<TranslationKey, string>> = { 'pt-BR': ptBR, en, es }
 const STORAGE_KEY = 'cnpq-webgis-locale'
 
 type TranslateFn = (key: TranslationKey, vars?: Record<string, string | number>) => string
@@ -18,7 +19,9 @@ const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 function readStoredLocale(): Locale {
   const stored = localStorage.getItem(STORAGE_KEY)
-  return stored === 'en' ? 'en' : 'pt-BR'
+  if (stored === 'en') return 'en'
+  if (stored === 'es') return 'es'
+  return 'pt-BR'
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {

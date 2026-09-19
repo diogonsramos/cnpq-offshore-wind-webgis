@@ -6,19 +6,8 @@ interface ProjectInfoPanelProps {
   onClose: () => void
 }
 
-const TECH_TABLE_ROWS = [
-  ['Modelos atmosféricos', 'WRF-ARW v4.6.0 (Weather Research and Forecasting) e MPAS v8.1.0 (Model for Prediction Across Scales)'],
-  ['Domínios aninhados (WRF)', 'D01: 27 km (América do Sul); D02: 9 km (costa brasileira)'],
-  ['Grade MPAS', 'Malha global com refinamento regional para ~9 km sobre a costa brasileira'],
-  ['Pontos de grade (frontend)', '~250.000 pontos após regridagem para grade lat/lon ~0,08°'],
-  ['Condições de contorno', 'ERA5 (reanálise ECMWF, ~31 km) e CMIP6 BC (Xu et al. 2021, ~139 km, 18 modelos) bias corrected'],
-  ['Níveis verticais', '51 níveis (sigma/pressão híbrida)'],
-  ['Alturas pós-processadas', '10, 50, 100, 150, 200 m (obtidas pela lei da potência com parâmetros atmosféricos do modelo)'],
-  ['Variáveis (frontend)', 'Velocidade do vento — ws (m/s); Densidade de potência — wpd (W/m²)'],
-  ['Períodos', 'Histórico (2004–2014), Presente (2015–2023), Futuro (2030–2050)'],
-  ['Volume bruto de entrada', '~20 TB (ERA5: 15 TB; CMIP6 BC: 5,4 TB)'],
-  ['Produtos processados', '700 COGs; GeoParquet por experimento e modelo'],
-]
+
+
 
 const PUBLICATIONS = [
   <>WEYLL, A. L. C. et al. <strong>Mapeamento eólico offshore histórico e futuro usando Quantile Delta Mapping com ajuste de erros do downscaling CMIP6-WRF.</strong> In: XI SAPCT e X ICPAD, 2026, Salvador.</>,
@@ -35,6 +24,20 @@ const PUBLICATIONS = [
 
 function ProjectInfoPanelInner({ onClose }: ProjectInfoPanelProps) {
   const { t } = useLocale()
+
+  const TECH_TABLE_ROWS: [string, string][] = [
+    [t('project.tech1_label'), t('project.tech1_value')],
+    [t('project.tech2_label'), t('project.tech2_value')],
+    [t('project.tech3_label'), t('project.tech3_value')],
+    [t('project.tech4_label'), t('project.tech4_value')],
+    [t('project.tech5_label'), t('project.tech5_value')],
+    [t('project.tech6_label'), t('project.tech6_value')],
+    [t('project.tech7_label'), t('project.tech7_value')],
+    [t('project.tech8_label'), t('project.tech8_value')],
+    [t('project.tech9_label'), t('project.tech9_value')],
+    [t('project.tech10_label'), t('project.tech10_value')],
+    [t('project.tech11_label'), t('project.tech11_value')],
+  ]
 
   return (
     <>

@@ -32,7 +32,7 @@ test.describe('Lazy-loading do Plotly (f04)', () => {
     await expect(page.locator('.map-container')).toBeVisible()
 
     const plotlyRequest = page.waitForRequest(PLOTLY_REQUEST, { timeout: 15000 })
-    await page.click('.tab-btn:has-text("Analytical Dashboard")')
+    await page.click('.tab-btn:has-text("Dashboard")')
     await expect(plotlyRequest).resolves.toBeTruthy()
   })
 })
@@ -48,9 +48,9 @@ test.describe('Preservação de estado — DashboardView com mount condicional (
     await heightSelect.selectOption('50')
     await expect(heightSelect).toHaveValue('50')
 
-    await page.click('.tab-btn:has-text("WebGIS Map")')
+    await page.click('.tab-btn:has-text("WebGIS")')
     await expect(page.locator('.map-container')).toBeVisible()
-    await page.click('.tab-btn:has-text("Analytical Dashboard")')
+    await page.click('.tab-btn:has-text("Dashboard")')
 
     await expect(heightSelect).toHaveValue('50')
   })
