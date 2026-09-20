@@ -143,9 +143,9 @@
 }
 
 .dv-chips {
+  grid-column: 1 / -1;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .dv-legend-chip {
@@ -160,6 +160,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: #334155;
+  flex: 1;
 }
 
 .dv-legend-swatch {
@@ -359,6 +360,7 @@
   transition: box-shadow 0.2s, transform 0.2s;
   display: flex;
   flex-direction: column;
+  min-height: 350px;
 }
 
 .chart-card:hover {
@@ -445,4 +447,67 @@
   height: 10px;
   border-radius: 5px;
   border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* ── Print / PDF Export Styling ──────────────────────────────── */
+@media print {
+  /* Hide unwanted UI elements */
+  .global-header, 
+  .dv-filter-bar-wrapper, 
+  .dv-add-btn, 
+  .chip-remove, 
+  .modebar, 
+  .chart-fullscreen-btn, 
+  .dv-location-inputs,
+  .gpe-apply-row {
+    display: none !important;
+  }
+
+  /* Reset layout constraints to allow natural flowing pages */
+  body, .dashboard-view, .unified-dashboard-container, .dv-main {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Stack sidebar elements */
+  .dv-sidebar {
+    display: block !important;
+    margin-bottom: 24px;
+  }
+
+  .geoparquet-filters, .minimap-container {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: none !important;
+  }
+
+  /* Convert chart grid to a flowing block to prevent overlaps */
+  .dv-chart-grid {
+    display: block !important;
+  }
+
+  .chart-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: none !important;
+    min-height: auto !important;
+  }
+
+  /* Force Plotly containers to a printable height */
+  .js-plotly-plot, .plot-container {
+    height: 350px !important;
+  }
+
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
 }

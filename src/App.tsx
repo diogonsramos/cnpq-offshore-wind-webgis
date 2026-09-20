@@ -120,6 +120,7 @@ export default function App() {
                 onOpenDashboard={switchToDashboard}
                 showFAQ={showFAQ} showProject={showProject}
                 opacity={cogOpacity}
+                basemap={basemap}
                 dispatch={dispatch}
               />
               <div className="map-area">

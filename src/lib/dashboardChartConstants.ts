@@ -59,7 +59,7 @@ export const CHART_FONT = { size: 12 }
 export const HOVER_LABEL_STYLE = {
   bgcolor: 'rgba(255,255,255,0.92)',
   bordercolor: 'rgba(0,0,0,0.15)',
-  font: { size: 12 },
+  font: { size: 13, color: '#000000' },
 }
 
 // Shared Plotly config for every dashboard chart: enables the modebar but keeps

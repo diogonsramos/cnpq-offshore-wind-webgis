@@ -14,6 +14,19 @@ html, body, #root {
   background: #f0f2f5;
 }
 
+@media print {
+  html, body, #root {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  .app {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
 h1, h2, h3, h4 {
   color: #1a1a2e;
   font-weight: 700;

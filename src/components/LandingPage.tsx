@@ -261,6 +261,63 @@ export default function LandingPage({ onNavigate }: Props) {
         </div>
       </section>
 
+      {/* Abordagens de Modelagem */}
+      <section id="modelos" className="lp-tech">
+        <div className="lp-tech-inner">
+          <p className="lp-section-label">Grades e Malhas</p>
+          <h2 className="lp-section-title">Comparação WRF vs MPAS</h2>
+          <div className="lp-tech-text">
+            <p>
+              O projeto fornece dados de altíssima resolução utilizando duas abordagens distintas e complementares de simulação atmosférica. As diferenças arquitetônicas entre o <strong>WRF</strong> (Weather Research and Forecasting) e o <strong>MPAS</strong> (Model for Prediction Across Scales) representam o estado-da-arte na modelagem climática.
+            </p>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem', margin: '3rem 0' }}>
+            {/* WRF Card */}
+            <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ background: '#3b82f6', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem' }}>WRF</span>
+                Grade Estruturada
+              </h3>
+              <img src="/plots/wrf_mapa.png" alt="Grade do WRF" style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
+              <table className="lp-tech-table" style={{ width: '100%', fontSize: '0.9rem', margin: 0 }}>
+                <tbody>
+                  <tr><td><strong>Geometria</strong></td><td>Grade regular ortogonal (Arakawa-C)</td></tr>
+                  <tr><td><strong>Refinamento</strong></td><td>Downscaling por domínios aninhados</td></tr>
+                  <tr><td><strong>Resolução</strong></td><td>Espaçamento fixo (DX/DY = 9km no domínio d02)</td></tr>
+                  <tr><td><strong>Vantagem</strong></td><td>Altamente consolidado para parametrização costeira e eólica</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* MPAS Card */}
+            <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ background: '#10b981', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem' }}>MPAS</span>
+                Malha de Voronoi
+              </h3>
+              <img src="/plots/mpas_mapa.png" alt="Malha do MPAS" style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
+              <table className="lp-tech-table" style={{ width: '100%', fontSize: '0.9rem', margin: 0 }}>
+                <tbody>
+                  <tr><td><strong>Geometria</strong></td><td>Malha não-estruturada (hexagonal/poligonal)</td></tr>
+                  <tr><td><strong>Refinamento</strong></td><td>Transição suave global-regional (sem aninhamento)</td></tr>
+                  <tr><td><strong>Resolução</strong></td><td>Distância entre células variável (<code>dcEdge</code>)</td></tr>
+                  <tr><td><strong>Vantagem</strong></td><td>Evita reflexão de ondas numéricas nas "paredes" das grades</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div style={{ textAlign: 'center', background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#0f172a' }}>Comparação de Malhas em Alta Resolução</h3>
+            <img src="/plots/comparacao_zoom.png" alt="Comparação Detalhada" style={{ maxWidth: '100%', borderRadius: '8px', border: '1px solid #f1f5f9' }} />
+            <p style={{ marginTop: '1.5rem', color: '#64748b', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '800px', margin: '1.5rem auto 0 auto' }}>
+              Visualização aproximada (zoom) da costa brasileira contrastando a matriz de pontos regulares cartesianos do WRF (esquerda) 
+              com a geometria dinâmica da malha de Voronoi do MPAS (direita). Esta sobreposição demonstra a riqueza dos dados brutos disponibilizados pelo projeto.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Dados */}
       <section id="dados" className="lp-tech">

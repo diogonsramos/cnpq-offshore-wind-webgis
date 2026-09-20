@@ -158,6 +158,13 @@ function DashboardViewInner({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [fullscreenChart])
 
+  // Force Plotly to recalculate container dimensions when layout structurally changes
+  useEffect(() => {
+    const t1 = setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
+    const t2 = setTimeout(() => window.dispatchEvent(new Event('resize')), 500)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [pinnedLocations.length, result?.count, dashboardVar, dashboardHeight, fullscreenChart])
+
   const handleManualAdd = () => {
     const lat = parseFloat(latInput)
     const lon = parseFloat(lonInput)
@@ -170,7 +177,7 @@ function DashboardViewInner({
   }
 
   const locLabel = (loc: DashboardLocationData, i: number): string => {
-    let label = `Loc ${i + 1}`
+    let label = `Ponto ${i + 1}`
     if (loc.model && loc.experiment) {
       const m = MODELS.includes(loc.model as Model) ? modelLabel(loc.model as Model, t) : loc.model.toUpperCase()
       const d = DATASETS.includes(loc.experiment as Dataset) ? datasetLabel(loc.experiment as Dataset, t) : loc.experiment.toUpperCase()
@@ -284,6 +291,17 @@ function DashboardViewInner({
             {HEIGHTS.map(h => <option key={h} value={h}>{h}m</option>)}
           </select>
         </div>
+        <div className="dv-filter-group" style={{ marginLeft: 'auto' }}>
+          <button 
+            className="dv-add-btn" 
+            style={{ padding: '8px 16px', background: '#3b82f6' }}
+            onClick={() => {
+              window.print()
+            }}
+          >
+            Exportar Gráficos
+          </button>
+        </div>
       </div>
       </div>
 
@@ -299,16 +317,6 @@ function DashboardViewInner({
               <button className="dv-add-btn" onClick={handleManualAdd}>{t('dashboard.add_location')}</button>
             </div>
             {locError && <span className="dv-error">{locError}</span>}
-            
-            <div className="dv-chips">
-              {pinnedLocations.map((loc, i) => (
-                <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
-                  <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
-                  {locLabel(loc, i)} — ({loc.lat.toFixed(2)}, {loc.lon.toFixed(2)})
-                  <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
-                </span>
-              ))}
-            </div>
           </div>
 
           <div className="geoparquet-filters">
@@ -344,18 +352,16 @@ function DashboardViewInner({
             </div>
           </div>
 
-          {result && result.count > 0 && (
-            <>
-              <h4 style={{ gridColumn: '1 / -1', margin: '0 0 -12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase' }}>Estatísticas da Região Filtrada ({result.count} pixels)</h4>
-              <div className="gpe-stats-grid">
-                <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.mean')}</span><span className="gpe-stat-value">{result.mean?.toFixed(1)} {varUnit}</span></div>
-              <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.median')}</span><span className="gpe-stat-value">{result.median?.toFixed(1)} {varUnit}</span></div>
-              <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.std')}</span><span className="gpe-stat-value">{result.std?.toFixed(2)}</span></div>
-              <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.min')}</span><span className="gpe-stat-value">{result.min?.toFixed(1)} {varUnit}</span></div>
-              <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.max')}</span><span className="gpe-stat-value">{result.max?.toFixed(1)} {varUnit}</span></div>
-              <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.cv')}</span><span className="gpe-stat-value">{result.cv?.toFixed(1)}%</span></div>
-              </div>
-            </>
+          {pinnedLocations.length > 0 && (
+            <div className="dv-chips">
+              {pinnedLocations.map((loc, i) => (
+                <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
+                  <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
+                  {locLabel(loc, i)} — (Lat: {loc.lat.toFixed(2)}, Lon: {loc.lon.toFixed(2)})
+                  <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
+                </span>
+              ))}
+            </div>
           )}
         </div>
 
@@ -402,7 +408,7 @@ function DashboardViewInner({
                       hoverlabel: HOVER_LABEL_STYLE,
                     }}
                     config={PLOT_CONFIG}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '100%' }}
                     useResizeHandler
                   />
                 </ChartCard>
@@ -439,7 +445,7 @@ function DashboardViewInner({
                       polar: { angularaxis: { direction: 'clockwise', rotation: 90 }, radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' } },
                     }}
                     config={WINDROSE_PLOT_CONFIG}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '100%' }}
                     useResizeHandler
                   />
                   {windRoseMaxSpeed > 0 && (
@@ -456,7 +462,7 @@ function DashboardViewInner({
                 <ChartCard id="boxplot-state" testId="chart-boxplot-state" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
                   <Plot
                     data={byStateOrdered.map((g, i) => ({
-                      y: g.values, type: 'box' as const, name: stateLabel(g.state),
+                      y: g.values, type: 'box' as const, name: g.state,
                       marker: { color: COLORS[i % COLORS.length] },
                       boxpoints: false as const,
                     }))}
@@ -473,7 +479,7 @@ function DashboardViewInner({
                       hoverlabel: HOVER_LABEL_STYLE,
                     }}
                     config={PLOT_CONFIG}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '100%' }}
                     useResizeHandler
                   />
                 </ChartCard>
@@ -500,7 +506,7 @@ function DashboardViewInner({
                       hoverlabel: HOVER_LABEL_STYLE,
                     }}
                     config={PLOT_CONFIG}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '100%' }}
                     useResizeHandler
                   />
                 </ChartCard>
@@ -528,7 +534,7 @@ function DashboardViewInner({
                       hoverlabel: HOVER_LABEL_STYLE,
                     }}
                     config={PLOT_CONFIG}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '100%' }}
                     useResizeHandler
                   />
                 </ChartCard>
@@ -556,7 +562,7 @@ function DashboardViewInner({
                       hoverlabel: HOVER_LABEL_STYLE,
                     }}
                     config={PLOT_CONFIG}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '100%' }}
                     useResizeHandler
                   />
                 </ChartCard>

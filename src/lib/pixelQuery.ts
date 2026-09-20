@@ -728,6 +728,7 @@ export function queryFilteredPixels(filters: FilterCriteria): FilteredAggregates
 
   const matched: { pixel: RawPixel; value: number }[] = []
   for (const r of records) {
+    if (r.bathy_zone === 'out_of_range') continue
     if (stateSet && !stateSet.has(r.state)) continue
     if (bathySet && !bathySet.has(r.bathy_zone)) continue
     if (r.distance_nm < distMin || r.distance_nm > distMax) continue

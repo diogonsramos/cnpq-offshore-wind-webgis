@@ -7,7 +7,6 @@ import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
 import type { BasemapId, BathyLayerId } from '../types'
 import type { AppAction } from '../reducer'
-import BasemapSwitcher from './BasemapSwitcher'
 import { useLocale } from '../i18n/provider'
 import './MapView.css'
 
@@ -425,10 +424,15 @@ function MapViewInner(props: MapViewProps) {
     img.src = dataUrl
   }, [variable, height, t])
 
+  useEffect(() => {
+    const triggerScreenshot = () => handleScreenshot()
+    window.addEventListener('take-map-screenshot', triggerScreenshot)
+    return () => window.removeEventListener('take-map-screenshot', triggerScreenshot)
+  }, [handleScreenshot])
+
   return (
     <>
       <div ref={container} className="map-container" />
-      <BasemapSwitcher basemap={basemap} onChange={id => dispatch({ type: 'SET_BASEMAP', basemap: id })} />
       
       <div className="map-legend">
         <div className="map-legend-title">
@@ -451,9 +455,6 @@ function MapViewInner(props: MapViewProps) {
           <span>{t('mapview.loading')}</span>
         </div>
       )}
-      <button className="map-screenshot-btn" onClick={handleScreenshot} title={t('mapview.screenshot_title')}>
-        📷 Screenshot
-      </button>
     </>
   )
 }

@@ -8,6 +8,8 @@ import type { BathyLayerId } from '../types'
 import type { AppAction } from '../reducer'
 import { useLocale } from '../i18n/provider'
 import type { TranslationKey } from '../i18n/types'
+import type { BasemapId } from '../types'
+import BasemapSwitcher from './BasemapSwitcher'
 import './SidePanel.css'
 
 interface SidePanelProps {
@@ -22,6 +24,7 @@ interface SidePanelProps {
   showFAQ: boolean
   showProject: boolean
   opacity: number
+  basemap: BasemapId
   dispatch: Dispatch<AppAction>
 }
 
@@ -73,7 +76,7 @@ export default function SidePanel({
   showBathymetry, bathyLayer,
   onOpenDashboard,
   showFAQ, showProject,
-  opacity,
+  opacity, basemap,
   dispatch,
 }: SidePanelProps) {
   const { t } = useLocale()
@@ -145,6 +148,24 @@ export default function SidePanel({
             />
           </div>
         </AccordionSection>
+
+        <div className="sidepanel-section" style={{ marginTop: 'auto', borderTop: '1px solid #e2e8f0', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p className="label" style={{ margin: 0 }}>MAPA BASE</p>
+          <BasemapSwitcher basemap={basemap} onChange={id => dispatch({ type: 'SET_BASEMAP', basemap: id })} />
+          <button 
+            onClick={() => window.dispatchEvent(new Event('take-map-screenshot'))}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '8px', border: '1px solid #e2e8f0', borderRadius: '6px',
+              background: '#f8fafc', color: '#475569', fontSize: '12px', fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.2s', width: '100%'
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a' }}
+            onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569' }}
+          >
+            📷 {t('mapview.screenshot_title') || 'Screenshot'}
+          </button>
+        </div>
       </div>
 
       <div className="footer">
