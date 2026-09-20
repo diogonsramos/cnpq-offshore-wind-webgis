@@ -38,71 +38,22 @@ function AccordionSection({ title, defaultOpen, children }: { title: string; def
   )
 }
 
-function SelectField<T extends string>({ label, options, value, onChange }: {
+function RadioList<T extends string>({ label, options, value, onChange }: {
   label: string
   options: { val: T; label: string }[]
   value: T
   onChange: (v: T) => void
 }) {
   return (
-    <div className="select-field">
+    <div className="radio-list-field">
       <p className="label">{label}</p>
-      <select value={value} onChange={e => onChange(e.target.value as T)}>
+      <div className="radio-list-options">
         {options.map(o => (
-          <option key={o.val} value={o.val}>{o.label}</option>
+          <label key={o.val} className="radio-row">
+            <input type="radio" name={label} checked={value === o.val} onChange={() => onChange(o.val)} />
+            <span>{o.label}</span>
+          </label>
         ))}
-      </select>
-    </div>
-  )
-}
-
-function SearchableSelect({ label, options, value, onChange }: {
-  label: string
-  options: { val: string; label: string }[]
-  value: string
-  onChange: (v: string) => void
-}) {
-  const { t } = useLocale()
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const selected = options.find(o => o.val === value)
-
-  const filtered = query
-    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()) || o.val.toLowerCase().includes(query.toLowerCase()))
-    : options
-
-  return (
-    <div className="select-field">
-      <p className="label">{label}</p>
-      <div className="combobox" onBlur={() => setTimeout(() => setOpen(false), 180)}>
-        <input
-          className="combobox-input"
-          type="text"
-          placeholder={selected ? `${selected.label} (${selected.val})` : t('sidepanel.search_placeholder')}
-          value={query}
-          onChange={e => { setQuery(e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
-        />
-        {open && filtered.length > 0 && (
-          <div className="combobox-dropdown">
-            {filtered.map(o => (
-              <div
-                key={o.val}
-                className={`combobox-option ${o.val === value ? 'active' : ''}`}
-                onMouseDown={() => { onChange(o.val); setQuery(''); setOpen(false) }}
-                title={o.label}
-              >
-                <span className="combobox-option-label">{o.label}</span>
-                <span className="combobox-option-val">{o.val}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {open && filtered.length === 0 && (
-          <div className="combobox-dropdown">
-            <div className="combobox-empty">{t('sidepanel.no_results')}</div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -135,19 +86,19 @@ export default function SidePanel({
 
       <div className="filters">
         <AccordionSection title={t('sidepanel.section.model_experiment')}>
-          <SelectField
+          <RadioList
             label={t('sidepanel.model_label')}
             options={MODELS.map(m => ({ val: m, label: modelLabel(m, t) }))}
             value={model}
             onChange={v => dispatch({ type: 'SET_MODEL', model: v as Model })}
           />
-          <SearchableSelect
+          <RadioList
             label={t('sidepanel.experiment_label')}
             options={DATASETS.map(d => ({ val: d, label: `${modelLabel(model, t)} ${datasetLabel(d, t)}` }))}
             value={dataset}
             onChange={v => dispatch({ type: 'SET_DATASET', dataset: v as Dataset })}
           />
-          <SelectField
+          <RadioList
             label={t('sidepanel.variable_label')}
             options={VARIABLES.map(v => ({ val: v, label: `${varLabel(v, t).label} (${varLabel(v, t).unit})` }))}
             value={variable}
@@ -155,23 +106,13 @@ export default function SidePanel({
           />
         </AccordionSection>
 
-        <AccordionSection title={t('sidepanel.section.height_season')} defaultOpen={false}>
-          <SelectField
+        <AccordionSection title={t('sidepanel.section.height')} defaultOpen={false}>
+          <RadioList
             label={t('sidepanel.height_label')}
             options={HEIGHTS.map(h => ({ val: String(h), label: `${h}m` }))}
             value={String(height)}
             onChange={v => dispatch({ type: 'SET_HEIGHT', height: Number(v) as Height })}
           />
-          {/* Seasonality Temporarily Disabled
-          {(dataset === 'era5' || dataset === 'hist') && (
-            <SelectField
-              label={t('sidepanel.season_label')}
-              options={SEASONS.map(s => ({ val: s, label: s.toUpperCase() }))}
-              value={season}
-              onChange={v => dispatch({ type: 'SET_SEASON', season: v as Season })}
-            />
-          )}
-          */}
         </AccordionSection>
 
         <AccordionSection title={t('sidepanel.section.bathy')} defaultOpen={false}>

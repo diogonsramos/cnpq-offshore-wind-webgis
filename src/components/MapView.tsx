@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, memo, useCallback, type Dispatch } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { renderCog } from '../lib/cogTileRenderer'
+import { renderCog, WS, PD } from '../lib/cogTileRenderer'
 import { buildCogUrl, datasetLabel, modelLabel, varLabel, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
 import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '../lib/pixelQuery'
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
@@ -54,10 +54,6 @@ const BASEMAP_TILES: Record<BasemapId, { tiles: string[]; attribution: string }>
     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
     attribution: '&copy; Esri',
   },
-  dark: {
-    tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
-    attribution: '&copy; CARTO',
-  },
   terrain: {
     tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
     attribution: 'Terrain tiles &copy; Mapzen, AWS Open Data Terrain Tiles',
@@ -76,7 +72,7 @@ const BASEMAP_TILES: Record<BasemapId, { tiles: string[]; attribution: string }>
   },
 }
 
-const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-dark', 'basemap-terrain', 'basemap-night', 'basemap-topo']
+const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-terrain', 'basemap-night', 'basemap-topo']
 const PIN_SRC = 'pin-src'
 const PIN_LYR = 'pin-lyr'
 const PIN_OUTLINE_LYR = 'pin-outline-lyr'
@@ -118,7 +114,6 @@ function MapViewInner(props: MapViewProps) {
         sources: {
           'basemap-street': { type: 'raster', tiles: BASEMAP_TILES.street.tiles, tileSize: 256, attribution: BASEMAP_TILES.street.attribution },
           'basemap-satellite': { type: 'raster', tiles: BASEMAP_TILES.satellite.tiles, tileSize: 256, attribution: BASEMAP_TILES.satellite.attribution },
-          'basemap-dark': { type: 'raster', tiles: BASEMAP_TILES.dark.tiles, tileSize: 256, attribution: BASEMAP_TILES.dark.attribution },
           'basemap-terrain': { type: 'raster-dem', tiles: BASEMAP_TILES.terrain.tiles, tileSize: 256, encoding: 'terrarium', attribution: BASEMAP_TILES.terrain.attribution },
           'basemap-night': { type: 'raster', tiles: BASEMAP_TILES.night.tiles, tileSize: 256, maxzoom: 8, attribution: BASEMAP_TILES.night.attribution },
           'basemap-topo': { type: 'raster', tiles: BASEMAP_TILES.topo.tiles, tileSize: 256, attribution: BASEMAP_TILES.topo.attribution },
@@ -126,7 +121,6 @@ function MapViewInner(props: MapViewProps) {
         layers: [
           { id: 'basemap-street-lyr', type: 'raster', source: 'basemap-street' },
           { id: 'basemap-satellite-lyr', type: 'raster', source: 'basemap-satellite', layout: { visibility: 'none' } },
-          { id: 'basemap-dark-lyr', type: 'raster', source: 'basemap-dark', layout: { visibility: 'none' } },
           { id: 'basemap-terrain-lyr', type: 'hillshade', source: 'basemap-terrain', layout: { visibility: 'none' }, paint: { 'hillshade-exaggeration': 0.6 } },
           { id: 'basemap-night-lyr', type: 'raster', source: 'basemap-night', layout: { visibility: 'none' } },
           { id: 'basemap-topo-lyr', type: 'raster', source: 'basemap-topo', layout: { visibility: 'none' } },
@@ -370,13 +364,7 @@ function MapViewInner(props: MapViewProps) {
 
   useEffect(() => {
     if (!ready || !map.current) return
-    const m = map.current
-    const idle = () => {
-      m.off('idle', idle)
-      drawCogWithPins()
-    }
-    m.on('idle', idle)
-    return () => { m.off('idle', idle) }
+    drawCogWithPins()
   }, [drawCogWithPins, ready])
 
   useEffect(() => {
@@ -441,6 +429,22 @@ function MapViewInner(props: MapViewProps) {
     <>
       <div ref={container} className="map-container" />
       <BasemapSwitcher basemap={basemap} onChange={id => dispatch({ type: 'SET_BASEMAP', basemap: id })} />
+      
+      <div className="map-legend">
+        <div className="map-legend-title">
+          {variable === 'ws' ? t('dashboard.chart.ws_unit') : t('dashboard.chart.wpd_unit')}
+        </div>
+        <div className="map-legend-gradient" style={{
+          background: `linear-gradient(to right, ${(variable === 'ws' ? WS : PD).map(s => 
+            `rgba(${s[1][0]}, ${s[1][1]}, ${s[1][2]}, 1)`
+          ).join(', ')})`
+        }} />
+        <div className="map-legend-labels">
+          <span>{(variable === 'ws' ? WS : PD)[0][0]}</span>
+          <span>{(variable === 'ws' ? WS : PD)[Math.floor((variable === 'ws' ? WS : PD).length / 2)][0]}</span>
+          <span>{(variable === 'ws' ? WS : PD)[(variable === 'ws' ? WS : PD).length - 1][0]}+</span>
+        </div>
+      </div>
       {cogLoading && (
         <div className="cog-loading">
           <div className="cog-spinner" />

@@ -11,7 +11,6 @@ interface BasemapSwitcherProps {
 const BASEMAPS: { id: BasemapId; labelKey: TranslationKey; icon: string }[] = [
   { id: 'street', labelKey: 'basemap.street', icon: '🗺' },
   { id: 'satellite', labelKey: 'basemap.satellite', icon: '🛰' },
-  { id: 'dark', labelKey: 'basemap.dark', icon: '🌙' },
   { id: 'terrain', labelKey: 'basemap.terrain', icon: '⛰' },
   { id: 'night', labelKey: 'basemap.night', icon: '🌃' },
   { id: 'topo', labelKey: 'basemap.topo', icon: '🗻' },

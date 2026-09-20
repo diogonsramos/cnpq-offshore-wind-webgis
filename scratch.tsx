@@ -69,8 +69,6 @@ function stateLabel(code: string): string {
   return COASTAL_STATES.find(s => s.val === code)?.label ?? code
 }
 
-const bathyOptionLabel = (val: string): string => BATHY_ZONE_OPTIONS.find(b => b.val === val)?.label ?? val
-
 function distanceMaxFromZones(zones: string[]): number {
   if (zones.length === 0) return DISTANCE_MAX_NM
   return Math.max(...zones.map(z => DISTANCE_ZONE_OPTIONS.find(o => o.val === z)?.max ?? DISTANCE_MAX_NM))
@@ -169,15 +167,7 @@ function DashboardViewInner({
     setLocError('')
   }
 
-  const locLabel = (loc: DashboardLocationData, i: number): string => {
-    let label = `Loc ${i + 1}`
-    if (loc.model && loc.experiment) {
-      const m = MODELS.includes(loc.model as Model) ? modelLabel(loc.model as Model, t) : loc.model.toUpperCase()
-      const d = DATASETS.includes(loc.experiment as Dataset) ? datasetLabel(loc.experiment as Dataset, t) : loc.experiment.toUpperCase()
-      label += ` (${m} — ${d})`
-    }
-    return label
-  }
+  const locLabel = (_loc: DashboardLocationData, i: number): string => `Loc ${i + 1}`
   const modelLabelStr = modelLabel(model, t)
   const datasetLabelStr = datasetLabel(dataset, t)
   const varUnit = dashboardVar === 'ws' ? 'm/s' : 'W/m²'
@@ -258,9 +248,8 @@ function DashboardViewInner({
     <div className="dashboard-view" style={{ overflowY: 'hidden' }}>
       
       {/* Top Filter Bar */}
-      <div className="dv-filter-bar-wrapper">
-        <div className="dv-filter-bar-unified">
-          <div className="dv-filter-group">
+      <div className="dv-filter-bar-unified">
+        <div className="dv-filter-group">
           <label className="dv-label">{t('dashboard.filters.model_label')}</label>
           <select value={model} onChange={e => dispatch({ type: 'SET_MODEL', model: e.target.value as Model })} className="dv-select">
             {MODELS.map(m => <option key={m} value={m}>{modelLabel(m, t)}</option>)}
@@ -284,7 +273,6 @@ function DashboardViewInner({
             {HEIGHTS.map(h => <option key={h} value={h}>{h}m</option>)}
           </select>
         </div>
-      </div>
       </div>
 
       <div className="unified-dashboard-container">
@@ -312,7 +300,7 @@ function DashboardViewInner({
           </div>
 
           <div className="geoparquet-filters">
-            <h3 className="gpe-title">Análise Regional (Filtros GeoParquet)</h3>
+            <h3 className="gpe-title">Filtros GeoParquet</h3>
             <div className="gpe-checkbox-col">
               <p className="dv-pair-picker-title">{t('geoparquet_explorer.filters.bathy_title')}</p>
               {BATHY_ZONE_OPTIONS.map(b => (
@@ -345,17 +333,14 @@ function DashboardViewInner({
           </div>
 
           {result && result.count > 0 && (
-            <>
-              <h4 style={{ gridColumn: '1 / -1', margin: '0 0 -12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase' }}>Estatísticas da Região Filtrada ({result.count} pixels)</h4>
-              <div className="gpe-stats-grid">
-                <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.mean')}</span><span className="gpe-stat-value">{result.mean?.toFixed(1)} {varUnit}</span></div>
+            <div className="gpe-stats-grid">
+              <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.mean')}</span><span className="gpe-stat-value">{result.mean?.toFixed(1)} {varUnit}</span></div>
               <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.median')}</span><span className="gpe-stat-value">{result.median?.toFixed(1)} {varUnit}</span></div>
               <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.std')}</span><span className="gpe-stat-value">{result.std?.toFixed(2)}</span></div>
               <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.min')}</span><span className="gpe-stat-value">{result.min?.toFixed(1)} {varUnit}</span></div>
               <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.max')}</span><span className="gpe-stat-value">{result.max?.toFixed(1)} {varUnit}</span></div>
               <div className="gpe-stat-chip"><span className="gpe-stat-label">{t('geoparquet_explorer.stats.cv')}</span><span className="gpe-stat-value">{result.cv?.toFixed(1)}%</span></div>
-              </div>
-            </>
+            </div>
           )}
         </div>
 
@@ -457,7 +442,7 @@ function DashboardViewInner({
                   <Plot
                     data={byStateOrdered.map((g, i) => ({
                       y: g.values, type: 'box' as const, name: stateLabel(g.state),
-                      marker: { color: COLORS[i % COLORS.length] },
+                      marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
                       boxpoints: false as const,
                     }))}
                     layout={{
@@ -484,7 +469,7 @@ function DashboardViewInner({
                   <Plot
                     data={byBathyOrdered.map((g, i) => ({
                       y: g.values, type: 'box' as const, name: bathyOptionLabel(g.zone),
-                      marker: { color: COLORS[i % COLORS.length] },
+                      marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
                       boxpoints: false as const,
                     }))}
                     layout={{

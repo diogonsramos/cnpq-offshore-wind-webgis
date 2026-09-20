@@ -260,6 +260,8 @@ export interface DashboardLocationData {
   state: string
   bathy_zone: string
   distance_nm: number
+  model?: string
+  experiment?: string
   seasons: SeasonalStats[]
   profile_heights: number[]
   profile_means: number[]
@@ -604,6 +606,8 @@ export async function queryDashboardLocation(
     state: best.state,
     bathy_zone: best.bathy_zone,
     distance_nm: best.distance_nm,
+    model,
+    experiment,
     seasons,
     profile_heights: safeArray(annualRow?.profile_heights ?? best.profile_heights).length > 0 ? safeArray(annualRow?.profile_heights ?? best.profile_heights) : [10, 50, 100, 150, 200],
     profile_means: safeArray(annualRow?.profile_means ?? best.profile_means),

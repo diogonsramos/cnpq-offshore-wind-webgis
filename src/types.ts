@@ -1,6 +1,6 @@
 export type TabId = 'home' | 'map' | 'dashboard'
 
-export type BasemapId = 'street' | 'satellite' | 'dark' | 'terrain' | 'night' | 'topo'
+export type BasemapId = 'street' | 'satellite' | 'terrain' | 'night' | 'topo'
 
 export type BathyLayerId =
   | 'mn_zee_nacional'
