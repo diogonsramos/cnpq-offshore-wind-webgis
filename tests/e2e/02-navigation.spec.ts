@@ -41,6 +41,7 @@ test.describe('Navegação: Sistema → Landing (botão ← Home)', () => {
 
   test('T11b — "Home" também funciona vindo do dashboard', async ({ page }) => {
     await page.goto('/')
+    await page.goto('/')
     await page.click('.lp-cta-secondary')
     await page.click('.gh-nav-link:has-text("Home")')
     await expect(page.locator('.landing')).toBeVisible()
