@@ -107,15 +107,16 @@ export default function LandingPage({ onNavigate }: Props) {
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoPlaying, setVideoPlaying] = useState(true)
-  const [videoMuted, setVideoMuted] = useState(false)
+  const [videoMuted, setVideoMuted] = useState(true)
   const [videoVolume, setVideoVolume] = useState(0.2)
   const [showVideoModal, setShowVideoModal] = useState(false)
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.volume = videoVolume
+      videoRef.current.muted = videoMuted
     }
-  }, [videoVolume])
+  }, [videoVolume, videoMuted])
 
   useEffect(() => {
     const OFFSETS = NAV_SECTIONS.map(s => s.id)
@@ -166,6 +167,8 @@ export default function LandingPage({ onNavigate }: Props) {
           muted={videoMuted}
           src={`${import.meta.env.BASE_URL}video/background.mp4`}
           className="lp-hero-video"
+          onPlay={() => setVideoPlaying(true)}
+          onPause={() => setVideoPlaying(false)}
           onTimeUpdate={(e) => {
             if (e.currentTarget.currentTime >= 8.04) {
               e.currentTarget.currentTime = 0;
@@ -180,19 +183,25 @@ export default function LandingPage({ onNavigate }: Props) {
               className="lp-video-btn" 
               onClick={() => {
                 if (videoRef.current) {
-                  if (videoPlaying) videoRef.current.pause()
-                  else videoRef.current.play()
-                  setVideoPlaying(!videoPlaying)
+                  if (videoPlaying) {
+                    videoRef.current.pause()
+                  } else {
+                    videoRef.current.play().catch(() => {})
+                  }
                 }
               }}
-              title={videoPlaying ? 'Pause' : 'Play'}
+              title={videoPlaying ? 'Pausar' : 'Reproduzir'}
             >
               {videoPlaying ? '⏸' : '▶️'}
             </button>
             <button 
               className="lp-video-btn" 
-              onClick={() => setVideoMuted(!videoMuted)}
-              title={videoMuted ? 'Unmute' : 'Mute'}
+              onClick={() => {
+                const nextMuted = !videoMuted
+                setVideoMuted(nextMuted)
+                if (videoRef.current) videoRef.current.muted = nextMuted
+              }}
+              title={videoMuted ? 'Desmutar' : 'Mutar'}
             >
               {videoMuted ? '🔇' : '🔊'}
             </button>
@@ -202,10 +211,14 @@ export default function LandingPage({ onNavigate }: Props) {
               min="0" 
               max="1" 
               step="0.05" 
-              value={videoVolume} 
+              value={videoMuted ? 0 : videoVolume} 
               onChange={(e) => {
-                setVideoVolume(parseFloat(e.target.value))
-                if (videoMuted && parseFloat(e.target.value) > 0) setVideoMuted(false)
+                const val = parseFloat(e.target.value)
+                setVideoVolume(val)
+                if (val > 0 && videoMuted) {
+                  setVideoMuted(false)
+                  if (videoRef.current) videoRef.current.muted = false
+                }
               }}
               title="Volume"
             />

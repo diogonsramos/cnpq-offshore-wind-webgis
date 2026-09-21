@@ -62,9 +62,10 @@
   bottom: 24px;
   left: 24px;
   display: flex;
+  align-items: center;
   gap: 6px;
-  z-index: 2;
-  pointer-events: none;
+  z-index: 10;
+  pointer-events: auto;
   background: rgba(0, 0, 0, 0.4);
   padding: 6px;
   border-radius: 8px;
