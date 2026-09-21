@@ -106,8 +106,8 @@ export function buildCogUrl(
 ): string {
   const VAR = variable.toUpperCase() // 'WS' | 'WPD'
   if (season === 'annual') {
-    return `/data/cogs/${model}/${dataset}/anual/${VAR}_${height}_avg.tif`
+    return `${import.meta.env.BASE_URL}data/cogs/${model}/${dataset}/anual/${VAR}_${height}_avg.tif`
   }
   const seasonSuffix = season.toUpperCase() // 'DJF' | 'MAM' | 'JJA' | 'SON'
-  return `/data/cogs/${model}/${dataset}/sazonal/${VAR}_${height}_avg_${seasonSuffix}.tif`
+  return `${import.meta.env.BASE_URL}data/cogs/${model}/${dataset}/sazonal/${VAR}_${height}_avg_${seasonSuffix}.tif`
 }

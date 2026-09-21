@@ -282,7 +282,7 @@ let loadedSeasons = new Set<string>()
 let loadGen = 0
 
 function parquetUrl(experiment: string, season: string, model: string = 'wrf'): string {
-  return `/data/geoparquet/${model}/${experiment.toLowerCase()}/season=${season.toLowerCase()}.parquet`
+  return `${import.meta.env.BASE_URL}data/geoparquet/${model}/${experiment.toLowerCase()}/season=${season.toLowerCase()}.parquet`
 }
 
 async function fetchAndParseParquet(url: string, cacheKey: string): Promise<Table> {
