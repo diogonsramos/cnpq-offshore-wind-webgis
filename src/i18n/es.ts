@@ -123,6 +123,7 @@ export const es = {
   'cogcatalog.state.SP': 'São Paulo',
 
   'faq.q1': '¿Cuáles son las fuentes de datos del WebGIS?',
+  'faq.a1': 'Datos de viento de los modelos WRF (Weather Research and Forecasting) y MPAS (Model for Prediction Across Scales) forzados por el reanálisis ERA5 del ECMWF y por el CMIP6 BC (Xu et al. 2021), un conjunto bias corrected de 18 modelos climáticos globales CMIP6 para los escenarios SSP2-4.5 y SSP5-8.5, con downscaling dinámico a ~9 km de resolución.',
   'faq.q2': '¿Cuál es la resolución espacial de los datos?',
   'faq.a2': 'Los datos de entrada ERA5 tienen una resolución original de ~0,25° (~31 km) y el CMIP6 BC de ~1,25° (~139 km). Después del downscaling dinámico con WRF y MPAS, ambos fueron estandarizados a ~9 km de resolución (~0,08° de malla). Malla re-interpolada a la proyección EPSG:4326 (WGS84) con aproximadamente 250 mil puntos de malla.',
   'faq.q3': '¿Cuál es la resolución temporal?',
