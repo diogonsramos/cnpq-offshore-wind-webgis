@@ -64,6 +64,7 @@
   display: flex;
   gap: 6px;
   z-index: 2;
+  pointer-events: none;
   background: rgba(0, 0, 0, 0.4);
   padding: 6px;
   border-radius: 8px;
@@ -183,6 +184,8 @@
   gap: 16px;
   justify-content: center;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 10;
 }
 
 .lp-cta-primary {
@@ -989,7 +992,7 @@ abbr[title] {
   }
 
   .lp-stat-card {
-    min-width: 140px;
+    min-width: 100px;
   }
 
   .lp-back-to-top {

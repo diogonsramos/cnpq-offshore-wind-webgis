@@ -1,8 +1,23 @@
 import { memo } from 'react'
 import type { PixelDataSummary } from '../lib/pixelQuery'
-import ProfileChart from './ProfileChart'
-import WeibullChart from './WeibullChart'
-import WindRoseChart from './WindRoseChart'
+import { lazy, Suspense } from 'react'
+import { SECTOR_LABELS, windSpeedColor, CHART_COLORS } from '../lib/dashboardChartConstants'
+import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
+
+const Plot = lazy(() => import('react-plotly.js'))
+
+const MINI_PLOT_LAYOUT = {
+  margin: { t: 5, b: 20, l: 30, r: 5 },
+  paper_bgcolor: 'transparent',
+  plot_bgcolor: 'transparent',
+  font: { size: 10, color: '#e0e0e0' },
+  showlegend: false,
+}
+
+const MINI_PLOT_CONFIG = {
+  displayModeBar: false,
+  responsive: true,
+}
 import { useLocale } from '../i18n/provider'
 import './PixelInfoPanel.css'
 
@@ -58,26 +73,124 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
 
             {data.profile_heights.length > 0 && (
               <Section title={t('pixel.section.vertical_profile')}>
-                <ProfileChart heights={data.profile_heights} means={data.profile_means} variant="ws" />
+                <div style={{ height: '140px', width: '100%' }}>
+                  <Suspense fallback={null}>
+                    <Plot
+                      data={[{
+                        x: data.profile_means, y: data.profile_heights,
+                        type: 'scatter', mode: 'lines+markers',
+                        line: { color: CHART_COLORS[0], width: 2 }, marker: { size: 4 }
+                      }]}
+                      layout={{
+                        ...MINI_PLOT_LAYOUT,
+                        xaxis: { range: [0, 20], tickfont: { size: 9 } },
+                        yaxis: { tickvals: [10, 50, 100, 150, 200], ticktext: ['10m', '50m', '100m', '150m', '200m'], tickfont: { size: 9 } },
+                      }}
+                      config={MINI_PLOT_CONFIG}
+                      style={{ width: '100%', height: '100%' }}
+                      useResizeHandler
+                    />
+                  </Suspense>
+                </div>
               </Section>
             )}
 
             <Section title={t('dashboard.chart.wpd_profile_title')}>
-              <ProfileChart heights={data.profile_heights} means={data.wpd_profile_means} variant="wpd" />
+              <div style={{ height: '140px', width: '100%' }}>
+                <Suspense fallback={null}>
+                  <Plot
+                    data={[{
+                      x: data.wpd_profile_means, y: data.profile_heights,
+                      type: 'scatter', mode: 'lines+markers',
+                      line: { color: CHART_COLORS[1], width: 2 }, marker: { size: 4 }
+                    }]}
+                    layout={{
+                      ...MINI_PLOT_LAYOUT,
+                      xaxis: { range: [0, 1500], tickfont: { size: 9 } },
+                      yaxis: { tickvals: [10, 50, 100, 150, 200], ticktext: ['10m', '50m', '100m', '150m', '200m'], tickfont: { size: 9 } },
+                    }}
+                    config={MINI_PLOT_CONFIG}
+                    style={{ width: '100%', height: '100%' }}
+                    useResizeHandler
+                  />
+                </Suspense>
+              </div>
             </Section>
 
             {data.weibull[height] && (
               <Section title={t('pixel.section.weibull')}>
                 <Row label={`WS${height} k`} value={fmt(data.weibull[height]?.k)} />
                 <Row label={`WS${height} c`} value={fmt(data.weibull[height]?.c, ' m/s')} />
-                <WeibullChart k={data.weibull[height]?.k ?? null} c={data.weibull[height]?.c ?? null} label={`${height}m`} />
+                <div style={{ height: '140px', width: '100%' }}>
+                  <Suspense fallback={null}>
+                    {(() => {
+                      const k = data.weibull[height]?.k ?? 0
+                      const c = data.weibull[height]?.c ?? 0
+                      if (k <= 0 || c <= 0) return null
+                      const xs: number[] = [], ys: number[] = []
+                      for (let x = 0; x <= 30; x += 0.5) {
+                        xs.push(x)
+                        ys.push((k / c) * Math.pow(x / c, k - 1) * Math.exp(-Math.pow(x / c, k)))
+                      }
+                      return (
+                        <Plot
+                          data={[{
+                            x: xs, y: ys, type: 'scatter', mode: 'lines',
+                            line: { color: CHART_COLORS[2], width: 2 },
+                            fill: 'tozeroy', fillcolor: CHART_COLORS[2] + '44'
+                          }]}
+                          layout={{
+                            ...MINI_PLOT_LAYOUT,
+                            xaxis: { range: [0, 30], tickfont: { size: 9 } },
+                            yaxis: { range: [0, 0.25], tickfont: { size: 9 } },
+                          }}
+                          config={MINI_PLOT_CONFIG}
+                          style={{ width: '100%', height: '100%' }}
+                          useResizeHandler
+                        />
+                      )
+                    })()}
+                  </Suspense>
+                </div>
               </Section>
             )}
 
             <Section title={t('pixel.section.directional')}>
               {data.wind_rose[height] ? (
-                <div className="chart-wrapper">
-                  <WindRoseChart data={data.wind_rose[height]} height={height} />
+                <div className="chart-wrapper" style={{ height: '180px', width: '100%' }}>
+                  <Suspense fallback={null}>
+                    {(() => {
+                      const wr = data.wind_rose[height]
+                      if (!wr) return null
+                      const speeds = SECTOR_LABELS.map(s => wr[s]?.mean_ws ?? 0)
+                      const maxSpeed = Math.max(...speeds, 1)
+                      return (
+                        <Plot
+                          data={[{
+                            r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
+                            theta: SECTOR_LABELS,
+                            type: 'barpolar',
+                            marker: { color: speeds.map(v => windSpeedColor(v, maxSpeed)), line: { color: '#333', width: 0.5 } },
+                            opacity: 0.85
+                          }]}
+                          layout={{
+                            margin: { t: 10, b: 10, l: 20, r: 20 },
+                            paper_bgcolor: 'transparent',
+                            plot_bgcolor: 'transparent',
+                            font: { size: 9, color: '#e0e0e0' },
+                            showlegend: false,
+                            polar: {
+                              angularaxis: { direction: 'clockwise', rotation: 90, tickfont: { size: 8 } },
+                              radialaxis: { visible: true, ticksuffix: '%', tickfont: { size: 8 } }
+                            }
+                          }}
+                          config={WINDROSE_PLOT_CONFIG}
+                          style={{ width: '100%', height: '100%' }}
+                          useResizeHandler
+                        />
+                      )
+                    })()}
+                  </Suspense>
                 </div>
               ) : null}
             </Section>

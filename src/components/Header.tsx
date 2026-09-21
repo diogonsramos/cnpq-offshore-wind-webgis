@@ -44,7 +44,7 @@ function HeaderInner({ tab, onNavigate, onOpenFAQ }: HeaderProps) {
             className="gh-nav-link" 
             onClick={() => handleNav('home', 'metodologia')}
           >
-            Projeto & Metodologia
+            {t('landing.nav.methodology' as any)}
           </button>
           <button 
             className={`gh-nav-link ${tab === 'map' ? 'active' : ''}`} 
