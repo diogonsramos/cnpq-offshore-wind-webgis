@@ -12,8 +12,8 @@ test.describe('Locale switcher — landing page', () => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
     await expect(page.locator('.tab-bar-locale')).toBeVisible()
-    await expect(page.locator('.locale-btn', { hasText: 'PT' })).toHaveClass(/active/)
-    await expect(page.locator('.locale-btn', { hasText: 'EN' })).not.toHaveClass(/active/)
+    await expect(page.locator('.locale-btn[title="pt-BR"]')).toHaveClass(/active/)
+    await expect(page.locator('.locale-btn[title="en"]')).not.toHaveClass(/active/)
   })
 
   test('T90 — clicar em EN traduz o H1 da landing page sem erro de console', async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe('Locale switcher — landing page', () => {
     await expect(page.locator('.lp-hero h1')).toContainText('Cenário atual e futuro do recurso eólico offshore no Brasil')
 
     await page.click('.lp-cta-primary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
     await page.click('.tab-home-btn')
 
     await expect(page.locator('.lp-hero h1')).toContainText('Current and future scenario of offshore wind resource in Brazil')
@@ -38,21 +38,21 @@ test.describe('Locale switcher — SidePanel e persistência', () => {
     await page.click('.lp-cta-primary')
 
     await expect(page.locator('.select-field .label').first()).toContainText('Modelo')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
     await expect(page.locator('.select-field .label').first()).toContainText('Model')
   })
 
   test('T92 — escolha de idioma persiste no localStorage após reload', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
 
     const stored = await page.evaluate(() => localStorage.getItem('cnpq-webgis-locale'))
     expect(stored).toBe('en')
 
     await page.reload()
     await page.click('.lp-cta-primary')
-    await expect(page.locator('.locale-btn', { hasText: 'EN' })).toHaveClass(/active/)
+    await expect(page.locator('.locale-btn[title="en"]')).toHaveClass(/active/)
     await expect(page.locator('.select-field .label').first()).toContainText('Model')
   })
 })
@@ -61,7 +61,7 @@ test.describe('Locale switcher — FAQ', () => {
   test('T93 — FAQ do drawer exibe perguntas em inglês após trocar para EN', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
 
     await page.click('.footer-icon-btn[title="FAQ"]')
     await expect(page.locator('.drawer-header')).toContainText('FAQ — Frequently Asked Questions')
@@ -78,39 +78,39 @@ test.describe('Locale switcher — rótulos de Experimento/Variável (cogCatalog
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-secondary')
-    await page.click('.locale-btn:has-text("EN")')
+    await page.click('.locale-btn[title="en"]')
   })
 
   test('T94 — SidePanel (aba Mapa): Variável e rótulo do footer traduzidos', async ({ page }) => {
-    await page.click('.tab-btn:has-text("WebGIS Map")')
+    await page.click('.tab-btn:has-text("WebGIS")')
     await expect(page.locator('.side-panel select').nth(1)).toContainText('Wind Speed')
-    await expect(page.locator('.footer-info')).toContainText('ERA5 Reanalysis (Historical)')
+    await expect(page.locator('.footer-info')).toContainText('ERA5 (Reanalysis)')
     await expect(page.locator('.footer-info')).not.toContainText('Reanálise')
   })
 
   test('T95 — Simple View: Experiment e Variable traduzidos', async ({ page }) => {
     const panel = page.locator('.dv-tab-panel').nth(0)
-    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA5 Reanalysis (Historical)')
+    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA5 (Reanalysis)')
     await expect(panel.locator('.dv-filter-group', { hasText: 'Variable' }).locator('select')).toContainText('Wind Speed')
   })
 
   test('T96 — Compare Experiments: checkboxes de pares traduzidos', async ({ page }) => {
     await page.click('.dv-inner-tab-btn:has-text("Compare Experiments")')
-    await expect(page.locator('.dv-pair-checkbox').first()).toContainText('ERA5 Reanalysis (Historical)')
+    await expect(page.locator('.dv-pair-checkbox').first()).toContainText('ERA5 (Reanalysis)')
     await expect(page.locator('.dv-pair-checkbox').first()).not.toContainText('Reanálise')
   })
 
   test('T97 — Compare Models: chips WRF/MPAS traduzidos', async ({ page }) => {
     await page.click('.dv-inner-tab-btn:has-text("Compare Models")')
     const chips = page.locator('.dv-legend-chip')
-    await expect(chips.nth(0)).toContainText('WRF — ERA5 Reanalysis (Historical)')
-    await expect(chips.nth(1)).toContainText('MPAS — ERA5 Reanalysis (Historical)')
+    await expect(chips.nth(0)).toContainText('WRF — ERA5 (Reanalysis)')
+    await expect(chips.nth(1)).toContainText('MPAS — ERA5 (Reanalysis)')
   })
 
   test('T98 — GeoParquet Explorer: Experiment e Variable traduzidos', async ({ page }) => {
     await page.click('.dv-inner-tab-btn:has-text("GeoParquet Explorer")')
     const panel = page.locator('.gpe')
-    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA5 Reanalysis (Historical)')
+    await expect(panel.locator('.dv-filter-group', { hasText: 'Experiment' }).locator('select')).toContainText('ERA5 (Reanalysis)')
     await expect(panel.locator('.dv-filter-group', { hasText: 'Variable' }).locator('select')).toContainText('Wind Speed')
   })
 })
@@ -126,10 +126,9 @@ test.describe('Locale switcher — navbar da landing page', () => {
 
     await page.goto('/')
     await expect(page.locator('.lp-navbar-locale')).toBeVisible()
-    await page.click('.lp-navbar-locale .locale-btn:has-text("EN")')
+    await page.click('.lp-navbar-locale .locale-btn[title="en"]')
 
     await expect(page.locator('.lp-hero h1')).toContainText('Current and future scenario of offshore wind resource in Brazil')
-    await expect(page.locator('.lp-navbar-enter')).toContainText('Enter System')
     expect(errors).toEqual([])
   })
 
@@ -137,7 +136,6 @@ test.describe('Locale switcher — navbar da landing page', () => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
     await expect(page.locator('.lp-navbar-locale')).toBeVisible()
-    await expect(page.locator('.lp-navbar-enter')).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(1)
   })

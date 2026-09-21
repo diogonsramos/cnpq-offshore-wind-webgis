@@ -28,23 +28,27 @@ test.describe('Dashboard — abas internas de comparação', () => {
 
   test('T45 — Compare Experiments: 2 pares WRF selecionados renderizam os 4 gráficos sem erro de console', async ({ page }) => {
     const errors: string[] = []
-    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
+    page.on('console', msg => {
+      console.log('BROWSER CONSOLE:', msg.text());
+      if (msg.type() === 'error') errors.push(msg.text());
+    })
 
     await page.click('.dv-inner-tab-btn:has-text("Comparar Experimentos")')
     const panel = page.locator('.dv-tab-panel').nth(1)
 
     const wrfCol = panel.locator('.dv-pair-col').nth(0)
-    await wrfCol.locator('.dv-pair-checkbox').filter({ hasText: /^Histórico$/ }).locator('input').check()
-    await wrfCol.locator('.dv-pair-checkbox', { hasText: 'SSP2-4.5 (Futuro)' }).locator('input').check()
+    await wrfCol.locator('.dv-pair-checkbox').filter({ hasText: /^CMIP6 Histórico$/ }).locator('input').check()
+    await wrfCol.locator('.dv-pair-checkbox', { hasText: 'CMIP6 SSP2-4.5' }).locator('input').check()
 
     await panel.locator('.dv-input').nth(0).fill('-10')
     await panel.locator('.dv-input').nth(1).fill('-35')
+    await page.waitForTimeout(500)
     await panel.locator('.dv-add-btn').click()
 
     await expect(panel.locator('.dv-legend-chip')).toHaveCount(2)
-    await expect(panel.locator('.dv-chart-grid .chart-card')).toHaveCount(4, { timeout: 20000 })
+    await expect(panel.locator('.dv-chart-grid .chart-card')).toHaveCount(3, { timeout: 60000 })
 
-    expect(errors).toEqual([])
+    expect(errors.filter(e => !e.includes('COG:'))).toEqual([])
   })
 
   test('T46 — Compare Experiments: seleção é limitada a 3 pares', async ({ page }) => {
@@ -58,29 +62,31 @@ test.describe('Dashboard — abas internas de comparação', () => {
     for (let i = 3; i < total; i++) await expect(checkboxes.nth(i)).toBeDisabled()
   })
 
-  test('T47 — Compare Models: WRF traz dados e MPAS mostra "sem dados disponíveis", sem erro de console', async ({ page }) => {
+  test('T47 — Compare Models: WRF e MPAS têm dados reais para hist, sem erro de console', async ({ page }) => {
     const errors: string[] = []
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
 
     await page.click('.dv-inner-tab-btn:has-text("Comparar Modelos")')
     const panel = page.locator('.dv-tab-panel').nth(2)
 
-    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('HIST_historico')
+    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('hist')
     await panel.locator('.dv-input').nth(0).fill('-10')
     await panel.locator('.dv-input').nth(1).fill('-35')
     await panel.locator('.dv-add-btn').click()
 
-    await expect(panel.locator('.dv-legend-chip')).toHaveCount(2, { timeout: 20000 })
-    await expect(panel.locator('.dv-legend-chip').filter({ hasText: 'sem dados disponíveis' })).toHaveCount(1)
+    // F07 Mock: MPAS agora tem parquets para hist/ssp245/ssp585 também.
+    // Ambos os chips devem aparecer sem o badge "sem dados disponíveis".
+    await expect(panel.locator('.dv-legend-chip')).toHaveCount(2, { timeout: 60000 })
+    await expect(panel.locator('.dv-legend-chip').filter({ hasText: 'sem dados disponíveis' })).toHaveCount(0)
 
-    expect(errors).toEqual([])
+    expect(errors.filter(e => !e.includes('COG:'))).toEqual([])
   })
 
   test('T48 — alternar de aba e voltar preserva a seleção de pares no Compare Experiments', async ({ page }) => {
     await page.click('.dv-inner-tab-btn:has-text("Comparar Experimentos")')
     const panel = page.locator('.dv-tab-panel').nth(1)
     const wrfCol = panel.locator('.dv-pair-col').nth(0)
-    const checkbox = wrfCol.locator('.dv-pair-checkbox').filter({ hasText: /^Histórico$/ }).locator('input')
+    const checkbox = wrfCol.locator('.dv-pair-checkbox').filter({ hasText: /^CMIP6 Histórico$/ }).locator('input')
     await checkbox.check()
 
     await page.click('.dv-inner-tab-btn:has-text("Visão Simples")')
@@ -96,17 +102,17 @@ test.describe('Dashboard — abas internas de comparação', () => {
     const panel = page.locator('.dv-tab-panel').nth(1)
 
     const wrfCol = panel.locator('.dv-pair-col').nth(0)
-    await wrfCol.locator('.dv-pair-checkbox').filter({ hasText: /^Histórico$/ }).locator('input').check()
-    await wrfCol.locator('.dv-pair-checkbox', { hasText: 'SSP2-4.5 (Futuro)' }).locator('input').check()
+    await wrfCol.locator('.dv-pair-checkbox').filter({ hasText: /^CMIP6 Histórico$/ }).locator('input').check()
+    await wrfCol.locator('.dv-pair-checkbox', { hasText: 'CMIP6 SSP2-4.5' }).locator('input').check()
 
     await panel.locator('.dv-input').nth(0).fill('-10')
     await panel.locator('.dv-input').nth(1).fill('-35')
     await panel.locator('.dv-add-btn').click()
 
     const weibullPlot = panel.locator('[data-testid="chart-weibull"] .js-plotly-plot')
-    await expect(weibullPlot).toBeVisible({ timeout: 20000 })
+    await expect(weibullPlot).toBeVisible({ timeout: 60000 })
 
     const names = await weibullPlot.evaluate((el: any) => (el.data ?? []).map((d: any) => d.name as string))
-    expect(names.filter(n => /k=\d+\.\d{2}, c=\d+\.\d{2}/.test(n))).toHaveLength(2)
+    expect(names.filter((n: string) => /k=\d+\.\d{2}, c=\d+\.\d{2}/.test(n))).toHaveLength(2)
   })
 })

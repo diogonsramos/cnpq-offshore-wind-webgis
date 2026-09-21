@@ -31,18 +31,17 @@ test.describe('Navegação in-page — links de âncora no navbar', () => {
     await page.goto('/')
   })
 
-  test('T22 — navbar contém links para seções principais', async ({ page }) => {
-    const anchors = page.locator('.lp-nav-anchor')
-    await expect(anchors).toHaveCount(6)
-    await expect(anchors.filter({ hasText: 'Metodologia' })).toBeVisible()
-    await expect(anchors.filter({ hasText: 'Cenários' })).toBeVisible()
-    await expect(anchors.filter({ hasText: 'Equipe' })).toBeVisible()
-    await expect(anchors.filter({ hasText: 'Publicações' })).toBeVisible()
-    await expect(anchors.filter({ hasText: 'FAQ' })).toBeVisible()
+  test('T22 — navbar contém links principais', async ({ page }) => {
+    const anchors = page.locator('.gh-nav-link')
+    await expect(anchors).toHaveCount(4)
+    await expect(anchors.filter({ hasText: 'Home' })).toBeVisible()
+    await expect(anchors.filter({ hasText: 'Projeto & Metodologia' })).toBeVisible()
+    await expect(anchors.filter({ hasText: 'WebGIS' })).toBeVisible()
+    await expect(anchors.filter({ hasText: 'Dashboard' })).toBeVisible()
   })
 
   test('T23 — seções principais possuem IDs de âncora', async ({ page }) => {
-    for (const id of ['metodologia', 'cenarios', 'interface', 'equipe', 'publicacoes', 'faq']) {
+    for (const id of ['metodologia', 'equipe', 'publicacoes', 'faq']) {
       const el = page.locator(`#${id}`)
       await expect(el).toHaveCount(1)
     }

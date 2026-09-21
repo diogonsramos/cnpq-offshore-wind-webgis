@@ -46,9 +46,9 @@ test.describe('FAQSection — accordion na landing page', () => {
     await expect(page.locator('.lp-faq-list')).toBeVisible()
   })
 
-  test('T33 — FAQ exibe 20 perguntas', async ({ page }) => {
+  test('T33 — FAQ exibe 19 perguntas', async ({ page }) => {
     const items = page.locator('.lp-faq-item')
-    await expect(items).toHaveCount(20)
+    await expect(items).toHaveCount(19)
   })
 
   test('T34 — perguntas do FAQ estão fechadas por padrão', async ({ page }) => {

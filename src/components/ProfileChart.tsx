@@ -51,6 +51,7 @@ function ProfileChartInner({ heights, means, variant = 'ws' }: ProfileChartProps
       data: means,
       borderColor: cfg.color,
       backgroundColor: cfg.background,
+      borderWidth: 3,
       fill: true,
       tension: 0.3,
       pointRadius: 4,
@@ -63,7 +64,7 @@ function ProfileChartInner({ heights, means, variant = 'ws' }: ProfileChartProps
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      title: { display: true, text: t(cfg.titleKey), font: { size: 11 }, color: '#555', padding: { bottom: 8 } },
+      title: { display: true, text: t(cfg.titleKey), font: { size: 14 }, color: '#555', padding: { bottom: 8 } },
       legend: { display: false },
       tooltip: {
         callbacks: {
@@ -74,22 +75,24 @@ function ProfileChartInner({ heights, means, variant = 'ws' }: ProfileChartProps
     },
     scales: {
       x: {
-        title: { display: true, text: t(cfg.axisKey), font: { size: 10 } },
+        title: { display: true, text: t(cfg.axisKey), font: { size: 13 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
         min: 0,
         max: cfg.xMax,
+        ticks: { font: { size: 12 } }
       },
       y: {
         reverse: true,
-        title: { display: true, text: t('dashboard.chart.height_axis'), font: { size: 10 } },
+        title: { display: true, text: t('dashboard.chart.height_axis'), font: { size: 13 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
+        ticks: { font: { size: 12 } }
       },
     },
   }
 
   return (
     <div className="chart-container">
-      <Line data={data} options={options} height={140} />
+      <Line data={data} options={options} height={200} />
     </div>
   )
 }

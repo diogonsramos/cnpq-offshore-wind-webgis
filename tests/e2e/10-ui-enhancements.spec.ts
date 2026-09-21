@@ -72,7 +72,7 @@ test.describe('Dashboard — exportação CSV, tela cheia e rosa dos ventos colo
     await page.click('.lp-cta-secondary')
     await expect(page.locator('.dashboard-view')).toBeVisible()
     const panel = page.locator('.dv-tab-panel').nth(0)
-    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('HIST_historico')
+    await panel.locator('.dv-filter-group', { hasText: 'Experimento' }).locator('select').selectOption('hist')
   })
 
   test('T81 — "Download CSV" fica desabilitado sem locais fixados e habilita após adicionar um', async ({ page }) => {
@@ -101,22 +101,22 @@ test.describe('Dashboard — exportação CSV, tela cheia e rosa dos ventos colo
     expect(lines[0]).toBe('location,variable,height,season,mean,min,max,std')
     // 1 local fixado × 5 sazonalidades × 2 variáveis × 5 alturas = 50 linhas de dado
     expect(lines.length).toBe(51)
-    expect(lines.some(l => l.startsWith('Loc 1,ws,100,ANNUAL,'))).toBe(true)
+    expect(lines.some((l: string) => l.startsWith('Loc 1,ws,100,ANNUAL,'))).toBe(true)
   })
 
   test('T83 — toggle de tela cheia aplica/remove chart-card--fullscreen; Escape restaura', async ({ page }) => {
     const panel = page.locator('.dv-tab-panel').nth(0)
     await pinLocation(panel)
 
-    const seasonalCard = panel.locator('[data-testid="chart-seasonal"]')
-    await expect(seasonalCard).not.toHaveClass(/chart-card--fullscreen/)
+    const weibullCard = panel.locator('[data-testid="chart-weibull"]')
+    await expect(weibullCard).not.toHaveClass(/chart-card--fullscreen/)
 
-    await seasonalCard.locator('.chart-fullscreen-btn').click()
-    await expect(seasonalCard).toHaveClass(/chart-card--fullscreen/)
+    await weibullCard.locator('.chart-fullscreen-btn').click()
+    await expect(weibullCard).toHaveClass(/chart-card--fullscreen/)
     await expect(page.locator('.chart-fullscreen-backdrop')).toBeVisible()
 
     await page.keyboard.press('Escape')
-    await expect(seasonalCard).not.toHaveClass(/chart-card--fullscreen/)
+    await expect(weibullCard).not.toHaveClass(/chart-card--fullscreen/)
     await expect(page.locator('.chart-fullscreen-backdrop')).toHaveCount(0)
   })
 

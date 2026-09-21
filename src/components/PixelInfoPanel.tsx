@@ -2,7 +2,7 @@ import { memo } from 'react'
 import type { PixelDataSummary } from '../lib/pixelQuery'
 import ProfileChart from './ProfileChart'
 import WeibullChart from './WeibullChart'
-import DirectionalHeatmap from './DirectionalHeatmap'
+import WindRoseChart from './WindRoseChart'
 import { useLocale } from '../i18n/provider'
 import './PixelInfoPanel.css'
 
@@ -12,12 +12,13 @@ interface PixelInfoPanelProps {
   loaded: boolean
   recordCount: number
   pinnedCount: number
+  height: number
   onClose: () => void
   onOpenDashboard: () => void
   onAddPin: (lat: number, lon: number) => void
 }
 
-function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, onClose, onOpenDashboard, onAddPin }: PixelInfoPanelProps) {
+function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, height, onClose, onOpenDashboard, onAddPin }: PixelInfoPanelProps) {
   const { t } = useLocale()
   const className = `pixel-panel${(data || loading) ? ' open' : ''}`
 
@@ -39,30 +40,20 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
         )}
         {data && (
           <div className="pixel-panel-data">
-            <div style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '8px', fontSize: '0.8rem', borderRadius: '4px', marginBottom: '10px' }}>
-              <strong>Aviso:</strong> Weibull, Rosa dos Ventos e Distância são dados <strong>sintéticos e temporários</strong> em processo de cálculo pelo modelo.
-            </div>
+
             <Section title={t('pixel.section.location')}>
               <Row label={t('pixel.lat')} value={data.lat.toFixed(4)} />
               <Row label={t('pixel.lon')} value={data.lon.toFixed(4)} />
               <Row label={t('pixel.pixel_id')} value={String(data.pixel_id)} />
               {data.state && <Row label={t('pixel.state')} value={data.state} />}
-              {data.bathy_zone && <Row label={t('pixel.bathy')} value={data.bathy_zone.replace('_', '-') + 'm'} />}
-              <Row label={t('pixel.dist_coast')} value={fmt(data.distance_nm, ' nm')} />
+              {data.bathy_zone && data.bathy_zone !== 'out_of_range' && <Row label={t('pixel.bathy')} value={data.bathy_zone.replace('_', '-') + 'm'} />}
             </Section>
 
-            <Section title={t('pixel.section.wind_speed', { height: '100m' })}>
-              <Row label={t('pixel.mean')} value={fmt(data.ws[100]?.mean, ' m/s')} />
-              <Row label={t('pixel.min')} value={fmt(data.ws[100]?.min, ' m/s')} />
-              <Row label={t('pixel.max')} value={fmt(data.ws[100]?.max, ' m/s')} />
-              <Row label={t('pixel.std')} value={fmt(data.ws[100]?.std, ' m/s')} />
-            </Section>
-
-            <Section title={t('pixel.section.wind_speed', { height: '10m' })}>
-              <Row label={t('pixel.mean')} value={fmt(data.ws[10]?.mean, ' m/s')} />
-              <Row label={t('pixel.min')} value={fmt(data.ws[10]?.min, ' m/s')} />
-              <Row label={t('pixel.max')} value={fmt(data.ws[10]?.max, ' m/s')} />
-              <Row label={t('pixel.std')} value={fmt(data.ws[10]?.std, ' m/s')} />
+            <Section title={t('pixel.section.wind_speed', { height: `${height}m` })}>
+              <Row label={t('pixel.mean')} value={fmt(data.ws[height]?.mean, ' m/s')} />
+              <Row label={t('pixel.min')} value={fmt(data.ws[height]?.min, ' m/s')} />
+              <Row label={t('pixel.max')} value={fmt(data.ws[height]?.max, ' m/s')} />
+              <Row label={t('pixel.std')} value={fmt(data.ws[height]?.std, ' m/s')} />
             </Section>
 
             {data.profile_heights.length > 0 && (
@@ -75,24 +66,20 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
               <ProfileChart heights={data.profile_heights} means={data.wpd_profile_means} variant="wpd" />
             </Section>
 
-            {data.weibull[100] && (
+            {data.weibull[height] && (
               <Section title={t('pixel.section.weibull')}>
-                <Row label="WS10 k" value={fmt(data.weibull[10]?.k)} />
-                <Row label="WS10 c" value={fmt(data.weibull[10]?.c, ' m/s')} />
-                <Row label="WS100 k" value={fmt(data.weibull[100]?.k)} />
-                <Row label="WS100 c" value={fmt(data.weibull[100]?.c, ' m/s')} />
-                <WeibullChart k={data.weibull[100]?.k ?? null} c={data.weibull[100]?.c ?? null} label="100m" />
-                {data.weibull[10]?.k != null && data.weibull[10]?.c != null && (
-                  <WeibullChart k={data.weibull[10]?.k ?? null} c={data.weibull[10]?.c ?? null} label="10m" />
-                )}
+                <Row label={`WS${height} k`} value={fmt(data.weibull[height]?.k)} />
+                <Row label={`WS${height} c`} value={fmt(data.weibull[height]?.c, ' m/s')} />
+                <WeibullChart k={data.weibull[height]?.k ?? null} c={data.weibull[height]?.c ?? null} label={`${height}m`} />
               </Section>
             )}
 
             <Section title={t('pixel.section.directional')}>
-              <DirectionalHeatmap data={data.heatmap['ws100_heatmap']} variable="ws" height={100} />
-              {data.heatmap['ws10_heatmap'] && data.heatmap['ws10_heatmap'].length > 0 && (
-                <DirectionalHeatmap data={data.heatmap['ws10_heatmap']} variable="ws" height={10} />
-              )}
+              {data.wind_rose[height] ? (
+                <div className="chart-wrapper">
+                  <WindRoseChart data={data.wind_rose[height]} height={height} />
+                </div>
+              ) : null}
             </Section>
 
             <div className="pixel-panel-actions">

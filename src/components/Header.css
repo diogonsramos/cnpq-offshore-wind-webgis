@@ -1,0 +1,115 @@
+.global-header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background: #1a1a2e;
+  color: #fff;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 0 24px;
+}
+
+.gh-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1004px;
+  margin: 0 auto;
+  height: 70px;
+}
+
+.gh-logos {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gh-logo-img {
+  height: 40px;
+  object-fit: contain;
+}
+
+.gh-logo-divider {
+  width: 1px;
+  height: 30px;
+  background: rgba(255,255,255,0.2);
+}
+
+.gh-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.gh-nav-link {
+  background: transparent;
+  border: none;
+  color: #a0a0b0;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: color 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.gh-nav-link:hover {
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.gh-nav-link.active {
+  color: #4a90d9;
+}
+
+.gh-nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: #4a90d9;
+  border-radius: 2px;
+}
+
+.gh-actions {
+  display: flex;
+  align-items: center;
+}
+
+.gh-locale {
+  display: flex;
+  gap: 8px;
+}
+
+/* Modificação para o LocaleToggle em telas globais */
+.locale-btn {
+  font-size: 15px;
+  font-weight: 600;
+  color: #a0a0b0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.locale-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+.locale-btn.active {
+  color: #4a90d9;
+  background: rgba(74, 144, 217, 0.1);
+}
+
+@media (max-width: 900px) {
+  .gh-nav {
+    display: none; /* Em uma implementação real, seria um menu hambúrguer */
+  }
+}

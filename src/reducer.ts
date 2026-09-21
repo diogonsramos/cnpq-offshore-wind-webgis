@@ -76,8 +76,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, tab: action.tab, dashboardVisited: state.dashboardVisited || action.tab === 'dashboard' }
     case 'SET_MODEL':
       return { ...state, model: action.model }
-    case 'SET_DATASET':
-      return { ...state, dataset: action.dataset }
+    case 'SET_DATASET': {
+      const isFuture = action.dataset === 'ssp245' || action.dataset === 'ssp585'
+      return { ...state, dataset: action.dataset, season: isFuture ? 'annual' : state.season }
+    }
     case 'SET_VARIABLE':
       return { ...state, variable: action.variable }
     case 'SET_HEIGHT':
