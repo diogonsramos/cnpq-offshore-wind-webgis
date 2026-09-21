@@ -6,7 +6,7 @@ interface FAQPanelProps {
   onClose: () => void
 }
 
-const FAQ_COUNT = 21
+const FAQ_COUNT = 19
 
 function FAQPanelInner({ onClose }: FAQPanelProps) {
   const { t } = useLocale()

@@ -465,6 +465,7 @@
 
   /* Reset layout constraints to allow natural flowing pages */
   body, .dashboard-view, .unified-dashboard-container, .dv-main {
+    display: block !important;
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
@@ -501,9 +502,10 @@
     min-height: auto !important;
   }
 
-  /* Force Plotly containers to a printable height */
+  /* Ensure Plotly containers can expand fully to prevent cropping */
   .js-plotly-plot, .plot-container {
-    height: 350px !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   @page {

@@ -150,7 +150,7 @@ export default function LandingPage({ onNavigate }: Props) {
     [t('landing.tech.row8_label'), t('landing.tech.row8_value')],
   ]
 
-  const faqs = Array.from({ length: FAQ_COUNT }, (_, i) => ({
+  const faqs = Array.from({ length: 19 }, (_, i) => ({
     q: t(`faq.q${i + 1}` as TranslationKey),
     a: t(`faq.a${i + 1}` as TranslationKey),
   }))
@@ -264,11 +264,11 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* Abordagens de Modelagem */}
       <section id="modelos" className="lp-tech">
         <div className="lp-tech-inner">
-          <p className="lp-section-label">Grades e Malhas</p>
-          <h2 className="lp-section-title">Comparação WRF vs MPAS</h2>
+          <p className="lp-section-label">{t('landing.compare.eyebrow')}</p>
+          <h2 className="lp-section-title">{t('landing.compare.title')}</h2>
           <div className="lp-tech-text">
             <p>
-              O projeto fornece dados de altíssima resolução utilizando duas abordagens distintas e complementares de simulação atmosférica. As diferenças arquitetônicas entre o <strong>WRF</strong> (Weather Research and Forecasting) e o <strong>MPAS</strong> (Model for Prediction Across Scales) representam o estado-da-arte na modelagem climática.
+              {t('landing.compare.desc1')}<strong>WRF</strong>{t('landing.compare.desc2')}<strong>MPAS</strong>{t('landing.compare.desc3')}
             </p>
           </div>
           
@@ -277,15 +277,15 @@ export default function LandingPage({ onNavigate }: Props) {
             <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
               <h3 style={{ marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ background: '#3b82f6', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem' }}>WRF</span>
-                Grade Estruturada
+                {t('landing.compare.wrf.title')}
               </h3>
-              <img src="/plots/wrf_mapa.png" alt="Grade do WRF" style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
+              <img src={`${import.meta.env.BASE_URL}plots/wrf_mapa.png`} alt={t('landing.compare.wrf.title')} style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
               <table className="lp-tech-table" style={{ width: '100%', fontSize: '0.9rem', margin: 0 }}>
                 <tbody>
-                  <tr><td><strong>Geometria</strong></td><td>Grade regular ortogonal (Arakawa-C)</td></tr>
-                  <tr><td><strong>Refinamento</strong></td><td>Downscaling por domínios aninhados</td></tr>
-                  <tr><td><strong>Resolução</strong></td><td>Espaçamento fixo (DX/DY = 9km no domínio d02)</td></tr>
-                  <tr><td><strong>Vantagem</strong></td><td>Altamente consolidado para parametrização costeira e eólica</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.geom_label')}</strong></td><td>{t('landing.compare.wrf.geom_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.ref_label')}</strong></td><td>{t('landing.compare.wrf.ref_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.res_label')}</strong></td><td>{t('landing.compare.wrf.res_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.adv_label')}</strong></td><td>{t('landing.compare.wrf.adv_val')}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -294,26 +294,25 @@ export default function LandingPage({ onNavigate }: Props) {
             <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
               <h3 style={{ marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ background: '#10b981', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem' }}>MPAS</span>
-                Malha de Voronoi
+                {t('landing.compare.mpas.title')}
               </h3>
-              <img src="/plots/mpas_mapa.png" alt="Malha do MPAS" style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
+              <img src={`${import.meta.env.BASE_URL}plots/mpas_mapa.png`} alt={t('landing.compare.mpas.title')} style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
               <table className="lp-tech-table" style={{ width: '100%', fontSize: '0.9rem', margin: 0 }}>
                 <tbody>
-                  <tr><td><strong>Geometria</strong></td><td>Malha não-estruturada (hexagonal/poligonal)</td></tr>
-                  <tr><td><strong>Refinamento</strong></td><td>Transição suave global-regional (sem aninhamento)</td></tr>
-                  <tr><td><strong>Resolução</strong></td><td>Distância entre células variável (<code>dcEdge</code>)</td></tr>
-                  <tr><td><strong>Vantagem</strong></td><td>Evita reflexão de ondas numéricas nas "paredes" das grades</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.geom_label')}</strong></td><td>{t('landing.compare.mpas.geom_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.ref_label')}</strong></td><td>{t('landing.compare.mpas.ref_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.res_label')}</strong></td><td>{t('landing.compare.mpas.res_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.adv_label')}</strong></td><td>{t('landing.compare.mpas.adv_val')}</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
           
           <div style={{ textAlign: 'center', background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ marginBottom: '1.5rem', color: '#0f172a' }}>Comparação de Malhas em Alta Resolução</h3>
-            <img src="/plots/comparacao_zoom.png" alt="Comparação Detalhada" style={{ maxWidth: '100%', borderRadius: '8px', border: '1px solid #f1f5f9' }} />
+            <h3 style={{ marginBottom: '1.5rem', color: '#0f172a' }}>{t('landing.compare.zoom.title')}</h3>
+            <img src={`${import.meta.env.BASE_URL}plots/comparacao_zoom.png`} alt={t('landing.compare.zoom.title')} style={{ maxWidth: '100%', borderRadius: '8px', border: '1px solid #f1f5f9' }} />
             <p style={{ marginTop: '1.5rem', color: '#64748b', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '800px', margin: '1.5rem auto 0 auto' }}>
-              Visualização aproximada (zoom) da costa brasileira contrastando a matriz de pontos regulares cartesianos do WRF (esquerda) 
-              com a geometria dinâmica da malha de Voronoi do MPAS (direita). Esta sobreposição demonstra a riqueza dos dados brutos disponibilizados pelo projeto.
+              {t('landing.compare.zoom.desc')}
             </p>
           </div>
         </div>
@@ -376,7 +375,10 @@ export default function LandingPage({ onNavigate }: Props) {
                 </tbody>
               </table>
             </div>
-            <p className="lp-citation">{t('landing.data.citation')}</p>
+            <p className="lp-citation">
+              <strong>Referência:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
+              <strong>Dados:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
+            </p>
           </div>
         </div>
       </section>
@@ -457,7 +459,7 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="lp-tech-inner" style={{ textAlign: 'center' }}>
           <div style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'row', gap: '2rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
             <a href="https://senaicimatec.com.br/servico/supercomputacao-cloud-e-ciberseguranca/" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
-              <img src={logoBase + 'logo-hpc.jpg'} alt="HPC SENAI CIMATEC" className="lp-partner-img" />
+              <img src={logoBase + 'logo-hpc.jpg'} alt="HPC SENAI CIMATEC" className="lp-partner-img" style={{ height: '65px' }} />
               <p>Centro de Supercomputação HPC</p>
             </a>
             <a href="https://cpaiai.senaicimatec.com.br/pt/acoes/centro-ciencias-atmosfericas" target="_blank" rel="noopener noreferrer" className="lp-partner-card">

@@ -130,6 +130,7 @@ export default function App() {
                   showBathymetry={showBathymetry} bathyLayer={bathyLayer}
                   basemap={basemap}
                   opacity={cogOpacity}
+                  isPanelOpen={!!pixelData}
                   onPixelClick={handlePixelClick}
                   pinnedLocations={pinnedLocations}
                   onAddPin={handleAddLocation}

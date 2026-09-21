@@ -2,7 +2,7 @@ import { memo } from 'react'
 import type { PixelDataSummary } from '../lib/pixelQuery'
 import ProfileChart from './ProfileChart'
 import WeibullChart from './WeibullChart'
-import DirectionalHeatmap from './DirectionalHeatmap'
+import WindRoseChart from './WindRoseChart'
 import { useLocale } from '../i18n/provider'
 import './PixelInfoPanel.css'
 
@@ -47,7 +47,6 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
               <Row label={t('pixel.pixel_id')} value={String(data.pixel_id)} />
               {data.state && <Row label={t('pixel.state')} value={data.state} />}
               {data.bathy_zone && data.bathy_zone !== 'out_of_range' && <Row label={t('pixel.bathy')} value={data.bathy_zone.replace('_', '-') + 'm'} />}
-              <Row label={t('pixel.dist_coast')} value={fmt(data.distance_nm, ' nm')} />
             </Section>
 
             <Section title={t('pixel.section.wind_speed', { height: `${height}m` })}>
@@ -76,8 +75,10 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
             )}
 
             <Section title={t('pixel.section.directional')}>
-              {data.heatmap[`ws${height}_heatmap`]?.length ? (
-                <DirectionalHeatmap data={data.heatmap[`ws${height}_heatmap`] as number[]} variable="ws" height={height} />
+              {data.wind_rose[height] ? (
+                <div className="chart-wrapper">
+                  <WindRoseChart data={data.wind_rose[height]} height={height} />
+                </div>
               ) : null}
             </Section>
 

@@ -22,6 +22,7 @@ interface MapViewProps {
   basemap: BasemapId
   onPixelClick: (data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => void
   pinnedLocations: DashboardLocationData[]
+  isPanelOpen: boolean
   onAddPin: (lat: number, lon: number) => void
   onRemovePin: (idx: number) => void
   dispatch: Dispatch<AppAction>
@@ -78,7 +79,9 @@ const PIN_OUTLINE_LYR = 'pin-outline-lyr'
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MapViewInner(props: MapViewProps) {
-  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap, onPixelClick, pinnedLocations, onAddPin, onRemovePin, dispatch } = props
+  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap,
+  onPixelClick, pinnedLocations, isPanelOpen,
+  onAddPin, onRemovePin, dispatch } = props
   const { t } = useLocale()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -430,23 +433,43 @@ function MapViewInner(props: MapViewProps) {
     return () => window.removeEventListener('take-map-screenshot', triggerScreenshot)
   }, [handleScreenshot])
 
+  const isWS = variable === 'ws'
+  const maxVal = isWS ? 16 : 2000
+  const ticks: { val: number; label: string }[] = []
+  if (isWS) {
+    for (let i = 0; i <= 16; i += 2) {
+      ticks.push({ val: i, label: i === 16 ? '16+' : i.toString() })
+    }
+  } else {
+    for (let i = 0; i <= 2000; i += 200) {
+      ticks.push({ val: i, label: i === 2000 ? '2000+' : i.toString() })
+    }
+  }
+
+  const stops = isWS ? WS : PD
+  const gradientStr = `linear-gradient(to top, ${stops.map(s => 
+    `rgba(${s[1][0]}, ${s[1][1]}, ${s[1][2]}, 1) ${(s[0] / maxVal) * 100}%`
+  ).join(', ')})`
+
   return (
     <>
       <div ref={container} className="map-container" />
       
-      <div className="map-legend">
-        <div className="map-legend-title">
-          {variable === 'ws' ? t('dashboard.chart.ws_unit') : t('dashboard.chart.wpd_unit')}
+      <div className="map-legend" style={{ right: isPanelOpen ? '444px' : '24px' }}>
+        <div className="map-legend-title" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', textAlign: 'center' }}>
+          {varLabel(variable, t).label} ({varLabel(variable, t).unit})
         </div>
-        <div className="map-legend-gradient" style={{
-          background: `linear-gradient(to right, ${(variable === 'ws' ? WS : PD).map(s => 
-            `rgba(${s[1][0]}, ${s[1][1]}, ${s[1][2]}, 1)`
-          ).join(', ')})`
-        }} />
-        <div className="map-legend-labels">
-          <span>{(variable === 'ws' ? WS : PD)[0][0]}</span>
-          <span>{(variable === 'ws' ? WS : PD)[Math.floor((variable === 'ws' ? WS : PD).length / 2)][0]}</span>
-          <span>{(variable === 'ws' ? WS : PD)[(variable === 'ws' ? WS : PD).length - 1][0]}+</span>
+        <div className="map-legend-gradient-wrapper">
+          <div className="map-legend-gradient" style={{ background: gradientStr }} />
+          {ticks.map(tick => (
+            <div 
+              key={tick.val} 
+              className="map-legend-tick" 
+              style={{ bottom: `${(tick.val / maxVal) * 100}%` }}
+            >
+              {tick.label}
+            </div>
+          ))}
         </div>
       </div>
       {cogLoading && (

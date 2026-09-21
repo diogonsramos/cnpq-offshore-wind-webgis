@@ -58,18 +58,6 @@ function HeaderInner({ tab, onNavigate, onOpenFAQ }: HeaderProps) {
           >
             Dashboard
           </button>
-          <button 
-            className="gh-nav-link" 
-            onClick={() => {
-              if (tab !== 'home' && onOpenFAQ) {
-                onOpenFAQ()
-              } else {
-                handleNav('home', 'faq')
-              }
-            }}
-          >
-            FAQ
-          </button>
         </nav>
 
         <div className="gh-actions">

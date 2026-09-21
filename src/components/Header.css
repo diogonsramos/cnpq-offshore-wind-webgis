@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1004px;
   margin: 0 auto;
   height: 70px;
 }
@@ -87,18 +87,25 @@
 
 /* Modificação para o LocaleToggle em telas globais */
 .locale-btn {
-  font-size: 24px; /* Aumentado para acessibilidade */
-  padding: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #a0a0b0;
+  padding: 6px 10px;
   border-radius: 6px;
-  background: rgba(255,255,255,0.05);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
 }
 
 .locale-btn:hover {
+  color: #fff;
   background: rgba(255,255,255,0.1);
 }
 
 .locale-btn.active {
-  background: rgba(255,255,255,0.2);
+  color: #4a90d9;
+  background: rgba(74, 144, 217, 0.1);
 }
 
 @media (max-width: 900px) {

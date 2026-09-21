@@ -64,17 +64,13 @@
 
 /* ── Basemap Switcher ───────────────────── */
 .basemap-switcher {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   display: flex;
-  gap: 2px;
+  flex-wrap: wrap;
+  gap: 4px;
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   padding: 3px;
-  z-index: 15;
-  max-width: min(320px, calc(100% - 24px));
+  max-width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -111,37 +107,47 @@
 /* ── Map Legend ─────────────────────────── */
 .map-legend {
   position: absolute;
-  bottom: 24px;
-  left: 24px;
+  bottom: 30px;
+  right: 24px;
   background: rgba(255, 255, 255, 0.95);
-  padding: 10px 14px;
+  padding: 16px 12px;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   z-index: 10;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
   pointer-events: none;
+  transition: right 0.25s ease;
 }
 
 .map-legend-title {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: #333;
-  text-transform: uppercase;
+}
+
+.map-legend-gradient-wrapper {
+  position: relative;
+  display: flex;
+  height: 380px;
+  width: 48px; /* space for the bar + the labels to the right */
 }
 
 .map-legend-gradient {
-  width: 180px;
-  height: 12px;
+  width: 14px;
+  height: 100%;
   border-radius: 4px;
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 1px solid rgba(0,0,0,0.15);
 }
 
-.map-legend-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: #666;
-  font-weight: 600;
+.map-legend-tick {
+  position: absolute;
+  left: 20px;
+  transform: translateY(50%);
+  font-size: 13px;
+  font-weight: 700;
+  color: #444;
+  white-space: nowrap;
 }
