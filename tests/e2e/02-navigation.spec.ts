@@ -10,7 +10,7 @@ test.describe('Navegação: Landing → Sistema', () => {
   test('T04 — CTA primário "Abrir Mapa" abre o mapa', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await expect(page.locator('.tab-panel')).toBeVisible()
+    await expect(page.locator('.map-container')).toBeVisible()
     await expect(page.locator('.landing')).not.toBeVisible()
   })
 
@@ -36,7 +36,7 @@ test.describe('Navegação: Sistema → Landing (botão ← Home)', () => {
     await page.click('.lp-cta-primary')
     await page.click('.gh-nav-link:has-text("Home")')
     await expect(page.locator('.landing')).toBeVisible()
-    await expect(page.locator('.tab-panel')).not.toBeVisible()
+    await expect(page.locator('.map-container')).not.toBeVisible()
   })
 
   test('T11b — "Home" também funciona vindo do dashboard', async ({ page }) => {

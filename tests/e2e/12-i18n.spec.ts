@@ -16,7 +16,7 @@ test.describe('Locale switcher — Header Global', () => {
   test('T91 — trocar para EN traduz o texto no Header', async ({ page }) => {
     await page.goto('/')
     await page.click('.locale-btn[title="en"]')
-    await expect(page.locator('.gh-nav-link').nth(1)).toContainText('Project')
+    await expect(page.locator('.gh-nav-link').nth(1)).toContainText('Methodology')
   })
 
   test('T92 — escolha de idioma persiste no localStorage', async ({ page }) => {
