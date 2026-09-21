@@ -14,7 +14,7 @@ function canvasSize(zoom: number): number {
   return 768
 }
 
-const WS: [number, [number, number, number, number]][] = [
+export const WS: [number, [number, number, number, number]][] = [
   [0, [40, 20, 80, 160]], [2, [30, 50, 170, 180]],
   [3, [20, 90, 200, 190]], [4, [15, 140, 210, 200]],
   [5, [10, 175, 190, 210]], [6, [20, 190, 140, 215]],
@@ -24,7 +24,7 @@ const WS: [number, [number, number, number, number]][] = [
   [14, [220, 40, 25, 245]], [16, [180, 20, 30, 250]],
 ]
 
-const PD: [number, [number, number, number, number]][] = [
+export const PD: [number, [number, number, number, number]][] = [
   [0, [40, 20, 80, 160]], [100, [20, 90, 200, 190]],
   [200, [10, 175, 190, 210]], [400, [60, 200, 100, 220]],
   [600, [200, 210, 40, 230]], [800, [250, 140, 25, 240]],

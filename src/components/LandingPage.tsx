@@ -144,47 +144,19 @@ export default function LandingPage({ onNavigate }: Props) {
     [t('landing.tech.row1_label'), t('landing.tech.row1_value')],
     [t('landing.tech.row2_label'), t('landing.tech.row2_value')],
     [t('landing.tech.row3_label'), t('landing.tech.row3_value')],
-    [t('landing.tech.row4_label'), t('landing.tech.row4_value')],
     [t('landing.tech.row5_label'), t('landing.tech.row5_value')],
     [t('landing.tech.row6_label'), t('landing.tech.row6_value')],
     [t('landing.tech.row7_label'), t('landing.tech.row7_value')],
     [t('landing.tech.row8_label'), t('landing.tech.row8_value')],
   ]
 
-  const faqs = Array.from({ length: FAQ_COUNT }, (_, i) => ({
+  const faqs = Array.from({ length: 19 }, (_, i) => ({
     q: t(`faq.q${i + 1}` as TranslationKey),
     a: t(`faq.a${i + 1}` as TranslationKey),
   }))
 
   return (
     <div className="landing">
-      {/* Navbar */}
-      <nav className="lp-navbar" aria-label={t('landing.nav.aria')}>
-        <div className="lp-navbar-inner">
-          <div className="lp-navbar-logos">
-            <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-navbar-logo" />
-            <a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer">
-              <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-navbar-logo" />
-            </a>
-            <a href="https://www.senaicimatec.com.br" target="_blank" rel="noopener noreferrer">
-              <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-navbar-logo" />
-            </a>
-          </div>
-          <div className="lp-navbar-anchors" role="navigation" aria-label={t('landing.nav.sections_aria')}>
-            {NAV_SECTIONS.map(s => (
-              <a
-                key={s.id}
-                href={`#${s.id}`}
-                className={`lp-nav-anchor${activeSection === s.id ? ' active' : ''}`}
-              >
-                {t(s.labelKey)}
-              </a>
-            ))}
-          </div>
-          <LocaleToggle className="lp-navbar-locale" />
-        </div>
-      </nav>
-
       {/* Hero */}
       <section id="inicio" className="lp-hero">
         <video 
@@ -202,60 +174,62 @@ export default function LandingPage({ onNavigate }: Props) {
           }}
         />
 
-        <div className="lp-hero-video-controls">
-          <button 
-            className="lp-video-btn" 
-            onClick={() => {
-              if (videoRef.current) {
-                if (videoPlaying) videoRef.current.pause()
-                else videoRef.current.play()
-                setVideoPlaying(!videoPlaying)
-              }
-            }}
-            title={videoPlaying ? 'Pause' : 'Play'}
-          >
-            {videoPlaying ? '⏸' : '▶️'}
-          </button>
-          <button 
-            className="lp-video-btn" 
-            onClick={() => setVideoMuted(!videoMuted)}
-            title={videoMuted ? 'Unmute' : 'Mute'}
-          >
-            {videoMuted ? '🔇' : '🔊'}
-          </button>
-          <input 
-            type="range" 
-            className="lp-video-volume-slider" 
-            min="0" 
-            max="1" 
-            step="0.05" 
-            value={videoVolume} 
-            onChange={(e) => {
-              setVideoVolume(parseFloat(e.target.value))
-              if (videoMuted && parseFloat(e.target.value) > 0) setVideoMuted(false)
-            }}
-            title="Volume"
-          />
-          <button 
-            className="lp-video-btn" 
-            onClick={() => setShowVideoModal(true)}
-            title="Ver Vídeo Completo"
-          >
-            ⛶
-          </button>
-        </div>
+        <div className="lp-hero-inner">
+          <div className="lp-hero-video-controls">
+            <button 
+              className="lp-video-btn" 
+              onClick={() => {
+                if (videoRef.current) {
+                  if (videoPlaying) videoRef.current.pause()
+                  else videoRef.current.play()
+                  setVideoPlaying(!videoPlaying)
+                }
+              }}
+              title={videoPlaying ? 'Pause' : 'Play'}
+            >
+              {videoPlaying ? '⏸' : '▶️'}
+            </button>
+            <button 
+              className="lp-video-btn" 
+              onClick={() => setVideoMuted(!videoMuted)}
+              title={videoMuted ? 'Unmute' : 'Mute'}
+            >
+              {videoMuted ? '🔇' : '🔊'}
+            </button>
+            <input 
+              type="range" 
+              className="lp-video-volume-slider" 
+              min="0" 
+              max="1" 
+              step="0.05" 
+              value={videoVolume} 
+              onChange={(e) => {
+                setVideoVolume(parseFloat(e.target.value))
+                if (videoMuted && parseFloat(e.target.value) > 0) setVideoMuted(false)
+              }}
+              title="Volume"
+            />
+            <button 
+              className="lp-video-btn" 
+              onClick={() => setShowVideoModal(true)}
+              title="Ver Vídeo Completo"
+            >
+              ⛶
+            </button>
+          </div>
 
-        <div className="lp-hero-content">
-          <p className="lp-hero-eyebrow">{t('landing.hero.eyebrow')}</p>
-          <h1>{t('landing.hero.title')}</h1>
-          <div className="lp-hero-ctas">
-          <button className="lp-cta-primary" onClick={() => onNavigate('map')}>
-            {t('landing.hero.cta_primary')}
-          </button>
-          <button className="lp-cta-secondary" onClick={() => onNavigate('dashboard')}>
-            {t('landing.hero.cta_secondary')}
-          </button>
-        </div>
+          <div className="lp-hero-content">
+            <p className="lp-hero-eyebrow">{t('landing.hero.eyebrow')}</p>
+            <h1>{t('landing.hero.title')}</h1>
+            <div className="lp-hero-ctas">
+              <button className="lp-cta-primary" onClick={() => onNavigate('map')}>
+                {t('landing.hero.cta_primary')}
+              </button>
+              <button className="lp-cta-secondary" onClick={() => onNavigate('dashboard')}>
+                {t('landing.hero.cta_secondary')}
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -275,26 +249,74 @@ export default function LandingPage({ onNavigate }: Props) {
             <p>{t('landing.tech.p5')}</p>
           </div>
           <div className="lp-tech-table-wrap">
-            <table className="lp-tech-table">
-              <thead>
-                <tr>
-                  <th scope="col">{t('landing.tech.table_indicator_col')}</th>
-                  <th scope="col">{t('landing.tech.table_value_col')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {TECH_TABLE_ROWS.map(([ind, val]) => (
-                  <tr key={ind}>
-                    <td>{ind}</td>
-                    <td>{val}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="lp-tech-cards-grid">
+              {TECH_TABLE_ROWS.map(([ind, val]) => (
+                <div key={ind} className="lp-tech-card">
+                  <div className="lp-tech-card-label">{ind}</div>
+                  <div className="lp-tech-card-value">{val}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
+      {/* Abordagens de Modelagem */}
+      <section id="modelos" className="lp-tech">
+        <div className="lp-tech-inner">
+          <p className="lp-section-label">{t('landing.compare.eyebrow')}</p>
+          <h2 className="lp-section-title">{t('landing.compare.title')}</h2>
+          <div className="lp-tech-text">
+            <p>
+              {t('landing.compare.desc1')}<strong>WRF</strong>{t('landing.compare.desc2')}<strong>MPAS</strong>{t('landing.compare.desc3')}
+            </p>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem', margin: '3rem 0' }}>
+            {/* WRF Card */}
+            <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ background: '#3b82f6', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem' }}>WRF</span>
+                {t('landing.compare.wrf.title')}
+              </h3>
+              <img src={`${import.meta.env.BASE_URL}plots/wrf_mapa.png`} alt={t('landing.compare.wrf.title')} style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
+              <table className="lp-tech-table" style={{ width: '100%', fontSize: '0.9rem', margin: 0 }}>
+                <tbody>
+                  <tr><td><strong>{t('landing.compare.wrf.geom_label')}</strong></td><td>{t('landing.compare.wrf.geom_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.ref_label')}</strong></td><td>{t('landing.compare.wrf.ref_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.res_label')}</strong></td><td>{t('landing.compare.wrf.res_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.adv_label')}</strong></td><td>{t('landing.compare.wrf.adv_val')}</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* MPAS Card */}
+            <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ background: '#10b981', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem' }}>MPAS</span>
+                {t('landing.compare.mpas.title')}
+              </h3>
+              <img src={`${import.meta.env.BASE_URL}plots/mpas_mapa.png`} alt={t('landing.compare.mpas.title')} style={{ width: '100%', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }} />
+              <table className="lp-tech-table" style={{ width: '100%', fontSize: '0.9rem', margin: 0 }}>
+                <tbody>
+                  <tr><td><strong>{t('landing.compare.wrf.geom_label')}</strong></td><td>{t('landing.compare.mpas.geom_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.ref_label')}</strong></td><td>{t('landing.compare.mpas.ref_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.res_label')}</strong></td><td>{t('landing.compare.mpas.res_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.wrf.adv_label')}</strong></td><td>{t('landing.compare.mpas.adv_val')}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div style={{ textAlign: 'center', background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#0f172a' }}>{t('landing.compare.zoom.title')}</h3>
+            <img src={`${import.meta.env.BASE_URL}plots/comparacao_zoom.png`} alt={t('landing.compare.zoom.title')} style={{ maxWidth: '100%', borderRadius: '8px', border: '1px solid #f1f5f9' }} />
+            <p style={{ marginTop: '1.5rem', color: '#64748b', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '800px', margin: '1.5rem auto 0 auto' }}>
+              {t('landing.compare.zoom.desc')}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Dados */}
       <section id="dados" className="lp-tech">
@@ -303,7 +325,7 @@ export default function LandingPage({ onNavigate }: Props) {
           <h2 className="lp-section-title">{t('landing.data.title')}</h2>
           <div className="lp-tech-text">
             <p>{t('landing.data.desc_era5')}</p>
-            <p>{t('landing.data.desc_cmip6')}</p>
+            <p>{t('landing.data.desc_cmip6')} <a href="https://wcrp-cmip.org/cmip-model-and-experiment-documentation/" target="_blank" rel="noopener noreferrer" style={{ color: '#4a90d9', textDecoration: 'none', fontWeight: 600 }}>WCRP CMIP Documentation</a>.</p>
             <div style={{ margin: '2rem 0', overflowX: 'auto' }}>
               <table className="lp-tech-table" style={{ width: '100%', minWidth: '700px', margin: '0 auto', fontSize: '0.85rem' }}>
                 <thead>
@@ -353,7 +375,10 @@ export default function LandingPage({ onNavigate }: Props) {
                 </tbody>
               </table>
             </div>
-            <p className="lp-citation">{t('landing.data.citation')}</p>
+            <p className="lp-citation">
+              <strong>Referência:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
+              <strong>Dados:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
+            </p>
           </div>
         </div>
       </section>
@@ -432,17 +457,19 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* Parceiros */}
       <section className="lp-tech">
         <div className="lp-tech-inner" style={{ textAlign: 'center' }}>
-          <p className="lp-section-label">{t('landing.partners.eyebrow')}</p>
-          <h2 className="lp-section-title">{t('landing.partners.title')}</h2>
-          <div style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center' }}>
-            <div>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{t('landing.partners.cca_title')}</h3>
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                <li><a href="https://senaicimatec.com.br/servico/supercomputacao-cloud-e-ciberseguranca/" target="_blank" rel="noopener noreferrer">{t('landing.partners.link_hpc')}</a></li>
-                <li><a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer">{t('landing.partners.link_cnpq_group')}</a></li>
-                <li><a href="https://cpaiai.senaicimatec.com.br/pt/acoes/centro-ciencias-atmosfericas" target="_blank" rel="noopener noreferrer">{t('landing.partners.link_cpaia')}</a></li>
-              </ul>
-            </div>
+          <div style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'row', gap: '2rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a href="https://senaicimatec.com.br/servico/supercomputacao-cloud-e-ciberseguranca/" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={logoBase + 'logo-hpc.jpg'} alt="HPC SENAI CIMATEC" className="lp-partner-img" style={{ height: '65px' }} />
+              <p>Centro de Supercomputação HPC</p>
+            </a>
+            <a href="https://cpaiai.senaicimatec.com.br/pt/acoes/centro-ciencias-atmosfericas" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={logoBase + 'logo-cpa-ia.png'} alt="CPA-IA" className="lp-partner-img" />
+              <p>Centro de Pesquisa Aplicada em IA (CPA-IA)</p>
+            </a>
+            <a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-partner-img" />
+              <p>Laboratório de Ciências Atmosféricas e Computação Científica (CNPq)</p>
+            </a>
           </div>
         </div>
       </section>

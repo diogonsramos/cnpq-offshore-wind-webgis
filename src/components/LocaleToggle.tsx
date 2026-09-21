@@ -10,9 +10,9 @@ function LocaleToggleInner({ className }: LocaleToggleProps) {
   const { locale, setLocale, t } = useLocale()
   
   const flags: Record<Locale, string> = {
-    'pt-BR': '🇧🇷',
-    'en': '🇺🇸',
-    'es': '🇪🇸'
+    'pt-BR': 'BR',
+    'en': 'US',
+    'es': 'ES'
   }
 
   return (

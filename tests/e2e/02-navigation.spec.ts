@@ -10,14 +10,14 @@ test.describe('Navegação: Landing → Sistema', () => {
   test('T04 — CTA primário "Abrir Mapa" abre o mapa', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await expect(page.locator('.tab-bar')).toBeVisible()
+    await expect(page.locator('.tab-panel')).toBeVisible()
     await expect(page.locator('.landing')).not.toBeVisible()
   })
 
   test('T05 — CTA secundário "Abrir Dashboard" abre o dashboard', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-secondary')
-    await expect(page.locator('.tab-bar')).toBeVisible()
+    await expect(page.locator('.global-header')).toBeVisible()
     await expect(page.locator('.dashboard-view')).toBeVisible()
   })
 
@@ -25,39 +25,38 @@ test.describe('Navegação: Landing → Sistema', () => {
 })
 
 test.describe('Navegação: Sistema → Landing (botão ← Home)', () => {
-  test('T10 — botão "← Home" está visível no TabBar após navegar para o mapa', async ({ page }) => {
+  test('T10 — botão "Home" está visível no Header após navegar para o mapa', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await expect(page.locator('.tab-home-btn')).toBeVisible()
-    await expect(page.locator('.tab-home-btn')).toContainText('Home')
+    await expect(page.locator('.gh-nav-link:has-text("Home")')).toBeVisible()
   })
 
-  test('T11 — clique em "← Home" retorna para a landing page', async ({ page }) => {
+  test('T11 — clique em "Home" retorna para a landing page', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
-    await page.click('.tab-home-btn')
+    await page.click('.gh-nav-link:has-text("Home")')
     await expect(page.locator('.landing')).toBeVisible()
-    await expect(page.locator('.tab-bar')).not.toBeVisible()
+    await expect(page.locator('.tab-panel')).not.toBeVisible()
   })
 
-  test('T11b — "← Home" também funciona vindo do dashboard', async ({ page }) => {
+  test('T11b — "Home" também funciona vindo do dashboard', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-secondary')
-    await page.click('.tab-home-btn')
+    await page.click('.gh-nav-link:has-text("Home")')
     await expect(page.locator('.landing')).toBeVisible()
-    await expect(page.locator('.tab-bar')).not.toBeVisible()
+    await expect(page.locator('.dashboard-view')).not.toBeVisible()
   })
 })
 
 test.describe('Preservação de estado durante navegação', () => {
-  test('T07 — TabBar mantém aba ativa correta ao alternar entre mapa e dashboard', async ({ page }) => {
+  test('T07 — Header mantém aba ativa correta ao alternar entre mapa e dashboard', async ({ page }) => {
     await page.goto('/')
     await page.click('.lp-cta-primary')
     // Deve estar na aba do mapa
-    await expect(page.locator('.tab-btn.active')).toContainText('WebGIS')
+    await expect(page.locator('.gh-nav-link.active')).toContainText('WebGIS')
     // Alterna para dashboard
-    await page.click('.tab-btn:has-text("Dashboard")')
-    await expect(page.locator('.tab-btn.active')).toContainText('Dashboard')
+    await page.click('.gh-nav-link:has-text("Dashboard")')
+    await expect(page.locator('.gh-nav-link.active')).toContainText('Dashboard')
     await expect(page.locator('.dashboard-view')).toBeVisible()
   })
 })

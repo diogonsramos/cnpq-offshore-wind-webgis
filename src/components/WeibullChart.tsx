@@ -49,7 +49,7 @@ function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
       fill: true,
       tension: 0.4,
       pointRadius: 0,
-      borderWidth: 2,
+      borderWidth: 3,
     }],
   }
 
@@ -57,7 +57,7 @@ function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      title: { display: true, text: t('dashboard.chart.weibull_title', { height: label }), font: { size: 11 }, color: '#555', padding: { bottom: 8 } },
+      title: { display: true, text: t('dashboard.chart.weibull_title', { height: label }), font: { size: 14 }, color: '#555', padding: { bottom: 8 } },
       legend: { display: false },
       tooltip: {
         callbacks: {
@@ -68,13 +68,14 @@ function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
     },
     scales: {
       x: {
-        title: { display: true, text: t('dashboard.chart.wind_speed_axis'), font: { size: 10 } },
+        title: { display: true, text: t('dashboard.chart.wind_speed_axis'), font: { size: 13 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
-        ticks: { maxTicksLimit: 8 },
+        ticks: { maxTicksLimit: 8, font: { size: 12 } },
       },
       y: {
-        title: { display: true, text: t('dashboard.chart.pdf_axis'), font: { size: 10 } },
+        title: { display: true, text: t('dashboard.chart.pdf_axis'), font: { size: 13 } },
         grid: { color: 'rgba(0,0,0,0.06)' },
+        ticks: { font: { size: 12 } },
         min: 0,
         max: 0.3,
       },
@@ -83,7 +84,7 @@ function WeibullChartInner({ k, c, label = '100m' }: WeibullChartProps) {
 
   return (
     <div className="chart-container">
-      <Line data={data} options={options} height={200} />
+      <Line data={data} options={options} height={220} />
     </div>
   )
 }

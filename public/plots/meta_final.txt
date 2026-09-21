@@ -1,0 +1,53 @@
+netcdf WRF_era5_T2_2020 {
+dimensions:
+        Time = UNLIMITED ; // (1460 currently)
+        south_north = 534 ;
+        west_east = 263 ;
+variables:
+        double Time(Time) ;
+                Time:_FillValue = NaN ;
+                Time:standard_name = "time" ;
+                Time:axis = "T" ;
+                Time:units = "hours since 2020-01-02 00:00:00" ;
+                Time:calendar = "proleptic_gregorian" ;
+        double south_north(south_north) ;
+                south_north:_FillValue = NaN ;
+                south_north:standard_name = "projection_y_coordinate" ;
+                south_north:units = "m" ;
+                south_north:axis = "Y" ;
+        double west_east(west_east) ;
+                west_east:_FillValue = NaN ;
+                west_east:standard_name = "projection_x_coordinate" ;
+                west_east:units = "m" ;
+                west_east:axis = "X" ;
+        float T2(Time, south_north, west_east) ;
+                T2:_FillValue = NaNf ;
+                T2:long_name = "Temperature at 2 meters" ;
+                T2:units = "degC" ;
+                T2:coordinates = "XLAT XLONG" ;
+        float XLAT(south_north, west_east) ;
+                XLAT:_FillValue = NaNf ;
+                XLAT:standard_name = "latitude" ;
+                XLAT:long_name = "latitude" ;
+                XLAT:units = "degree_north" ;
+                XLAT:_CoordinateAxisType = "Lat" ;
+        float XLONG(south_north, west_east) ;
+                XLONG:_FillValue = NaNf ;
+                XLONG:standard_name = "longitude" ;
+                XLONG:long_name = "longitude" ;
+                XLONG:units = "degree_east" ;
+                XLONG:_CoordinateAxisType = "Lon" ;
+
+// global attributes:
+                :CDI = "Climate Data Interface version 2.6.1 (https://mpimet.mpg.
+de/cdi)" ;
+                :Conventions = "CF-1.6" ;
+                :source = "WRF V4.6.0 - Projeto CNPq-Offshore" ;
+                :title = "WRF Auxiliary Output Post-processed (masked by ZEE)" ;
+                :author = "Equipe CIMATEC" ;
+                :date_created = "2025-10-03 10:15:34" ;
+                :start_simulation = "2020-01-01_12:00:00" ;
+                :WRF_namelist = "ERA5_atlas" ;
+                :cdo_openmp_thread_number = 4 ;
+                :CDO = "Climate Data Operators version 2.6.1 (https://mpimet.mpg.
+de/cdo)" ;

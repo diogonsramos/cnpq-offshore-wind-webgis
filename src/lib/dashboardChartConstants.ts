@@ -37,7 +37,6 @@ export const BATHY_ZONE_OPTIONS: { val: string; label: string }[] = [
   { val: '0 a -20 m', label: '0 – 20 m' },
   { val: '-20 a -50 m', label: '20 – 50 m' },
   { val: '-50 a -100 m', label: '50 – 100 m' },
-  { val: 'out_of_range', label: 'Sem Batimetria (Erro ETL Python)' },
 ]
 
 export const DISTANCE_MAX_NM = 400
@@ -60,7 +59,7 @@ export const CHART_FONT = { size: 12 }
 export const HOVER_LABEL_STYLE = {
   bgcolor: 'rgba(255,255,255,0.92)',
   bordercolor: 'rgba(0,0,0,0.15)',
-  font: { size: 12 },
+  font: { size: 13, color: '#000000' },
 }
 
 // Shared Plotly config for every dashboard chart: enables the modebar but keeps
@@ -71,8 +70,7 @@ export const PLOT_CONFIG: Partial<Config> = {
   displayModeBar: true,
   displaylogo: false,
   modeBarButtonsToRemove: [
-    'lasso2d', 'select2d', 'zoom2d', 'pan2d',
-    'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d',
+    'lasso2d', 'select2d',
     'hoverClosestCartesian', 'hoverCompareCartesian',
   ],
   responsive: true,

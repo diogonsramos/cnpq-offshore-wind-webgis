@@ -9,10 +9,33 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   color: #1a1a2e;
   background: #f0f2f5;
 }
+
+@media print {
+  html, body, #root {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  .app {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
+h1, h2, h3, h4 {
+  color: #1a1a2e;
+  font-weight: 700;
+  line-height: 1.3;
+}
+h1 { font-size: 32px; }
+h2 { font-size: 24px; }
+h3 { font-size: 20px; }
+h4 { font-size: 18px; }
 
 .app {
   display: flex;

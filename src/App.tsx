@@ -4,7 +4,7 @@ import MapView from './components/MapView'
 import PixelInfoPanel from './components/PixelInfoPanel'
 import DashboardSkeleton from './components/DashboardSkeleton'
 import ErrorBoundary from './components/ErrorBoundary'
-import TabBar from './components/TabBar'
+import Header from './components/Header'
 import FAQPanel from './components/FAQPanel'
 import ProjectInfoPanel from './components/ProjectInfoPanel'
 import LandingPage from './components/LandingPage'
@@ -104,11 +104,15 @@ export default function App() {
   return (
     <LocaleProvider>
       <div className={`app${tab === 'home' ? ' app--landing' : ''}`}>
+        <Header 
+          tab={tab} 
+          onNavigate={t => dispatch({ type: 'SET_TAB', tab: t })}
+          onOpenFAQ={() => dispatch({ type: 'SET_SHOW_FAQ', show: true })}
+        />
         {tab === 'home' ? (
           <LandingPage onNavigate={t => dispatch({ type: 'SET_TAB', tab: t })} />
         ) : (
           <>
-            <TabBar tab={tab} onChange={t => dispatch({ type: 'SET_TAB', tab: t })} />
             <div className="tab-panel" style={{ display: tab === 'map' ? 'flex' : 'none' }}>
               <SidePanel
                 model={model} dataset={dataset} variable={variable} height={height} season={season}
@@ -116,6 +120,7 @@ export default function App() {
                 onOpenDashboard={switchToDashboard}
                 showFAQ={showFAQ} showProject={showProject}
                 opacity={cogOpacity}
+                basemap={basemap}
                 dispatch={dispatch}
               />
               <div className="map-area">
@@ -125,6 +130,7 @@ export default function App() {
                   showBathymetry={showBathymetry} bathyLayer={bathyLayer}
                   basemap={basemap}
                   opacity={cogOpacity}
+                  isPanelOpen={!!pixelData}
                   onPixelClick={handlePixelClick}
                   pinnedLocations={pinnedLocations}
                   onAddPin={handleAddLocation}
@@ -138,6 +144,7 @@ export default function App() {
                     loaded={parquetLoaded}
                     recordCount={parquetCount}
                     pinnedCount={pinnedLocations.length}
+                    height={height}
                     onClose={handleClosePanel}
                     onOpenDashboard={switchToDashboard}
                     onAddPin={handlePinFromPanel}

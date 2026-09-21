@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, memo, useCallback, type Dispatch } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { renderCog } from '../lib/cogTileRenderer'
+import { renderCog, WS, PD } from '../lib/cogTileRenderer'
 import { buildCogUrl, datasetLabel, modelLabel, varLabel, type Model, type Dataset, type Variable, type Height, type Season } from '../lib/cogCatalog'
 import { loadParquet, queryNearest, isLoading, isLoaded, getRecordCount } from '../lib/pixelQuery'
 import type { PixelDataSummary, DashboardLocationData } from '../lib/pixelQuery'
 import type { BasemapId, BathyLayerId } from '../types'
 import type { AppAction } from '../reducer'
-import BasemapSwitcher from './BasemapSwitcher'
 import { useLocale } from '../i18n/provider'
 import './MapView.css'
 
@@ -23,6 +22,7 @@ interface MapViewProps {
   basemap: BasemapId
   onPixelClick: (data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => void
   pinnedLocations: DashboardLocationData[]
+  isPanelOpen: boolean
   onAddPin: (lat: number, lon: number) => void
   onRemovePin: (idx: number) => void
   dispatch: Dispatch<AppAction>
@@ -54,10 +54,6 @@ const BASEMAP_TILES: Record<BasemapId, { tiles: string[]; attribution: string }>
     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
     attribution: '&copy; Esri',
   },
-  dark: {
-    tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
-    attribution: '&copy; CARTO',
-  },
   terrain: {
     tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
     attribution: 'Terrain tiles &copy; Mapzen, AWS Open Data Terrain Tiles',
@@ -76,14 +72,16 @@ const BASEMAP_TILES: Record<BasemapId, { tiles: string[]; attribution: string }>
   },
 }
 
-const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-dark', 'basemap-terrain', 'basemap-night', 'basemap-topo']
+const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-terrain', 'basemap-night', 'basemap-topo']
 const PIN_SRC = 'pin-src'
 const PIN_LYR = 'pin-lyr'
 const PIN_OUTLINE_LYR = 'pin-outline-lyr'
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MapViewInner(props: MapViewProps) {
-  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap, onPixelClick, pinnedLocations, onAddPin, onRemovePin, dispatch } = props
+  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap,
+  onPixelClick, pinnedLocations, isPanelOpen,
+  onAddPin, onRemovePin, dispatch } = props
   const { t } = useLocale()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -118,7 +116,6 @@ function MapViewInner(props: MapViewProps) {
         sources: {
           'basemap-street': { type: 'raster', tiles: BASEMAP_TILES.street.tiles, tileSize: 256, attribution: BASEMAP_TILES.street.attribution },
           'basemap-satellite': { type: 'raster', tiles: BASEMAP_TILES.satellite.tiles, tileSize: 256, attribution: BASEMAP_TILES.satellite.attribution },
-          'basemap-dark': { type: 'raster', tiles: BASEMAP_TILES.dark.tiles, tileSize: 256, attribution: BASEMAP_TILES.dark.attribution },
           'basemap-terrain': { type: 'raster-dem', tiles: BASEMAP_TILES.terrain.tiles, tileSize: 256, encoding: 'terrarium', attribution: BASEMAP_TILES.terrain.attribution },
           'basemap-night': { type: 'raster', tiles: BASEMAP_TILES.night.tiles, tileSize: 256, maxzoom: 8, attribution: BASEMAP_TILES.night.attribution },
           'basemap-topo': { type: 'raster', tiles: BASEMAP_TILES.topo.tiles, tileSize: 256, attribution: BASEMAP_TILES.topo.attribution },
@@ -126,7 +123,6 @@ function MapViewInner(props: MapViewProps) {
         layers: [
           { id: 'basemap-street-lyr', type: 'raster', source: 'basemap-street' },
           { id: 'basemap-satellite-lyr', type: 'raster', source: 'basemap-satellite', layout: { visibility: 'none' } },
-          { id: 'basemap-dark-lyr', type: 'raster', source: 'basemap-dark', layout: { visibility: 'none' } },
           { id: 'basemap-terrain-lyr', type: 'hillshade', source: 'basemap-terrain', layout: { visibility: 'none' }, paint: { 'hillshade-exaggeration': 0.6 } },
           { id: 'basemap-night-lyr', type: 'raster', source: 'basemap-night', layout: { visibility: 'none' } },
           { id: 'basemap-topo-lyr', type: 'raster', source: 'basemap-topo', layout: { visibility: 'none' } },
@@ -370,13 +366,7 @@ function MapViewInner(props: MapViewProps) {
 
   useEffect(() => {
     if (!ready || !map.current) return
-    const m = map.current
-    const idle = () => {
-      m.off('idle', idle)
-      drawCogWithPins()
-    }
-    m.on('idle', idle)
-    return () => { m.off('idle', idle) }
+    drawCogWithPins()
   }, [drawCogWithPins, ready])
 
   useEffect(() => {
@@ -437,19 +427,57 @@ function MapViewInner(props: MapViewProps) {
     img.src = dataUrl
   }, [variable, height, t])
 
+  useEffect(() => {
+    const triggerScreenshot = () => handleScreenshot()
+    window.addEventListener('take-map-screenshot', triggerScreenshot)
+    return () => window.removeEventListener('take-map-screenshot', triggerScreenshot)
+  }, [handleScreenshot])
+
+  const isWS = variable === 'ws'
+  const maxVal = isWS ? 16 : 2000
+  const ticks: { val: number; label: string }[] = []
+  if (isWS) {
+    for (let i = 0; i <= 16; i += 2) {
+      ticks.push({ val: i, label: i === 16 ? '16+' : i.toString() })
+    }
+  } else {
+    for (let i = 0; i <= 2000; i += 200) {
+      ticks.push({ val: i, label: i === 2000 ? '2000+' : i.toString() })
+    }
+  }
+
+  const stops = isWS ? WS : PD
+  const gradientStr = `linear-gradient(to top, ${stops.map(s => 
+    `rgba(${s[1][0]}, ${s[1][1]}, ${s[1][2]}, 1) ${(s[0] / maxVal) * 100}%`
+  ).join(', ')})`
+
   return (
     <>
       <div ref={container} className="map-container" />
-      <BasemapSwitcher basemap={basemap} onChange={id => dispatch({ type: 'SET_BASEMAP', basemap: id })} />
+      
+      <div className="map-legend" style={{ right: isPanelOpen ? '444px' : '24px' }}>
+        <div className="map-legend-title" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', textAlign: 'center' }}>
+          {varLabel(variable, t).label} ({varLabel(variable, t).unit})
+        </div>
+        <div className="map-legend-gradient-wrapper">
+          <div className="map-legend-gradient" style={{ background: gradientStr }} />
+          {ticks.map(tick => (
+            <div 
+              key={tick.val} 
+              className="map-legend-tick" 
+              style={{ bottom: `${(tick.val / maxVal) * 100}%` }}
+            >
+              {tick.label}
+            </div>
+          ))}
+        </div>
+      </div>
       {cogLoading && (
         <div className="cog-loading">
           <div className="cog-spinner" />
           <span>{t('mapview.loading')}</span>
         </div>
       )}
-      <button className="map-screenshot-btn" onClick={handleScreenshot} title={t('mapview.screenshot_title')}>
-        📷 Screenshot
-      </button>
     </>
   )
 }

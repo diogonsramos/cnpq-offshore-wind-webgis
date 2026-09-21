@@ -14,7 +14,7 @@ test.describe('Landing Page — carregamento inicial', () => {
 
   test('T02 — landing page é a tela inicial (não o mapa)', async ({ page }) => {
     await expect(page.locator('.landing')).toBeVisible()
-    await expect(page.locator('.tab-bar')).not.toBeVisible()
+    await expect(page.locator('.tab-panel')).not.toBeVisible()
   })
 
   test('T03 — H1 contém o título oficial do projeto', async ({ page }) => {
@@ -29,9 +29,9 @@ test.describe('Landing Page — seções de conteúdo', () => {
     await page.goto('/')
   })
 
-  test('NavbarTop — logos visíveis', async ({ page }) => {
-    await expect(page.locator('.lp-navbar')).toBeVisible()
-    await expect(page.locator('.lp-navbar-logo').first()).toBeVisible()
+  test('Header — logos visíveis', async ({ page }) => {
+    await expect(page.locator('.global-header')).toBeVisible()
+    await expect(page.locator('.gh-logo-img').first()).toBeVisible()
   })
 
   test('HeroSection — dois CTAs visíveis', async ({ page }) => {

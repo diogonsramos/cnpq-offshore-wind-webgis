@@ -195,6 +195,7 @@ export interface PixelDataSummary {
   profile_means: number[]
   wpd_profile_means: number[]
   weibull: Record<number, { k: number; c: number } | null>
+  wind_rose: Record<number, Record<string, { freq: number; mean_ws: number }> | null>
   heatmap: Record<string, number[] | null>
 }
 
@@ -260,6 +261,8 @@ export interface DashboardLocationData {
   state: string
   bathy_zone: string
   distance_nm: number
+  model?: string
+  experiment?: string
   seasons: SeasonalStats[]
   profile_heights: number[]
   profile_means: number[]
@@ -493,12 +496,19 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
   }
 
   const heatmap: Record<string, number[] | null> = {}
+  const windRose: Record<number, Record<string, { freq: number; mean_ws: number }> | null> = {}
   if (annualRow) {
     for (const h of HEIGHTS) {
       for (const prefix of ['ws', 'wpd']) {
         const hmKey = `${prefix}${h}_heatmap`
         heatmap[hmKey] = annualRow[hmKey] ? safeArray(annualRow[hmKey]) : getSyntheticHeatmap()
       }
+      const wrKey = `wind_rose_${h}m`
+      windRose[h] = annualRow[wrKey] ? asWindRoseRecord(annualRow[wrKey]) : getSyntheticWindRose()
+    }
+  } else {
+    for (const h of HEIGHTS) {
+      windRose[h] = getSyntheticWindRose()
     }
   }
 
@@ -515,6 +525,7 @@ export function queryNearest(lat: number, lon: number): PixelDataSummary | null 
     profile_means: safeArray(best.profile_means),
     wpd_profile_means: safeArray(best.wpd_profile_means),
     weibull: buildWeibullRecord(best),
+    wind_rose: windRose,
     heatmap,
   }
 }
@@ -604,6 +615,8 @@ export async function queryDashboardLocation(
     state: best.state,
     bathy_zone: best.bathy_zone,
     distance_nm: best.distance_nm,
+    model,
+    experiment,
     seasons,
     profile_heights: safeArray(annualRow?.profile_heights ?? best.profile_heights).length > 0 ? safeArray(annualRow?.profile_heights ?? best.profile_heights) : [10, 50, 100, 150, 200],
     profile_means: safeArray(annualRow?.profile_means ?? best.profile_means),
@@ -724,6 +737,7 @@ export function queryFilteredPixels(filters: FilterCriteria): FilteredAggregates
 
   const matched: { pixel: RawPixel; value: number }[] = []
   for (const r of records) {
+    if (r.bathy_zone === 'out_of_range') continue
     if (stateSet && !stateSet.has(r.state)) continue
     if (bathySet && !bathySet.has(r.bathy_zone)) continue
     if (r.distance_nm < distMin || r.distance_nm > distMax) continue
