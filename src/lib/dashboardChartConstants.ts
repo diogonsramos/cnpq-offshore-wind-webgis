@@ -52,7 +52,7 @@ export const DISTANCE_ZONE_OPTIONS: { val: string; label: string; max: number }[
 
 // Shared font size for every dashboard chart's title/axis/legend text, so
 // switching between subplots doesn't shift the reading size.
-export const CHART_FONT = { size: 12 }
+export const CHART_FONT = { size: 12, color: '#000000' }
 
 // Shared hover box styling: a translucent panel (readable over any subplot
 // background) sized to match CHART_FONT instead of Plotly's tiny default.

@@ -10,7 +10,7 @@ const MINI_PLOT_LAYOUT = {
   margin: { t: 5, b: 20, l: 30, r: 5 },
   paper_bgcolor: 'transparent',
   plot_bgcolor: 'transparent',
-  font: { size: 10, color: '#e0e0e0' },
+  font: { size: 10, color: '#000000' },
   showlegend: false,
 }
 
@@ -83,8 +83,8 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
                       }]}
                       layout={{
                         ...MINI_PLOT_LAYOUT,
-                        xaxis: { range: [0, 20], tickfont: { size: 9 } },
-                        yaxis: { tickvals: [10, 50, 100, 150, 200], ticktext: ['10m', '50m', '100m', '150m', '200m'], tickfont: { size: 9 } },
+                        xaxis: { range: [0, 20], tickfont: { size: 9, color: '#000000' } },
+                        yaxis: { tickvals: [10, 50, 100, 150, 200], ticktext: ['10m', '50m', '100m', '150m', '200m'], tickfont: { size: 9, color: '#000000' } },
                       }}
                       config={MINI_PLOT_CONFIG}
                       style={{ width: '100%', height: '100%' }}
@@ -106,8 +106,8 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
                     }]}
                     layout={{
                       ...MINI_PLOT_LAYOUT,
-                      xaxis: { range: [0, 1500], tickfont: { size: 9 } },
-                      yaxis: { tickvals: [10, 50, 100, 150, 200], ticktext: ['10m', '50m', '100m', '150m', '200m'], tickfont: { size: 9 } },
+                      xaxis: { range: [0, 1500], tickfont: { size: 9, color: '#000000' } },
+                      yaxis: { tickvals: [10, 50, 100, 150, 200], ticktext: ['10m', '50m', '100m', '150m', '200m'], tickfont: { size: 9, color: '#000000' } },
                     }}
                     config={MINI_PLOT_CONFIG}
                     style={{ width: '100%', height: '100%' }}
@@ -141,8 +141,8 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
                           }]}
                           layout={{
                             ...MINI_PLOT_LAYOUT,
-                            xaxis: { range: [0, 30], tickfont: { size: 9 } },
-                            yaxis: { range: [0, 0.25], tickfont: { size: 9 } },
+                            xaxis: { range: [0, 30], tickfont: { size: 9, color: '#000000' } },
+                            yaxis: { range: [0, 0.25], tickfont: { size: 9, color: '#000000' } },
                           }}
                           config={MINI_PLOT_CONFIG}
                           style={{ width: '100%', height: '100%' }}
@@ -177,11 +177,11 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
                             margin: { t: 10, b: 10, l: 20, r: 20 },
                             paper_bgcolor: 'transparent',
                             plot_bgcolor: 'transparent',
-                            font: { size: 9, color: '#e0e0e0' },
+                            font: { size: 9, color: '#000000' },
                             showlegend: false,
                             polar: {
-                              angularaxis: { direction: 'clockwise', rotation: 90, tickfont: { size: 8 } },
-                              radialaxis: { visible: true, ticksuffix: '%', tickfont: { size: 8 } }
+                              angularaxis: { direction: 'clockwise', rotation: 90, tickfont: { size: 8, color: '#000000' } },
+                              radialaxis: { visible: true, ticksuffix: '%', tickfont: { size: 8, color: '#000000' } }
                             }
                           }}
                           config={WINDROSE_PLOT_CONFIG}

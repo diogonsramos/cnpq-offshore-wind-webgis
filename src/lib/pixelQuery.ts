@@ -1,7 +1,6 @@
 import initWasm, { readParquet } from 'parquet-wasm/esm/parquet_wasm.js'
+import wasmUrl from 'parquet-wasm/esm/parquet_wasm_bg.wasm?url'
 import { tableFromIPC, type Table } from 'apache-arrow'
-
-const WASM_URL = '/parquet_wasm_bg.wasm'
 const DB_NAME = 'webgis-cache'
 const DB_VERSION = 2
 const CACHE_PREFIX = 'parquet-'
@@ -335,7 +334,7 @@ export async function loadParquet(experiment: string = 'ERA5_atlas', model: stri
 
   loading = (async () => {
     try {
-      await initWasm(WASM_URL)
+      await initWasm({ module_or_path: wasmUrl })
     } catch (e) {
       console.warn('initWasm failed:', e)
       throw e
