@@ -67,7 +67,7 @@
 /* ── Unified Layout ─────────────────────────── */
 .unified-dashboard-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1;
   overflow: hidden;
   padding: 20px 20px 0 20px;
@@ -77,16 +77,68 @@
   width: 100%;
 }
 
-/* ── Top Controls (formerly Sidebar) ────────────────────────────────── */
+/* ── Left Sidebar ────────────────────────────────── */
 .dv-sidebar {
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  align-items: start;
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  gap: 12px;
   flex-shrink: 0;
+  transition: width 0.3s ease;
+  height: 100%;
 }
 
-/* No sidebar scrollbar needed as it is part of vertical flow */
+.dv-sidebar--closed {
+  width: auto;
+}
+
+.dv-sidebar-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dv-sidebar-toggle {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dv-sidebar-toggle:hover {
+  background: #f1f5f9;
+}
+
+.dv-sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-bottom: 20px;
+  padding-right: 8px; /* space for scrollbar */
+}
+
+/* Custom scrollbar for sidebar */
+.dv-sidebar-content::-webkit-scrollbar { width: 6px; }
+.dv-sidebar-content::-webkit-scrollbar-track { background: transparent; }
+.dv-sidebar-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+@media (max-width: 900px) {
+  .unified-dashboard-container {
+    flex-direction: column;
+  }
+  .dv-sidebar {
+    width: 100%;
+    height: auto;
+  }
+  .dv-sidebar--closed {
+    width: 100%;
+  }
+}
 
 .minimap-container {
   background: #fff;
@@ -143,8 +195,8 @@
 }
 
 .dv-chips {
-  grid-column: 1 / -1;
   display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -160,7 +212,6 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: #334155;
-  flex: 1;
 }
 
 .dv-legend-swatch {
@@ -190,8 +241,8 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  display: grid;
-  grid-template-columns: 200px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
@@ -343,10 +394,10 @@
 }
 
 .dv-chart-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* ── Chart Card ──────────────────────────────── */

@@ -108,6 +108,7 @@ function DashboardViewInner({
   const [appliedFilters, setAppliedFilters] = useState<FilterCriteria | null>(null)
   const [result, setResult] = useState<FilteredAggregates | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   const cacheRef = useRef<Map<string, FilteredAggregates>>(new Map())
   const loadGenRef = useRef(0)
@@ -305,19 +306,26 @@ function DashboardViewInner({
       </div>
       </div>
 
-      <div className="unified-dashboard-container">
+      <div className={`unified-dashboard-container ${isSidebarOpen ? '' : 'focus-mode'}`}>
         
         {/* Left Sidebar */}
-        <div className="dv-sidebar">
-          <div className="minimap-container">
-            <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} />
-            <div className="dv-location-inputs">
-              <input className="dv-input" type="number" step="any" placeholder={t('pixel.lat')} value={latInput} onChange={e => setLatInput(e.target.value)} />
-              <input className="dv-input" type="number" step="any" placeholder={t('pixel.lon')} value={lonInput} onChange={e => setLonInput(e.target.value)} />
-              <button className="dv-add-btn" onClick={handleManualAdd}>{t('dashboard.add_location')}</button>
-            </div>
-            {locError && <span className="dv-error">{locError}</span>}
+        <div className={`dv-sidebar ${isSidebarOpen ? '' : 'dv-sidebar--closed'}`}>
+          <div className="dv-sidebar-header">
+            <button className="dv-sidebar-toggle" onClick={() => setIsSidebarOpen(!isSidebarOpen)} title="Alternar Modo Foco">
+              {isSidebarOpen ? '← Ocultar Filtros' : 'Filtros →'}
+            </button>
           </div>
+
+          <div className="dv-sidebar-content" style={{ display: isSidebarOpen ? 'flex' : 'none' }}>
+            <div className="minimap-container">
+              <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} />
+              <div className="dv-location-inputs">
+                <input className="dv-input" type="number" step="any" placeholder={t('pixel.lat')} value={latInput} onChange={e => setLatInput(e.target.value)} />
+                <input className="dv-input" type="number" step="any" placeholder={t('pixel.lon')} value={lonInput} onChange={e => setLonInput(e.target.value)} />
+                <button className="dv-add-btn" onClick={handleManualAdd}>{t('dashboard.add_location')}</button>
+              </div>
+              {locError && <span className="dv-error">{locError}</span>}
+            </div>
 
           <div className="geoparquet-filters">
             <h3 className="gpe-title">Análise Regional (Filtros GeoParquet)</h3>
@@ -352,17 +360,18 @@ function DashboardViewInner({
             </div>
           </div>
 
-          {pinnedLocations.length > 0 && (
-            <div className="dv-chips">
-              {pinnedLocations.map((loc, i) => (
-                <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
-                  <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
-                  {locLabel(loc, i)} — (Lat: {loc.lat.toFixed(2)}, Lon: {loc.lon.toFixed(2)})
-                  <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
-                </span>
-              ))}
-            </div>
-          )}
+            {pinnedLocations.length > 0 && (
+              <div className="dv-chips">
+                {pinnedLocations.map((loc, i) => (
+                  <span key={i} className="dv-legend-chip" style={{ borderLeftColor: COLORS[i] }}>
+                    <span className="dv-legend-swatch" style={{ background: COLORS[i] }} />
+                    {locLabel(loc, i)} — (Lat: {loc.lat.toFixed(2)}, Lon: {loc.lon.toFixed(2)})
+                    <button className="chip-remove" onClick={() => onRemoveLocation(i)}>&times;</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Main Content */}

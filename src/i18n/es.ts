@@ -77,6 +77,7 @@ export const es = {
   'dashboard.chart.restore_aria': 'Restaurar gráfico',
   'dashboard.chart.expand_aria': 'Expandir gráfico',
   'dashboard.add_location': '+ Añadir Ubicación',
+  'dashboard.minimap_overlay': 'Haga clic en el mapa o escriba las coordenadas a continuación',
   'dashboard.add_location_hint': 'o haga clic en el minimapa de abajo',
   'dashboard.remove_all': 'Eliminar Todo',
   'dashboard.empty_state': 'Haga clic en el mapa o ingrese coordenadas para añadir ubicaciones.',

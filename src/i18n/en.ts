@@ -82,6 +82,7 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.chart.restore_aria': 'Restore chart',
   'dashboard.chart.expand_aria': 'Expand chart',
   'dashboard.add_location': '+ Add Location',
+  'dashboard.minimap_overlay': 'Click on the map or type the coordinates below',
   'dashboard.add_location_hint': 'or click the mini-map below',
   'dashboard.remove_all': 'Remove All',
   'dashboard.empty_state': 'Click the map or enter coordinates to add locations.',

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { useLocale } from '../i18n/provider'
 
 interface MiniMapProps {
   pinnedLocations: { lat: number; lon: number }[]
@@ -10,6 +11,7 @@ interface MiniMapProps {
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
+  const { t } = useLocale()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const [ready, setReady] = useState(false)
@@ -76,7 +78,20 @@ function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
     })
   }, [pinnedLocations, ready])
 
-  return <div ref={container} className="minimap" />
+  return (
+    <div className="minimap" style={{ position: 'relative' }}>
+      <div style={{
+        position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)',
+        background: 'rgba(255, 255, 255, 0.9)', padding: '4px 12px',
+        borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+        color: '#334155', pointerEvents: 'none', zIndex: 2,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)', whiteSpace: 'nowrap'
+      }}>
+        {t('dashboard.minimap_overlay')}
+      </div>
+      <div ref={container} style={{ width: '100%', height: '100%' }} />
+    </div>
+  )
 }
 
 export default MiniMap

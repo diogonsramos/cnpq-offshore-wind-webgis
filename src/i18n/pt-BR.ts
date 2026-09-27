@@ -80,6 +80,7 @@ export const ptBR = {
   'dashboard.chart.restore_aria': 'Restaurar gráfico',
   'dashboard.chart.expand_aria': 'Expandir gráfico',
   'dashboard.add_location': '+ Adicionar Local',
+  'dashboard.minimap_overlay': 'Clique no mapa ou digite as coordenadas abaixo',
   'dashboard.add_location_hint': 'ou clique no mini-mapa abaixo',
   'dashboard.remove_all': 'Remover Tudo',
   'dashboard.empty_state': 'Clique no mapa ou digite coordenadas para adicionar locais.',
