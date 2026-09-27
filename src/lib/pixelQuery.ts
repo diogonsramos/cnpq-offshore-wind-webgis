@@ -4,7 +4,7 @@ import { tableFromIPC, type Table } from 'apache-arrow'
 const DB_NAME = 'webgis-cache'
 const DB_VERSION = 2
 const CACHE_PREFIX = 'parquet-'
-const CACHE_VERSION = 2
+const CACHE_VERSION = 3
 const SEASONS = ['ANNUAL', 'DJF', 'MAM', 'JJA', 'SON']
 const VERSION_STORAGE_KEY = 'webgis-cache-version'
 const MAX_CACHE_BYTES = 50 * 1024 * 1024
