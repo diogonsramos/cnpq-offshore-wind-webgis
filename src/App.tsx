@@ -36,8 +36,29 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('landing-mode')
     }
+    
+    // Sync tab to hash without scrolling
+    const targetHash = `/${tab}`
+    if (window.location.hash !== `#${targetHash}`) {
+      window.history.replaceState(null, '', `#${targetHash}`)
+    }
+
     return () => document.documentElement.classList.remove('landing-mode')
   }, [tab])
+
+  // Listen to browser navigation (back/forward)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '')
+      if (hash === 'map' || hash === 'dashboard') {
+        dispatch({ type: 'SET_TAB', tab: hash as any })
+      } else if (hash === 'home' || hash === '') {
+        dispatch({ type: 'SET_TAB', tab: 'home' })
+      }
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
 
   // Auto-load the pixel-query parquet for the selected pair as soon as the user
   // enters the Map or Dashboard, so "+ Add Location" works without a prior map

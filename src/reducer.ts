@@ -26,8 +26,15 @@ export interface AppState {
   dashboardVisited: boolean
 }
 
+function getInitialTab(): TabId {
+  if (typeof window === 'undefined') return 'home'
+  const hash = window.location.hash.replace(/^#\/?/, '')
+  if (hash === 'map' || hash === 'dashboard') return hash as TabId
+  return 'home'
+}
+
 export const initialAppState: AppState = {
-  tab: 'home',
+  tab: getInitialTab(),
   model: 'wrf',
   dataset: 'era5',
   variable: 'ws',
@@ -44,7 +51,7 @@ export const initialAppState: AppState = {
   pinnedLocations: [],
   showFAQ: false,
   showProject: false,
-  dashboardVisited: false,
+  dashboardVisited: getInitialTab() === 'dashboard',
 }
 
 export type AppAction =

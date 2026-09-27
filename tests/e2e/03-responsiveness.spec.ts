@@ -28,8 +28,7 @@ test('T08b — em mobile (375 px) os CTAs da Landing Page são exibidos em colun
 for (const vp of VIEWPORTS) {
   test(`T60 — Dashboard Unificado sem scroll horizontal overflow absurdo em ${vp.name} (${vp.width}px)`, async ({ page }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height })
-    await page.goto('/')
-    await page.click('.lp-cta-secondary')
+    await page.goto('/#dashboard')
     await expect(page.locator('.dashboard-view')).toBeVisible()
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
