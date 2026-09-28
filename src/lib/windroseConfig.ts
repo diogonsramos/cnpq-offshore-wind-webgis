@@ -37,15 +37,15 @@ export const WINDROSE_PLOT_CONFIG: Partial<Config> = {
 
 // Bins for stacked wind rose (based on 'Plasma_r' or similar perceptually uniform palette)
 export const WIND_BINS = [
-  { min: 0, max: 2, color: '#0d0887', label: '0-2 m/s' },
-  { min: 2, max: 4, color: '#4c02a1', label: '2-4 m/s' },
-  { min: 4, max: 6, color: '#7e03a8', label: '4-6 m/s' },
-  { min: 6, max: 8, color: '#aa2395', label: '6-8 m/s' },
+  { min: 0, max: 2, color: '#f0f921', label: '0-2 m/s' },
+  { min: 2, max: 4, color: '#fdc527', label: '2-4 m/s' },
+  { min: 4, max: 6, color: '#f89540', label: '4-6 m/s' },
+  { min: 6, max: 8, color: '#e66c5c', label: '6-8 m/s' },
   { min: 8, max: 10, color: '#cc4778', label: '8-10 m/s' },
-  { min: 10, max: 12, color: '#e66c5c', label: '10-12 m/s' },
-  { min: 12, max: 14, color: '#f89540', label: '12-14 m/s' },
-  { min: 14, max: 16, color: '#fdc527', label: '14-16 m/s' },
-  { min: 16, max: Infinity, color: '#f0f921', label: '16+ m/s' },
+  { min: 10, max: 12, color: '#aa2395', label: '10-12 m/s' },
+  { min: 12, max: 14, color: '#7e03a8', label: '12-14 m/s' },
+  { min: 14, max: 16, color: '#4c02a1', label: '14-16 m/s' },
+  { min: 16, max: Infinity, color: '#0d0887', label: '16+ m/s' },
 ]
 
 // Simple polynomial approximation for Gamma(x) where 1 <= x <= 2

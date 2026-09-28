@@ -259,7 +259,7 @@ function DashboardComparisonViewInner({ mode, currentModel, currentDataset, pinn
                   data={readyEntries.map(e => {
                     const w = e.data.weibull?.[height]
                     if (!w) return { x: [], y: [], type: 'scatter' as const, name: e.label }
-                    const maxX = 30
+                    const maxX = 20
                     const step = maxX / 60
                     const xs: number[] = [], ys: number[] = []
                     for (let x = 0; x <= maxX; x += step) {

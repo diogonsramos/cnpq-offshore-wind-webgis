@@ -385,7 +385,7 @@ function DashboardViewInner({
                     data={pinnedLocations.map((loc, i) => {
                       const w = loc.weibull?.[dashboardHeight]
                       if (!w) return { x: [], y: [], type: 'scatter', name: locLabel(loc, i) }
-                      const maxX = 30
+                      const maxX = 20
                       const step = maxX / 60
                       const xs: number[] = [], ys: number[] = []
                       for (let x = 0; x <= maxX; x += step) {

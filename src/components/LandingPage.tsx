@@ -39,7 +39,7 @@ const TEAM: {
 // Citações bibliográficas — reproduzidas verbatim (não traduzidas) nos dois
 // idiomas, como qualquer lista de referências científicas.
 const PUBLICATIONS = [
-  <>AYLAS, G. Y. R. et al. <strong>Simulation of an anomalously high wind gust event in São Paulo: A comparative analysis between WRF and MPAS-A models.</strong> Theor Appl Climatol 157, 644 (2026).</>,
+  <>AYLAS, G. Y. R. et al. <strong><a href="https://link.springer.com/article/10.1007/s00704-026-06537-9" target="_blank" rel="noopener noreferrer">Simulation of an anomalously high wind gust event in São Paulo: A comparative analysis between WRF and MPAS-A models.</a></strong> Theor Appl Climatol 157, 644 (2026).</>,
   <>WEYLL, A. L. C. et al. <strong>Mapeamento eólico offshore histórico e futuro usando Quantile Delta Mapping com ajuste de erros do downscaling CMIP6-WRF.</strong> In: XI SAPCT e X ICPAD, 2026, Salvador.</>,
   <>RAMOS, D. N. S. et al. <strong>MPAS-A OR WRF: WHICH IS THE BETTER WIND DOWNSCALING TOOL FOR WIND POTENTIAL MAPPING IN BRAZIL?</strong> In: I SIEME, 2025, Maceió.</>,
   <>AYLAS, G. Y. R. et al. <strong>ANALYZING HEAT WAVE IMPACTS ON ELECTRICITY DEMAND AND THERMAL STRESS: A STUDY WITH MPAS-A MODEL IN BAURU-SP.</strong> In: I SIEME, 2025, Maceió.</>,
