@@ -37,23 +37,43 @@ export default function App() {
       document.documentElement.classList.remove('landing-mode')
     }
     
-    // Sync tab to hash without scrolling
-    const targetHash = `/${tab}`
+    // Sync tab and global state to hash without scrolling
+    const params = new URLSearchParams()
+    if (tab !== 'home') {
+      params.set('model', model)
+      params.set('dataset', dataset)
+      params.set('var', variable)
+      params.set('height', height.toString())
+      params.set('season', season)
+    }
+    const query = params.toString() ? `?${params.toString()}` : ''
+    const targetHash = `/${tab}${query}`
+    
+    // Compare path and query (ignoring exact string match to avoid needless updates if order changes, but simple string compare is usually enough since we generate it deterministically)
     if (window.location.hash !== `#${targetHash}`) {
       window.history.replaceState(null, '', `#${targetHash}`)
     }
 
     return () => document.documentElement.classList.remove('landing-mode')
-  }, [tab])
+  }, [tab, model, dataset, variable, height, season])
 
   // Listen to browser navigation (back/forward)
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace(/^#\/?/, '')
-      if (hash === 'map' || hash === 'dashboard') {
-        dispatch({ type: 'SET_TAB', tab: hash as any })
-      } else if (hash === 'home' || hash === '') {
-        dispatch({ type: 'SET_TAB', tab: 'home' })
+      const hashStr = window.location.hash
+      const path = hashStr.split('?')[0].replace(/^#\/?/, '')
+      const query = hashStr.split('?')[1]
+      const params = query ? new URLSearchParams(query) : new URLSearchParams()
+      
+      let newTab: any = 'home'
+      if (path === 'map' || path === 'dashboard') {
+        newTab = path
+      }
+
+      if (query) {
+        dispatch({ type: 'SYNC_FROM_URL', tab: newTab, params })
+      } else {
+        dispatch({ type: 'SET_TAB', tab: newTab })
       }
     }
     window.addEventListener('hashchange', handleHashChange)

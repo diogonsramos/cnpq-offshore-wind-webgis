@@ -26,20 +26,28 @@ export interface AppState {
   dashboardVisited: boolean
 }
 
+function parseHashParams(): URLSearchParams | null {
+  if (typeof window === 'undefined') return null
+  const query = window.location.hash.split('?')[1]
+  return query ? new URLSearchParams(query) : null
+}
+
 function getInitialTab(): TabId {
   if (typeof window === 'undefined') return 'home'
-  const hash = window.location.hash.replace(/^#\/?/, '')
+  const hash = window.location.hash.split('?')[0].replace(/^#\/?/, '')
   if (hash === 'map' || hash === 'dashboard') return hash as TabId
   return 'home'
 }
 
+const initParams = parseHashParams()
+
 export const initialAppState: AppState = {
   tab: getInitialTab(),
-  model: 'wrf',
-  dataset: 'era5',
-  variable: 'ws',
-  height: 100,
-  season: 'annual',
+  model: (initParams?.get('model') as Model) || 'wrf',
+  dataset: (initParams?.get('dataset') as Dataset) || 'era5',
+  variable: (initParams?.get('var') as Variable) || 'ws',
+  height: (initParams?.get('height') ? parseInt(initParams.get('height')!) : 100) as Height,
+  season: (initParams?.get('season') as Season) || 'annual',
   showBathymetry: true,
   bathyLayer: 'bathy_0_100_nacional',
   pixelData: null,
@@ -74,11 +82,23 @@ export type AppAction =
   | { type: 'REFRESH_PINNED_LOCATIONS'; locations: DashboardLocationData[] }
   | { type: 'SET_SHOW_FAQ'; show: boolean }
   | { type: 'SET_SHOW_PROJECT'; show: boolean }
+  | { type: 'SYNC_FROM_URL'; params: URLSearchParams, tab: TabId }
 
 const MAX_PINS = 3
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
+    case 'SYNC_FROM_URL':
+      return {
+        ...state,
+        tab: action.tab,
+        dashboardVisited: state.dashboardVisited || action.tab === 'dashboard',
+        model: (action.params.get('model') as Model) || state.model,
+        dataset: (action.params.get('dataset') as Dataset) || state.dataset,
+        variable: (action.params.get('var') as Variable) || state.variable,
+        height: (action.params.get('height') ? parseInt(action.params.get('height')!) : state.height) as Height,
+        season: (action.params.get('season') as Season) || state.season,
+      }
     case 'SET_TAB':
       return { ...state, tab: action.tab, dashboardVisited: state.dashboardVisited || action.tab === 'dashboard' }
     case 'SET_MODEL':
