@@ -1,6 +1,5 @@
-import { memo } from 'react'
+import { memo, useState, lazy, Suspense, useEffect } from 'react'
 import type { PixelDataSummary } from '../lib/pixelQuery'
-import { lazy, Suspense } from 'react'
 import { SECTOR_LABELS, windSpeedColor, CHART_COLORS } from '../lib/dashboardChartConstants'
 import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
 
@@ -35,6 +34,30 @@ interface PixelInfoPanelProps {
 
 function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, height, onClose, onOpenDashboard, onAddPin }: PixelInfoPanelProps) {
   const { t } = useLocale()
+  const [exactBathy, setExactBathy] = useState<{ loading: boolean; value: string | null; error: boolean }>({ loading: false, value: null, error: false })
+  
+  // Reset when pixel changes
+  useEffect(() => {
+    setExactBathy({ loading: false, value: null, error: false })
+  }, [data?.lat, data?.lon])
+
+  const fetchExactBathy = async () => {
+    if (!data) return
+    setExactBathy({ loading: true, value: null, error: false })
+    try {
+      const url = `https://gis.ngdc.noaa.gov/arcgis/rest/services/DEM_mosaics/DEM_all/ImageServer/identify?geometry=${data.lon},${data.lat}&geometryType=esriGeometryPoint&f=json`
+      const res = await fetch(url)
+      const json = await res.json()
+      if (json && json.value && json.value !== 'NoData') {
+        setExactBathy({ loading: false, value: json.value, error: false })
+      } else {
+        setExactBathy({ loading: false, value: null, error: true })
+      }
+    } catch {
+      setExactBathy({ loading: false, value: null, error: true })
+    }
+  }
+
   const className = `pixel-panel${(data || loading) ? ' open' : ''}`
 
   return (
@@ -62,6 +85,27 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
               <Row label={t('pixel.pixel_id')} value={String(data.pixel_id)} />
               {data.state && <Row label={t('pixel.state')} value={data.state} />}
               {data.bathy_zone && data.bathy_zone !== 'out_of_range' && <Row label={t('pixel.bathy')} value={data.bathy_zone.replace('_', '-') + 'm'} />}
+              <div style={{ marginTop: '4px' }}>
+                {exactBathy.value ? (
+                  <Row label="Profundidade Exata" value={`${parseFloat(exactBathy.value).toFixed(1)}m (NOAA)`} />
+                ) : (
+                  <button 
+                    onClick={fetchExactBathy} 
+                    disabled={exactBathy.loading}
+                    style={{ 
+                      fontSize: '11px', 
+                      background: 'none', 
+                      border: '1px solid #d0d7de', 
+                      padding: '2px 6px', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      color: '#4a90d9'
+                    }}
+                  >
+                    {exactBathy.loading ? 'Consultando NOAA...' : exactBathy.error ? 'Erro na consulta. Tentar novamente?' : 'Consultar Profundidade Exata'}
+                  </button>
+                )}
+              </div>
             </Section>
 
             <Section title={t('pixel.section.wind_speed', { height: `${height}m` })}>
