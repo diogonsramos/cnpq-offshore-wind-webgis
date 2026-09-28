@@ -432,9 +432,7 @@ export default function LandingPage({ onNavigate }: Props) {
           <p className="lp-section-label">{t('landing.team.eyebrow')}</p>
           <h2 className="lp-section-title">{t('landing.team.title')}</h2>
           <p className="lp-section-intro">
-            {t('landing.team.intro_before')}
-            <abbr title={t('landing.team.intro_abbr_title')}>CS2I — SENAI CIMATEC</abbr>
-            {t('landing.team.intro_after')}
+            {t('landing.team.intro')}
           </p>
           <div className="lp-team-grid">
             {TEAM.map(m => (
