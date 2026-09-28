@@ -579,7 +579,6 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="lp-footer-inner">
           <div className="lp-footer-logos">
             <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-footer-logo" />
-            <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-footer-logo" />
             <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-footer-logo" />
           </div>
           <div className="lp-footer-citation">
