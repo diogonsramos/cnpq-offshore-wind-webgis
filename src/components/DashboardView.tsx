@@ -10,9 +10,9 @@ import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG,
   CHART_FONT, HOVER_LABEL_STYLE, windSpeedColor, WS_LEGEND_GRADIENT,
-  BATHY_ZONE_OPTIONS, DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS
+  BATHY_ZONE_OPTIONS, DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS, mergeEdits
 } from '../lib/dashboardChartConstants'
-import { WINDROSE_PLOT_CONFIG } from '../lib/windroseConfig'
+import { WINDROSE_PLOT_CONFIG, WIND_BINS, getWeibullBinFreqs } from '../lib/windroseConfig'
 import MiniMap from './MiniMap'
 
 import DashboardSkeleton from './DashboardSkeleton'
@@ -404,8 +404,8 @@ function DashboardViewInner({
                     })}
                     layout={{
                       title: { text: t('dashboard.chart.weibull_title', { height: `${dashboardHeight}m` }) },
-                      xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 30], zeroline: false, hoverformat: '.2f' },
-                      yaxis: { title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 }, range: [0, 0.3], zeroline: false, hoverformat: '.4f' },
+                      xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, zeroline: false, hoverformat: '.2f' },
+                      yaxis: { title: { text: t('dashboard.chart.pdf_axis'), standoff: 10 }, zeroline: false, hoverformat: '.4f' },
                       height: plotHeight('weibull'),
                       margin: { t: 40, b: 40, l: 55, r: 20 },
                       paper_bgcolor: 'transparent',
@@ -425,45 +425,60 @@ function DashboardViewInner({
 
               {pinnedLocations.length > 0 && (
                 <ChartCard id="windrose" testId="chart-windrose" fullscreenId={fullscreenChart} onToggleFullscreen={toggleFullscreen}>
-                  <Plot
-                    data={pinnedLocations.map((loc, i) => {
+                  <div style={{ display: 'flex', gap: '24px', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+                    {pinnedLocations.map((loc, i) => {
                       const wr = loc.wind_rose?.[dashboardHeight]
-                      if (!wr) return { r: [], theta: [], type: 'barpolar', name: locLabel(loc, i) }
-                      const speeds = SECTOR_LABELS.map(s => wr[s]?.mean_ws ?? 0)
-                      return {
-                        r: SECTOR_LABELS.map(s => wr[s]?.freq ?? 0),
-                        theta: SECTOR_LABELS,
-                        type: 'barpolar' as const,
-                        name: locLabel(loc, i),
-                        marker: { color: speeds.map(v => windSpeedColor(v, windRoseMaxSpeed)), line: { color: COLORS[i], width: 2.5 } },
-                        opacity: 0.85,
-                        customdata: speeds,
-                        hovertemplate: `%{theta}: %{r:.1f}%<br>${t('dashboard.chart.windrose_avg_speed')}: %{customdata:.2f} m/s<extra></extra>`,
-                      }
+                      if (!wr) return null
+                      const w = loc.weibull?.[dashboardHeight]
+                      
+                      const traces: any[] = []
+                      WIND_BINS.forEach((bin, bIdx) => {
+                        const r = SECTOR_LABELS.map(s => {
+                          if (!wr[s]) return 0
+                          return getWeibullBinFreqs(wr[s].freq, wr[s].mean_ws, w?.k ?? null)[bIdx]
+                        })
+                        
+                        traces.push({
+                          r,
+                          theta: SECTOR_LABELS,
+                          type: 'barpolar',
+                          name: bin.label,
+                          legendgroup: bin.label,
+                          showlegend: i === pinnedLocations.length - 1,
+                          marker: { color: bin.color, line: { color: '#000', width: 0.5 } },
+                          opacity: 0.9,
+                          hovertemplate: `%{theta}: %{r:.1f}%<br>${bin.label}<extra></extra>`,
+                        })
+                      })
+
+                      return (
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 300px', minWidth: 300, height: plotHeight('windrose') + 40 }}>
+                          <Plot
+                            data={traces}
+                            layout={{
+                              title: { text: i === Math.floor((pinnedLocations.length - 1) / 2) ? t('dashboard.chart.windrose_title', { height: `${dashboardHeight}m` }) : ' ' },
+                              height: plotHeight('windrose'),
+                              margin: { t: 40, b: 30, l: 40, r: i === pinnedLocations.length - 1 ? 100 : 40 },
+                              paper_bgcolor: 'transparent',
+                              plot_bgcolor: 'transparent',
+                              font: CHART_FONT,
+                              showlegend: i === pinnedLocations.length - 1,
+                              legend: { orientation: 'v', x: 1.05, y: 0.5, bgcolor: 'rgba(255,255,255,0.8)' },
+                              barmode: 'stack',
+                              hoverlabel: { font: { size: 12, color: '#fff' } },
+                              polar: { angularaxis: { direction: 'clockwise', rotation: 90 }, radialaxis: { visible: true, title: { text: '' }, ticksuffix: '%', angle: 90, tickangle: 90, side: 'counterclockwise' } },
+                            }}
+                            config={WINDROSE_PLOT_CONFIG}
+                            style={{ width: '100%', height: '100%' }}
+                            useResizeHandler
+                          />
+                          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: COLORS[i], textAlign: 'center', marginTop: '-15px', textTransform: 'uppercase', padding: '4px 12px', background: COLORS[i] + '1A', borderRadius: '8px' }}>
+                            {locLabel(loc, i)}
+                          </div>
+                        </div>
+                      )
                     })}
-                    layout={{
-                      title: { text: t('dashboard.chart.windrose_title', { height: `${dashboardHeight}m` }) },
-                      height: plotHeight('windrose'),
-                      margin: { t: 40, b: 30, l: 50, r: 50 },
-                      paper_bgcolor: 'transparent',
-                      plot_bgcolor: 'transparent',
-                      font: CHART_FONT,
-                      showlegend: false,
-                      barmode: 'overlay',
-                      hoverlabel: { font: { size: 12, color: '#fff' } },
-                      polar: { angularaxis: { direction: 'clockwise', rotation: 90 }, radialaxis: { visible: true, title: { text: t('dashboard.chart.freq_axis') }, ticksuffix: '%' } },
-                    }}
-                    config={WINDROSE_PLOT_CONFIG}
-                    style={{ width: '100%', height: '100%' }}
-                    useResizeHandler
-                  />
-                  {windRoseMaxSpeed > 0 && (
-                    <div className="windrose-legend">
-                      <span className="windrose-legend-label">0 m/s</span>
-                      <div className="windrose-legend-bar" style={{ background: WS_LEGEND_GRADIENT }} />
-                      <span className="windrose-legend-label">{windRoseMaxSpeed.toFixed(1)} m/s</span>
-                    </div>
-                  )}
+                  </div>
                 </ChartCard>
               )}
 
@@ -477,8 +492,8 @@ function DashboardViewInner({
                     }))}
                     layout={{
                       title: { text: t('geoparquet_explorer.charts.boxplot_state_title') },
-                      xaxis: { tickangle: -45 },
-                      yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                      xaxis: { tickangle: 0 },
+                      yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, zeroline: false, hoverformat: '.2f' },
                       height: plotHeight('boxplot-state'),
                       margin: { t: 40, b: 60, l: 55, r: 20 },
                       paper_bgcolor: 'transparent',
@@ -504,8 +519,8 @@ function DashboardViewInner({
                     }))}
                     layout={{
                       title: { text: t('geoparquet_explorer.charts.boxplot_bathy_title') },
-                      xaxis: { tickangle: -45 },
-                      yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, range: xRange, zeroline: false, hoverformat: '.2f' },
+                      xaxis: { tickangle: 0 },
+                      yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, zeroline: false, hoverformat: '.2f' },
                       height: plotHeight('boxplot-bathy'),
                       margin: { t: 40, b: 80, l: 55, r: 20 },
                       paper_bgcolor: 'transparent',
@@ -531,7 +546,7 @@ function DashboardViewInner({
                     }))}
                     layout={{
                       title: { text: t('dashboard.chart.ws_profile_title') },
-                      xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, range: [0, 20], zeroline: false, hoverformat: '.2f' },
+                      xaxis: { title: { text: t('dashboard.chart.wind_speed_axis'), standoff: 10 }, zeroline: false, hoverformat: '.2f' },
                       yaxis: profileYAxis,
                       height: plotHeight('ws-profile'),
                       margin: { t: 40, b: 40, l: 55, r: 20 },
@@ -559,7 +574,7 @@ function DashboardViewInner({
                     }))}
                     layout={{
                       title: { text: t('dashboard.chart.wpd_profile_title') },
-                      xaxis: { title: { text: t('dashboard.chart.wpd_axis'), standoff: 10 }, range: [0, 1500], zeroline: false, hoverformat: '.1f' },
+                      xaxis: { title: { text: t('dashboard.chart.wpd_axis'), standoff: 10 }, zeroline: false, hoverformat: '.1f' },
                       yaxis: profileYAxis,
                       height: plotHeight('wpd-profile'),
                       margin: { t: 40, b: 40, l: 55, r: 20 },

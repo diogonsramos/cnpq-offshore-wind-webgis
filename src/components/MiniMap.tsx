@@ -16,6 +16,11 @@ function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
   const map = useRef<maplibregl.Map | null>(null)
   const [ready, setReady] = useState(false)
 
+  const onPinClickRef = useRef(onPinClick)
+  useEffect(() => {
+    onPinClickRef.current = onPinClick
+  }, [onPinClick])
+
   useEffect(() => {
     if (!container.current || map.current) return
     const m = new maplibregl.Map({
@@ -36,7 +41,7 @@ function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
     m.addControl(new maplibregl.NavigationControl({ showZoom: true, showCompass: false }), 'bottom-right')
     m.on('load', () => setReady(true))
     m.on('click', (e: maplibregl.MapMouseEvent) => {
-      onPinClick(e.lngLat.lat, e.lngLat.lng)
+      onPinClickRef.current(e.lngLat.lat, e.lngLat.lng)
     })
     map.current = m
     return () => { m.remove(); map.current = null }

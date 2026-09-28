@@ -550,13 +550,6 @@
     margin-bottom: 24px;
     border: 1px solid #e2e8f0;
     box-shadow: none !important;
-    min-height: auto !important;
-  }
-
-  /* Ensure Plotly containers can expand fully to prevent cropping */
-  .js-plotly-plot, .plot-container {
-    height: auto !important;
-    overflow: visible !important;
   }
 
   @page {

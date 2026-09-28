@@ -69,25 +69,6 @@ export default function App() {
     }
   }, [tab, dataset, model])
 
-  // A1 — pinned locations carry a snapshot of whichever pair was loaded when the
-  // point was added; when the user switches experiment/model, re-query each point
-  // against the new pair so every chart reflects the current selection.
-  useEffect(() => {
-    const current = pinnedRef.current
-    if (current.length === 0) return
-    let cancelled = false
-      ; (async () => {
-        const refreshed: DashboardLocationData[] = []
-        for (const loc of current) {
-          const data = await queryDashboardLocation(loc.lat, loc.lon, model, dataset)
-          // Keep the previous snapshot when the new pair has no data (e.g. MPAS),
-          // so switching model/experiment never wipes the pinned coordinates.
-          refreshed.push(data ?? loc)
-        }
-        if (!cancelled) dispatch({ type: 'REFRESH_PINNED_LOCATIONS', locations: refreshed })
-      })()
-    return () => { cancelled = true }
-  }, [model, dataset])
 
   const handlePixelClick = useCallback((data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => {
     dispatch({ type: 'SET_PIXEL_DATA', data })

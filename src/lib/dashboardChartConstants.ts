@@ -67,6 +67,8 @@ export const HOVER_LABEL_STYLE = {
 // since these are read-only analytical charts where that cluster is just clutter.
 // displaylogo:false removes the Plotly watermark.
 export const PLOT_CONFIG: Partial<Config> = {
+  editable: true,
+  edits: { titleText: true, axisTitleText: true },
   displayModeBar: true,
   displaylogo: false,
   modeBarButtonsToRemove: [
@@ -80,4 +82,38 @@ export const PLOT_CONFIG: Partial<Config> = {
     height: 600,
     width: 900,
   },
+}
+
+export function mergeEdits(layout: any, edits: any) {
+  if (!edits) return layout;
+  const newLayout = JSON.parse(JSON.stringify(layout));
+  for (const key in edits) {
+    // Ignore autosize or other non-layout structural edits if needed, but usually safe to merge
+    if (key.includes('.')) {
+      const parts = key.split('.');
+      let obj = newLayout;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const match = parts[i].match(/(.*)\[(\d+)\]/);
+        if (match) {
+          obj[match[1]] = obj[match[1]] || [];
+          obj[match[1]][match[2]] = obj[match[1]][match[2]] || {};
+          obj = obj[match[1]][match[2]];
+        } else {
+          obj[parts[i]] = obj[parts[i]] || {};
+          obj = obj[parts[i]];
+        }
+      }
+      const lastPart = parts[parts.length - 1];
+      const match = lastPart.match(/(.*)\[(\d+)\]/);
+      if (match) {
+        obj[match[1]] = obj[match[1]] || [];
+        obj[match[1]][match[2]] = edits[key];
+      } else {
+        obj[lastPart] = edits[key];
+      }
+    } else {
+      newLayout[key] = edits[key];
+    }
+  }
+  return newLayout;
 }

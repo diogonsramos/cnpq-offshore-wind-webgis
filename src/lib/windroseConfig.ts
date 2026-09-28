@@ -34,3 +34,39 @@ export const WINDROSE_PLOT_CONFIG: Partial<Config> = {
     click: (gd: HTMLElement) => Plotly.relayout(gd, { 'polar.radialaxis.autorange': true } as unknown as Partial<Layout>),
   }],
 }
+
+// Bins for stacked wind rose (based on 'Plasma_r' or similar perceptually uniform palette)
+export const WIND_BINS = [
+  { min: 0, max: 2, color: '#0d0887', label: '0-2 m/s' },
+  { min: 2, max: 4, color: '#4c02a1', label: '2-4 m/s' },
+  { min: 4, max: 6, color: '#7e03a8', label: '4-6 m/s' },
+  { min: 6, max: 8, color: '#aa2395', label: '6-8 m/s' },
+  { min: 8, max: 10, color: '#cc4778', label: '8-10 m/s' },
+  { min: 10, max: 12, color: '#e66c5c', label: '10-12 m/s' },
+  { min: 12, max: 14, color: '#f89540', label: '12-14 m/s' },
+  { min: 14, max: 16, color: '#fdc527', label: '14-16 m/s' },
+  { min: 16, max: Infinity, color: '#f0f921', label: '16+ m/s' },
+]
+
+// Simple polynomial approximation for Gamma(x) where 1 <= x <= 2
+function gammaApproximation(z: number): number {
+  const x = z - 1
+  return 1.0 - 0.5771 * x + 0.9882 * x * x - 0.8970 * Math.pow(x, 3) + 0.9182 * Math.pow(x, 4) - 0.7567 * Math.pow(x, 5) + 0.4821 * Math.pow(x, 6) - 0.1935 * Math.pow(x, 7) + 0.03586 * Math.pow(x, 8)
+}
+
+// Generates frequency distribution across speed bins given a sector's total frequency and mean speed,
+// assuming the shape parameter (k) is roughly constant and applying a Weibull distribution.
+export function getWeibullBinFreqs(freq: number, mean_ws: number, overall_k: number | null): number[] {
+  if (!mean_ws || mean_ws <= 0 || freq <= 0) return WIND_BINS.map(() => 0)
+  
+  const k = (overall_k && overall_k > 1) ? overall_k : 2.0
+  const z = 1 + 1 / k
+  const g = gammaApproximation(z)
+  const c = mean_ws / g
+
+  return WIND_BINS.map(bin => {
+    const pMin = bin.min === 0 ? 0 : (1 - Math.exp(-Math.pow(bin.min / c, k)))
+    const pMax = bin.max === Infinity ? 1 : (1 - Math.exp(-Math.pow(bin.max / c, k)))
+    return freq * Math.max(0, pMax - pMin)
+  })
+}
