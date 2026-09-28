@@ -589,7 +589,9 @@ export default function LandingPage({ onNavigate }: Props) {
           <div className="lp-footer-copyright">
             {t('landing.footer.copyright')}
             <br />
-            <span className="lp-footer-updated">{t('landing.footer.updated')}</span>
+            <span className="lp-footer-updated">
+              {t('landing.footer.updated')} {new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date())}
+            </span>
           </div>
         </div>
       </footer>
@@ -601,7 +603,7 @@ export default function LandingPage({ onNavigate }: Props) {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label={t('landing.footer.back_to_top_aria')}
         >
-          ↑
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
         </button>
       )}
     </div>

@@ -294,7 +294,7 @@ export const ptBR = {
   'landing.tech.row2_label': 'Domínios aninhados', 'landing.tech.row2_value': 'D01: 27 km de resolução; D02: 9 km de resolução',
   'landing.tech.row3_label': 'Número de Pixels', 'landing.tech.row3_value': '30.773',
   'landing.tech.row5_label': 'Níveis verticais', 'landing.tech.row5_value': '51 níveis (sigma/pressão híbrida)',
-  'landing.tech.row6_label': 'Variáveis (frontend)', 'landing.tech.row6_value': 'Velocidade do vento — ws (m/s); Densidade de potência — wpd (W/m²)',
+  'landing.tech.row6_label': 'Variáveis', 'landing.tech.row6_value': 'Velocidade do vento (m/s); Densidade de potência (W/m²)',
   'landing.tech.row7_label': 'Volume bruto', 'landing.tech.row7_value': '2,8 TB (Pós-processados) | 19,2 TB (Originais)',
   'landing.tech.row8_label': 'Produtos processados', 'landing.tech.row8_value': '~80 COGs; 8 GeoParquet',
   'landing.compare.eyebrow': 'Grades e Malhas',
@@ -366,7 +366,7 @@ export const ptBR = {
   'landing.footer.disclaimer_bold': 'preliminares',
   'landing.footer.disclaimer_after': ', para fins de desenvolvimento. Os dados finais (otimizados em formato e performance) serão atualizados posteriormente.',
   'landing.footer.copyright': '© 2024–2026 CS2I — SENAI CIMATEC. Financiado pelo CNPq — Processo 407949/2022-4. Desenvolvido por Dr. Diogo Ramos.',
-  'landing.footer.updated': 'Última atualização: junho de 2026',
+  'landing.footer.updated': 'Última atualização:',
   'landing.footer.back_to_top_aria': 'Voltar ao topo da página',
 
   'landing.data.table_no': 'Nº',

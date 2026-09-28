@@ -293,7 +293,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.tech.row2_label': 'Nested domains', 'landing.tech.row2_value': 'D01: 27 km resolution; D02: 9 km resolution',
   'landing.tech.row3_label': 'Number of Pixels', 'landing.tech.row3_value': '30,773',
   'landing.tech.row5_label': 'Vertical levels', 'landing.tech.row5_value': '51 levels (hybrid sigma/pressure)',
-  'landing.tech.row6_label': 'Variables (frontend)', 'landing.tech.row6_value': 'Wind speed — ws (m/s); Power density — wpd (W/m²)',
+  'landing.tech.row6_label': 'Variables', 'landing.tech.row6_value': 'Wind speed (m/s); Wind power density (W/m²)',
   'landing.tech.row7_label': 'Raw volume', 'landing.tech.row7_value': '2.8 TB (Post-processed) | 19.2 TB (Raw)',
   'landing.tech.row8_label': 'Processed products', 'landing.tech.row8_value': '~80 COGs; 8 GeoParquet',
   'landing.compare.eyebrow': 'Grids and Meshes',
@@ -365,7 +365,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.footer.disclaimer_bold': 'preliminary',
   'landing.footer.disclaimer_after': ', for development purposes. Final data (optimized in format and performance) will be updated later.',
   'landing.footer.copyright': '© 2024–2026 CS2I — SENAI CIMATEC. Funded by CNPq — Grant 407949/2022-4.',
-  'landing.footer.updated': 'Last updated: June 2026',
+  'landing.footer.updated': 'Last updated:',
   'landing.footer.back_to_top_aria': 'Back to top of page',
 
   'landing.data.table_no': 'No.',
