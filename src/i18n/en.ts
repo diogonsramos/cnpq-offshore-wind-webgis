@@ -123,6 +123,7 @@ export const en: Record<TranslationKey, string> = {
   'basemap.terrain': 'Terrain',
   'basemap.night': 'Night',
   'basemap.topo': 'Topo',
+  'basemap.ocean': 'Ocean',
 
   // SidePanel
   'sidepanel.header_title': 'Offshore Wind Mapping',

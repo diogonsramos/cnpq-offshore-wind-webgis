@@ -80,9 +80,24 @@ export default function SidePanel({
   dispatch,
 }: SidePanelProps) {
   const { t } = useLocale()
+  const [isOpen, setIsOpen] = useState(true)
+
   return (
-    <div className="side-panel">
-      <div className="filters">
+    <div className={`side-panel ${isOpen ? '' : 'closed'}`}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px' }}>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px',
+            fontSize: '11px', cursor: 'pointer', color: '#475569', fontWeight: 600
+          }}
+        >
+          {isOpen ? '← Ocultar' : 'Filtros →'}
+        </button>
+      </div>
+
+      <div className="side-panel-content" style={{ display: isOpen ? 'flex' : 'none', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
+        <div className="filters">
         <AccordionSection title={t('sidepanel.section.model_experiment')}>
           <RadioList
             label={t('sidepanel.model_label')}
@@ -166,6 +181,7 @@ export default function SidePanel({
       <div className="footer">
         <p className="footer-info">{modelLabel(model, t)} {datasetLabel(dataset, t)} | {varLabel(variable, t).label} {height}m</p>
 
+      </div>
       </div>
     </div>
   )

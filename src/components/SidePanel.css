@@ -8,6 +8,11 @@
   flex-direction: column;
   overflow-y: auto;
   z-index: 10;
+  transition: width 0.3s ease;
+}
+
+.side-panel.closed {
+  width: auto;
 }
 
 .side-panel .header {

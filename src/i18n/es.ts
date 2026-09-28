@@ -175,6 +175,7 @@ export const es = {
   'basemap.terrain': 'Terreno',
   'basemap.night': 'Noche',
   'basemap.topo': 'Topo',
+  'basemap.ocean': 'Océano',
 
   // SidePanel
   'sidepanel.header_title': 'Mapeo Eólico Offshore',

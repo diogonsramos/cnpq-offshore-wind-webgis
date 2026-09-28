@@ -11,6 +11,26 @@ interface MiniMapProps {
 
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
+const STATE_BOUNDS: Record<string, [number, number, number, number]> = {
+  AP: [-51.5, -0.5, -49.5, 4.5],
+  PA: [-55.0, -1.5, -46.0, 1.0],
+  MA: [-46.0, -2.5, -41.5, -1.0],
+  PI: [-42.0, -3.0, -41.0, -2.5],
+  CE: [-41.5, -5.0, -37.0, -2.5],
+  RN: [-37.5, -6.5, -34.5, -4.5],
+  PB: [-35.0, -7.5, -34.5, -6.0],
+  PE: [-35.5, -9.0, -34.5, -7.5],
+  AL: [-36.0, -10.5, -35.0, -8.5],
+  SE: [-37.5, -11.5, -36.0, -10.0],
+  BA: [-39.5, -18.5, -37.0, -11.5],
+  ES: [-40.5, -21.5, -39.0, -18.0],
+  RJ: [-44.5, -23.5, -41.0, -21.0],
+  SP: [-48.0, -25.5, -44.0, -23.0],
+  PR: [-49.0, -26.0, -48.0, -25.0],
+  SC: [-49.0, -29.5, -48.0, -25.5],
+  RS: [-53.5, -34.0, -49.5, -29.0],
+}
+
 function MiniMap({ pinnedLocations, onPinClick, states = [] }: MiniMapProps) {
   const { t } = useLocale()
   const container = useRef<HTMLDivElement>(null)
@@ -130,6 +150,39 @@ function MiniMap({ pinnedLocations, onPinClick, states = [] }: MiniMapProps) {
       }
     }
   }, [states, ready])
+
+  // Fit bounds logic
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+
+    if (states.length > 0 || pinnedLocations.length >= 2) {
+      const bounds = new maplibregl.LngLatBounds()
+      let hasBounds = false
+
+      states.forEach(st => {
+        const b = STATE_BOUNDS[st]
+        if (b) {
+          bounds.extend([b[0], b[1]])
+          bounds.extend([b[2], b[3]])
+          hasBounds = true
+        }
+      })
+
+      pinnedLocations.forEach(loc => {
+        bounds.extend([loc.lon, loc.lat])
+        hasBounds = true
+      })
+
+      if (hasBounds) {
+        m.fitBounds(bounds, { padding: 40, duration: 800, maxZoom: 8 })
+      }
+    } else if (pinnedLocations.length === 1) {
+      m.easeTo({ center: [pinnedLocations[0].lon, pinnedLocations[0].lat], zoom: 5, duration: 800 })
+    } else if (states.length === 0 && pinnedLocations.length === 0) {
+      m.easeTo({ center: [-38, -13], zoom: 4, duration: 800 })
+    }
+  }, [states, pinnedLocations, ready])
 
   return (
     <div className="minimap" style={{ position: 'relative' }}>
