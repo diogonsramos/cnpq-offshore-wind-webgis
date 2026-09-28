@@ -3,8 +3,8 @@
 Este documento mapeia o plano de ação estruturado com base nos feedbacks recebidos dos usuários (Hallan, Yossimar, Vitor, Diogo) após o lançamento da v1.0.0.
 
 ## 1. Roteamento e Estado (Branch: `feat/f14-routing-persistence`)
-- [ ] Implementar rotas na aplicação.
-- [ ] Garantir que, ao atualizar a página (F5), o usuário permaneça na rota atual em vez de retornar para a página inicial.
+- [x] Implementar rotas na aplicação.
+- [x] Garantir que, ao atualizar a página (F5), o usuário permaneça na rota atual em vez de retornar para a página inicial.
 
 ## 2. Reestruturação do Dashboard (Branch: `feat/f14-dashboard-redesign`)
 - [ ] Substituir o layout atual baseado em painéis horizontais por uma estrutura de coluna vertical contínua.
