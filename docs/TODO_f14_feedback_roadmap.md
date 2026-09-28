@@ -20,11 +20,11 @@ Este documento mapeia o plano de ação estruturado com base nos feedbacks receb
 - [x] Adicionar metadados (modelo, cenário, altura e variável) nos marcadores inseridos no mapa de análise regional.
 
 ## 4. Interface Geral do WebGIS (Branch: `feat/f14-webgis-ui`)
-- [ ] Remover os títulos redundantes ("Mapeamento Eólico Offshore", "Visualizador de COGs") e remover nome do modelo dos cenários (ex: "WRF ERA5" -> "ERA5").
-- [ ] Remover botões fixos desnecessários do menu lateral (FAQ, Projeto, Dashboard) e limpar cabeçalho das variáveis.
-- [ ] Reposicionar a barra de cores do mapa para o lado esquerdo e isolar dos controles de Zoom (+/-).
-- [ ] Alterar o layout da seleção de mapas-base para exibição vertical.
-- [ ] Destacar visualmente no mapa a ZEE ou os Estados efetivamente filtrados.
+- [x] Remover os títulos redundantes ("Mapeamento Eólico Offshore", "Visualizador de COGs") e remover nome do modelo dos cenários (ex: "WRF ERA5" -> "ERA5").
+- [x] Remover botões fixos desnecessários do menu lateral (FAQ, Projeto, Dashboard) e limpar cabeçalho das variáveis.
+- [x] Reposicionar a barra de cores do mapa para o lado esquerdo e isolar dos controles de Zoom (+/-).
+- [x] Alterar o layout da seleção de mapas-base para exibição vertical.
+- [x] Destacar visualmente no mapa a ZEE ou os Estados efetivamente filtrados.
 
 ## 5. Landing Page e UX (Branch: `fix/f14-home-aesthetics`)
 - [ ] Padronizar tipografia e diminuir tamanho de fonte em seções descritivas ("Resumo Técnico", "Comparação", "Publicações").

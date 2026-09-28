@@ -65,13 +65,13 @@
 /* ── Basemap Switcher ───────────────────── */
 .basemap-switcher {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
   background: #fff;
   border-radius: 8px;
-  padding: 3px;
+  padding: 4px;
   max-width: 100%;
-  overflow-x: auto;
+  overflow-y: auto;
   scrollbar-width: thin;
 }
 .basemap-btn {
@@ -108,7 +108,7 @@
 .map-legend {
   position: absolute;
   bottom: 30px;
-  right: 24px;
+  left: 24px;
   background: rgba(255, 255, 255, 0.95);
   padding: 16px 12px;
   border-radius: 8px;

@@ -455,7 +455,7 @@ function MapViewInner(props: MapViewProps) {
     <>
       <div ref={container} className="map-container" />
       
-      <div className="map-legend" style={{ right: isPanelOpen ? '444px' : '24px' }}>
+      <div className="map-legend">
         <div className="map-legend-title" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', textAlign: 'center' }}>
           {varLabel(variable, t).label} ({varLabel(variable, t).unit})
         </div>

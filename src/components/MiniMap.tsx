@@ -6,11 +6,12 @@ import { useLocale } from '../i18n/provider'
 interface MiniMapProps {
   pinnedLocations: { lat: number; lon: number }[]
   onPinClick: (lat: number, lon: number) => void
+  states?: string[]
 }
 
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
-function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
+function MiniMap({ pinnedLocations, onPinClick, states = [] }: MiniMapProps) {
   const { t } = useLocale()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -82,6 +83,53 @@ function MiniMap({ pinnedLocations, onPinClick }: MiniMapProps) {
       },
     })
   }, [pinnedLocations, ready])
+
+  // Update states highlight
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+
+    const srcId = 'states-src'
+    const fillLyrId = 'states-fill-lyr'
+    const lineLyrId = 'states-line-lyr'
+
+    if (!m.getSource(srcId)) {
+      m.addSource(srcId, {
+        type: 'geojson',
+        data: `${import.meta.env.BASE_URL}data/bathymetry/mn_zee_estadual.geojson`,
+      })
+      // Add below pins layer
+      m.addLayer({
+        id: fillLyrId,
+        type: 'fill',
+        source: srcId,
+        paint: {
+          'fill-color': '#4a90d9',
+          'fill-opacity': 0, // dynamic
+        },
+      }, m.getLayer('pins-lyr') ? 'pins-lyr' : undefined)
+      m.addLayer({
+        id: lineLyrId,
+        type: 'line',
+        source: srcId,
+        paint: {
+          'line-color': '#1a5a9e',
+          'line-width': 0.5,
+          'line-opacity': 0, // dynamic
+        },
+      }, m.getLayer('pins-lyr') ? 'pins-lyr' : undefined)
+    }
+
+    if (m.getLayer(fillLyrId)) {
+      if (states.length === 0) {
+        m.setPaintProperty(fillLyrId, 'fill-opacity', 0)
+        m.setPaintProperty(lineLyrId, 'line-opacity', 0)
+      } else {
+        m.setPaintProperty(fillLyrId, 'fill-opacity', ['case', ['in', ['get', 'estado'], ['literal', states]], 0.35, 0])
+        m.setPaintProperty(lineLyrId, 'line-opacity', ['case', ['in', ['get', 'estado'], ['literal', states]], 0.8, 0])
+      }
+    }
+  }, [states, ready])
 
   return (
     <div className="minimap" style={{ position: 'relative' }}>

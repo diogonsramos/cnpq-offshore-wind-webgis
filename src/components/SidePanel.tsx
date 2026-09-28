@@ -82,11 +82,6 @@ export default function SidePanel({
   const { t } = useLocale()
   return (
     <div className="side-panel">
-      <div className="header">
-        <h1>{t('sidepanel.header_title')}</h1>
-        <p className="subtitle">{t('sidepanel.header_subtitle', { model: modelLabel(model, t).toUpperCase() })}</p>
-      </div>
-
       <div className="filters">
         <AccordionSection title={t('sidepanel.section.model_experiment')}>
           <RadioList
@@ -97,7 +92,7 @@ export default function SidePanel({
           />
           <RadioList
             label={t('sidepanel.experiment_label')}
-            options={DATASETS.map(d => ({ val: d, label: `${modelLabel(model, t)} ${datasetLabel(d, t)}` }))}
+            options={DATASETS.map(d => ({ val: d, label: datasetLabel(d, t) }))}
             value={dataset}
             onChange={v => dispatch({ type: 'SET_DATASET', dataset: v as Dataset })}
           />
@@ -170,20 +165,7 @@ export default function SidePanel({
 
       <div className="footer">
         <p className="footer-info">{modelLabel(model, t)} {datasetLabel(dataset, t)} | {varLabel(variable, t).label} {height}m</p>
-        <div className="footer-icons">
-          <button className="footer-icon-btn" onClick={() => dispatch({ type: 'SET_SHOW_FAQ', show: true })} title={t('sidepanel.faq_title')}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/><text x="8" y="11.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="currentColor">?</text></svg>
-            <span>{t('sidepanel.faq_button')}</span>
-          </button>
-          <button className="footer-icon-btn" onClick={() => dispatch({ type: 'SET_SHOW_PROJECT', show: true })} title={t('sidepanel.project_title')}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/><text x="8" y="11.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="currentColor">i</text></svg>
-            <span>{t('sidepanel.project_button')}</span>
-          </button>
-          <button className="footer-icon-btn dashboard-btn" onClick={onOpenDashboard} title={t('sidepanel.dashboard_title')}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="9" y="1" width="6" height="3" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="9" y="6" width="6" height="9" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2"/></svg>
-            <span>{t('sidepanel.dashboard_button')}</span>
-          </button>
-        </div>
+
       </div>
     </div>
   )

@@ -318,7 +318,7 @@ function DashboardViewInner({
 
           <div className="dv-sidebar-content" style={{ display: isSidebarOpen ? 'flex' : 'none' }}>
             <div className="minimap-container">
-              <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} />
+              <MiniMap pinnedLocations={pinnedLocations} onPinClick={onAddLocation} states={states} />
               <div className="dv-location-inputs">
                 <input className="dv-input" type="number" step="any" placeholder={t('pixel.lat')} value={latInput} onChange={e => setLatInput(e.target.value)} />
                 <input className="dv-input" type="number" step="any" placeholder={t('pixel.lon')} value={lonInput} onChange={e => setLonInput(e.target.value)} />
