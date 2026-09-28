@@ -256,7 +256,6 @@
   font-weight: 800;
   color: #1a1a2e;
   margin-bottom: 40px;
-  letter-spacing: -0.3px;
 }
 
 /* ── Tech Summary ─────────────────────────────── */
@@ -279,6 +278,9 @@
   line-height: 1.7;
   margin-bottom: 18px;
   width: 100%;
+  margin-left: 0;
+  padding-left: 0;
+  text-indent: 0;
 }
 
 .lp-tech-figure {
@@ -898,6 +900,9 @@ abbr[title] {
   margin-top: -24px;
   margin-bottom: 32px;
   max-width: 72ch;
+  margin-left: 0;
+  padding-left: 0;
+  text-indent: 0;
 }
 
 /* ── Team collapse / toggle ──────────────────── */
