@@ -294,7 +294,7 @@ export const ptBR = {
   'landing.tech.row2_label': 'Domínios aninhados', 'landing.tech.row2_value': 'D01: 27 km de resolução; D02: 9 km de resolução',
   'landing.tech.row3_label': 'Número de Pixels', 'landing.tech.row3_value': '30.773',
   'landing.tech.row5_label': 'Níveis verticais', 'landing.tech.row5_value': '51 níveis (sigma/pressão híbrida)',
-  'landing.tech.row6_label': 'Variáveis (frontend)', 'landing.tech.row6_value': 'Velocidade do vento — ws (m/s); Densidade de potência — wpd (W/m²)',
+  'landing.tech.row6_label': 'Variáveis', 'landing.tech.row6_value': 'Velocidade do vento (m/s); Densidade de potência (W/m²)',
   'landing.tech.row7_label': 'Volume bruto', 'landing.tech.row7_value': '2,8 TB (Pós-processados) | 19,2 TB (Originais)',
   'landing.tech.row8_label': 'Produtos processados', 'landing.tech.row8_value': '~80 COGs; 8 GeoParquet',
   'landing.compare.eyebrow': 'Grades e Malhas',
@@ -340,9 +340,7 @@ export const ptBR = {
   'landing.gallery.dashboard_weibull_aria': 'Abrir Dashboard — Weibull',
   'landing.team.eyebrow': 'Pesquisadores',
   'landing.team.title': 'Equipe do Projeto',
-  'landing.team.intro_before': '17 pesquisadores do ',
-  'landing.team.intro_abbr_title': 'Centro de Supercomputação para Inovação Industrial — SENAI CIMATEC, Salvador, BA',
-  'landing.team.intro_after': ' cobrindo meteorologia regional, modelagem climática, machine learning e engenharia de software.',
+  'landing.team.intro': 'Lista de pesquisadores externos e do Centro de Supercomputação do SENAI CIMATEC que participaram do desenvolvimento ao longo da execução do projeto, cobrindo diferentes áreas do conhecimento como meteorologia da energia, modelagem atmosférica, downscaling dinâmico, projeções e cenários climáticos, machine learning, desenvolvimento e supercomputação.',
   'landing.team.role_coord': 'Coordenador',
   'landing.team.role_lead': 'Pesquisador Líder',
   'landing.team.role_researcher_m': 'Pesquisador',
@@ -353,7 +351,7 @@ export const ptBR = {
   'landing.team.toggle_show_less': '↑ Ver menos',
   'landing.publications.eyebrow': 'Produção científica',
   'landing.publications.title': 'Publicações Científicas',
-  'landing.publications.intro': '11 trabalhos publicados em simpósios e congressos nacionais e internacionais (2024–2026), cobrindo downscaling regional, correção de viés, machine learning e análise do potencial eólico offshore.',
+  'landing.publications.intro': 'Lista de trabalhos publicados em simpósios e congressos nacionais e internacionais (2024–2026), cobrindo downscaling regional, correção de viés, machine learning e análise do potencial eólico offshore.',
   'landing.faq.eyebrow': 'Dúvidas frequentes',
   'landing.faq.title': 'FAQ',
   'landing.faq.intro_before': 'Respostas sobre dados, metodologia e uso do sistema.',
@@ -366,7 +364,8 @@ export const ptBR = {
   'landing.footer.disclaimer_bold': 'preliminares',
   'landing.footer.disclaimer_after': ', para fins de desenvolvimento. Os dados finais (otimizados em formato e performance) serão atualizados posteriormente.',
   'landing.footer.copyright': '© 2024–2026 CS2I — SENAI CIMATEC. Financiado pelo CNPq — Processo 407949/2022-4. Desenvolvido por Dr. Diogo Ramos.',
-  'landing.footer.updated': 'Última atualização: junho de 2026',
+  'landing.footer.updated': 'Última atualização:',
+  'landing.footer.contact': 'Contato:',
   'landing.footer.back_to_top_aria': 'Voltar ao topo da página',
 
   'landing.data.table_no': 'Nº',
@@ -392,7 +391,7 @@ export const ptBR = {
   'landing.data.var_mrsol': 'Temperatura do solo',
 
   'landing.partners.eyebrow': 'Apoio e Infraestrutura',
-  'landing.partners.title': 'Instituições Parceiras',
+  'landing.partners.title': 'Apoio institucional',
   'landing.partners.cca_title': 'Centro de Ciências Atmosféricas — SENAI CIMATEC',
   'landing.partners.link_hpc': 'Supercomputação, cloud e cibersegurança',
   'landing.partners.link_cnpq_group': 'Grupo de Pesquisa CNPq',
@@ -425,8 +424,9 @@ export const ptBR = {
   'landing.releases.v1_2.li2': 'Novas variáveis: cisalhamento do vento e estimativa de produção energética (AEP).',
 
   'landing.tech.p1': 'A energia eólica offshore é uma fronteira estratégica para a transição energética brasileira. A avaliação precisa desse recurso requer dados de alta resolução espacial e temporal que capturem a complexidade da circulação atmosférica costeira, incluindo brisas marítimas e jatos de baixos níveis.',
+  'landing.tech.p1_5': 'Além de subsidiar o planejamento da geração eólica offshore, a base de dados em alta resolução constitui um ativo estratégico para a Amazônia Azul. Os campos anemométricos e termodinâmicos subsidiam operações de segurança e defesa marítima, apoio à navegação e logística portuária, modelagem de dispersão de poluentes e planos de contingência da Defesa Civil contra eventos costeiros extremos, fomentando novos modelos de negócios e a governança sustentável da economia do mar.',
   'landing.tech.p2': 'Para isso, o projeto mapeia o potencial eólico utilizando simulações climáticas regionais de alta resolução com dois modelos atmosféricos: WRF-ARW v4.6.0 (com domínios aninhados refinados para 9 km na costa) e MPAS v8.1.0 (com malha global de resolução variável, também refinada para ~9 km).',
   'landing.tech.p3': 'As condições de contorno provêm de duas bases de dados: a reanálise ERA5 (referência observacional para 2004–2024) e o CMIP6 BC (Xu et al. 2021), um conjunto bias-corrected de 18 modelos climáticos para o período histórico (2004–2014) e projeções futuras (2015–2050).',
   'landing.tech.p4': 'As projeções futuras contemplam os cenários climáticos SSP2-4.5 (mitigação moderada, forçante radiativa de ~4,5 W/m²) e SSP5-8.5 (emissões elevadas, ~8,5 W/m²). Após o downscaling dinâmico, todos os experimentos foram padronizados para uma grade de ~9 km de resolução.',
-  'landing.tech.p5': 'As variáveis disponíveis no frontend — velocidade do vento (ws, m/s) e densidade de potência eólica (wpd, W/m²) — são servidas em formato COG (Cloud Optimized GeoTIFF) para visualização no mapa interativo e GeoParquet para consultas espaciais eficientes. O sistema permite consultar estatísticas por pixel (média, mínimo, máximo, desvio padrão, parâmetros de Weibull, rosa dos ventos e perfil vertical em 5 altitudes), comparar até 3 localizações no dashboard analítico e exportar dados.'
+  'landing.tech.p5': 'As variáveis disponíveis no WebGIS e Dashboard são velocidade do vento (m/s) e densidade de potência eólica (W/m²), que são servidas em formato COG (Cloud Optimized GeoTIFF) para visualização no mapa interativo e GeoParquet para consultas espaciais eficientes. O sistema permite consultar estatísticas por pixel (média, mínimo, máximo, desvio padrão, parâmetros de Weibull, rosa dos ventos e perfil vertical em 5 altitudes), comparar até 3 localizações no dashboard analítico e exportar dados.'
 }

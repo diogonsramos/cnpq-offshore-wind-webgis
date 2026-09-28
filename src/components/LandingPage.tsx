@@ -30,7 +30,7 @@ const TEAM: {
     { name: 'Ana Paula Paes dos Santos', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'ana_paula_paes_dos_santos.png', lattes: 'https://lattes.cnpq.br/0287853035799329' },
     { name: 'William Duarte Jacondino', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'william_duarte_jacondino.png', lattes: 'https://lattes.cnpq.br/1111671373753798' },
     { name: 'Hallan Souza de Jesus', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'hallan_souza_de_jesus.png', lattes: 'https://lattes.cnpq.br/1996145337862107' },
-    { name: 'Yasmin Kaore Lago Kitagawa', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'default_image.png', lattes: 'https://lattes.cnpq.br/5503607216137253' },
+    { name: 'Yasmin Kaore Lago Kitagawa', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'yasmin_kaore.jpg', lattes: 'https://lattes.cnpq.br/5503607216137253' },
     { name: 'Rosiberto Salustiano da Silva Júnior', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'rosiberto_salustiano_da_silva_junior.png', lattes: 'https://lattes.cnpq.br/1798232201205174' },
     { name: 'Allan Cavalcante Araujo', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'allan_cavalcante_araujo.png', lattes: 'https://lattes.cnpq.br/5127547423362922' },
     { name: 'Sofia Alexandrino Lage', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'sofia_alexandrino_lage.png', lattes: 'https://lattes.cnpq.br/8666873652216091' },
@@ -39,7 +39,7 @@ const TEAM: {
 // Citações bibliográficas — reproduzidas verbatim (não traduzidas) nos dois
 // idiomas, como qualquer lista de referências científicas.
 const PUBLICATIONS = [
-  <>AYLAS, G. Y. R. et al. <strong>Simulation of an anomalously high wind gust event in São Paulo: A comparative analysis between WRF and MPAS-A models.</strong> Theor Appl Climatol 157, 644 (2026).</>,
+  <>AYLAS, G. Y. R. et al. <strong><a href="https://link.springer.com/article/10.1007/s00704-026-06537-9" target="_blank" rel="noopener noreferrer">Simulation of an anomalously high wind gust event in São Paulo: A comparative analysis between WRF and MPAS-A models.</a></strong> Theor Appl Climatol 157, 644 (2026).</>,
   <>WEYLL, A. L. C. et al. <strong>Mapeamento eólico offshore histórico e futuro usando Quantile Delta Mapping com ajuste de erros do downscaling CMIP6-WRF.</strong> In: XI SAPCT e X ICPAD, 2026, Salvador.</>,
   <>RAMOS, D. N. S. et al. <strong>MPAS-A OR WRF: WHICH IS THE BETTER WIND DOWNSCALING TOOL FOR WIND POTENTIAL MAPPING IN BRAZIL?</strong> In: I SIEME, 2025, Maceió.</>,
   <>AYLAS, G. Y. R. et al. <strong>ANALYZING HEAT WAVE IMPACTS ON ELECTRICITY DEMAND AND THERMAL STRESS: A STUDY WITH MPAS-A MODEL IN BAURU-SP.</strong> In: I SIEME, 2025, Maceió.</>,
@@ -253,11 +253,12 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="lp-tech-grid">
           <div className="lp-tech-text">
             <p>{t('landing.tech.p1')}</p>
+            <p>{t('landing.tech.p1_5')}</p>
             <p>{t('landing.tech.p2')}</p>
             <p>{t('landing.tech.p3')}</p>
             <p>{t('landing.tech.p4')}</p>
             <figure className="lp-tech-figure">
-              <img src={`${import.meta.env.BASE_URL}images/fluxograma_${locale === 'pt-BR' ? 'br' : locale === 'en' ? 'en' : 'sp'}.svg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
+              <img src={`${import.meta.env.BASE_URL}images/fluxo_br.jpg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
             </figure>
             <p>{t('landing.tech.p5')}</p>
           </div>
@@ -390,7 +391,7 @@ export default function LandingPage({ onNavigate }: Props) {
             </div>
             <p className="lp-citation">
               <strong>Referência:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
-              <strong>Dados:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
+              <strong>Dados CMIP6 gerados por Xu et al. (2021) e usados neste projeto:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
             </p>
           </div>
         </div>
@@ -431,9 +432,7 @@ export default function LandingPage({ onNavigate }: Props) {
           <p className="lp-section-label">{t('landing.team.eyebrow')}</p>
           <h2 className="lp-section-title">{t('landing.team.title')}</h2>
           <p className="lp-section-intro">
-            {t('landing.team.intro_before')}
-            <abbr title={t('landing.team.intro_abbr_title')}>CS2I — SENAI CIMATEC</abbr>
-            {t('landing.team.intro_after')}
+            {t('landing.team.intro')}
           </p>
           <div className="lp-team-grid">
             {TEAM.map(m => (
@@ -470,6 +469,7 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* Parceiros */}
       <section className="lp-tech">
         <div className="lp-tech-inner" style={{ textAlign: 'center' }}>
+          <h2 className="lp-section-title" style={{ textAlign: 'center', marginBottom: '20px' }}>{t('landing.partners.title')}</h2>
           <div style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'row', gap: '2rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
             <a href="https://senaicimatec.com.br/servico/supercomputacao-cloud-e-ciberseguranca/" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
               <img src={logoBase + 'logo-hpc.jpg'} alt="HPC SENAI CIMATEC" className="lp-partner-img" style={{ height: '65px' }} />
@@ -578,7 +578,6 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="lp-footer-inner">
           <div className="lp-footer-logos">
             <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-footer-logo" />
-            <img src={logoBase + 'logo-peob-cnpq.png'} alt="PEOB CNPq" className="lp-footer-logo" />
             <img src={logoBase + 'logo-senai-cimatec.png'} alt="SENAI CIMATEC" className="lp-footer-logo" />
           </div>
           <div className="lp-footer-citation">
@@ -589,7 +588,11 @@ export default function LandingPage({ onNavigate }: Props) {
           <div className="lp-footer-copyright">
             {t('landing.footer.copyright')}
             <br />
-            <span className="lp-footer-updated">{t('landing.footer.updated')}</span>
+            {t('landing.footer.contact')} <a href="mailto:diogo.ramos@fieb.org.br" style={{ color: 'inherit', textDecoration: 'underline' }}>diogo.ramos@fieb.org.br</a>
+            <br />
+            <span className="lp-footer-updated">
+              {t('landing.footer.updated')} {new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date())}
+            </span>
           </div>
         </div>
       </footer>
@@ -601,7 +604,7 @@ export default function LandingPage({ onNavigate }: Props) {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label={t('landing.footer.back_to_top_aria')}
         >
-          ↑
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
         </button>
       )}
     </div>

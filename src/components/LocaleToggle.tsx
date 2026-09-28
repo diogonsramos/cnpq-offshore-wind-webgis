@@ -9,10 +9,16 @@ interface LocaleToggleProps {
 function LocaleToggleInner({ className }: LocaleToggleProps) {
   const { locale, setLocale, t } = useLocale()
   
-  const flags: Record<Locale, string> = {
+  const labels: Record<Locale, string> = {
     'pt-BR': 'BR',
     'en': 'US',
     'es': 'ES'
+  }
+
+  const flags: Record<Locale, string> = {
+    'pt-BR': 'br',
+    'en': 'us',
+    'es': 'es'
   }
 
   return (
@@ -23,8 +29,14 @@ function LocaleToggleInner({ className }: LocaleToggleProps) {
           className={`locale-btn ${locale === l ? 'active' : ''}`}
           onClick={() => setLocale(l)}
           title={l}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}
         >
-          {flags[l]}
+          <span>{labels[l]}</span>
+          <img 
+            src={`https://flagcdn.com/16x12/${flags[l]}.png`} 
+            alt={`${labels[l]} flag`}
+            style={{ marginTop: '3px', width: '16px', height: '12px', borderRadius: '2px' }}
+          />
         </button>
       ))}
     </div>

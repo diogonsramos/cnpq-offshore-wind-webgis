@@ -293,7 +293,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.tech.row2_label': 'Nested domains', 'landing.tech.row2_value': 'D01: 27 km resolution; D02: 9 km resolution',
   'landing.tech.row3_label': 'Number of Pixels', 'landing.tech.row3_value': '30,773',
   'landing.tech.row5_label': 'Vertical levels', 'landing.tech.row5_value': '51 levels (hybrid sigma/pressure)',
-  'landing.tech.row6_label': 'Variables (frontend)', 'landing.tech.row6_value': 'Wind speed — ws (m/s); Power density — wpd (W/m²)',
+  'landing.tech.row6_label': 'Variables', 'landing.tech.row6_value': 'Wind speed (m/s); Wind power density (W/m²)',
   'landing.tech.row7_label': 'Raw volume', 'landing.tech.row7_value': '2.8 TB (Post-processed) | 19.2 TB (Raw)',
   'landing.tech.row8_label': 'Processed products', 'landing.tech.row8_value': '~80 COGs; 8 GeoParquet',
   'landing.compare.eyebrow': 'Grids and Meshes',
@@ -339,9 +339,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.gallery.dashboard_weibull_aria': 'Open Dashboard — Weibull',
   'landing.team.eyebrow': 'Researchers',
   'landing.team.title': 'Project Team',
-  'landing.team.intro_before': '17 researchers from ',
-  'landing.team.intro_abbr_title': 'Center for Supercomputing in Industrial Innovation — SENAI CIMATEC, Salvador, BA',
-  'landing.team.intro_after': ' covering regional meteorology, climate modeling, machine learning and software engineering.',
+  'landing.team.intro': 'List of external researchers and members from the SENAI CIMATEC Supercomputing Center who participated in the development throughout the project execution, covering different knowledge areas such as energy meteorology, atmospheric modeling, dynamical downscaling, climate projections and scenarios, machine learning, development, and supercomputing.',
   'landing.team.role_coord': 'Coordinator',
   'landing.team.role_lead': 'Lead Researcher',
   'landing.team.role_researcher_m': 'Researcher',
@@ -352,7 +350,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.team.toggle_show_less': '↑ Show less',
   'landing.publications.eyebrow': 'Scientific output',
   'landing.publications.title': 'Scientific Publications',
-  'landing.publications.intro': '11 papers published in national and international symposia and conferences (2024–2026), covering regional downscaling, bias correction, machine learning and offshore wind potential analysis.',
+  'landing.publications.intro': 'List of papers published in national and international symposiums and conferences (2024–2026), covering regional downscaling, bias correction, machine learning, and offshore wind potential analysis.',
   'landing.faq.eyebrow': 'Frequently asked questions',
   'landing.faq.title': 'FAQ',
   'landing.faq.intro_before': 'Answers about data, methodology and system usage. ',
@@ -365,7 +363,8 @@ export const en: Record<TranslationKey, string> = {
   'landing.footer.disclaimer_bold': 'preliminary',
   'landing.footer.disclaimer_after': ', for development purposes. Final data (optimized in format and performance) will be updated later.',
   'landing.footer.copyright': '© 2024–2026 CS2I — SENAI CIMATEC. Funded by CNPq — Grant 407949/2022-4.',
-  'landing.footer.updated': 'Last updated: June 2026',
+  'landing.footer.updated': 'Last updated:',
+  'landing.footer.contact': 'Contact:',
   'landing.footer.back_to_top_aria': 'Back to top of page',
 
   'landing.data.table_no': 'No.',
@@ -391,7 +390,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.data.var_mrsol': 'Soil temperature',
 
   'landing.partners.eyebrow': 'Support & Infrastructure',
-  'landing.partners.title': 'Partner Institutions',
+  'landing.partners.title': 'Institutional Support',
   'landing.partners.cca_title': 'Center for Atmospheric Sciences — SENAI CIMATEC',
   'landing.partners.link_hpc': 'Supercomputing, cloud & cybersecurity',
   'landing.partners.link_cnpq_group': 'CNPq Research Group',
@@ -424,8 +423,9 @@ export const en: Record<TranslationKey, string> = {
   'landing.releases.v1_2.li2': 'New variables: wind shear and annual energy production (AEP) estimation.',
 
   'landing.tech.p1': 'Offshore wind energy is a strategic frontier for the Brazilian energy transition. Accurate assessment of this resource requires high spatial and temporal resolution data that capture the complexity of coastal atmospheric circulation, including sea breezes and low-level jets.',
+  'landing.tech.p1_5': 'In addition to subsidizing the planning of offshore wind generation, the high-resolution database constitutes a strategic asset for the Blue Amazon. The anemometric and thermodynamic fields subsidize maritime security and defense operations, navigation support and port logistics, pollutant dispersion modeling, and Civil Defense contingency plans against extreme coastal events, fostering new business models and the sustainable governance of the ocean economy.',
   'landing.tech.p2': 'To achieve this, the project maps the wind potential using high-resolution regional climate simulations with two atmospheric models: WRF-ARW v4.6.0 (with nested domains refined to 9 km on the coast) and MPAS v8.1.0 (with a variable-resolution global mesh, also refined to ~9 km).',
   'landing.tech.p3': 'Boundary conditions come from two databases: the ERA5 reanalysis (observational reference for 2004–2024) and CMIP6 BC (Xu et al. 2021), a bias-corrected ensemble of 18 climate models for the historical period (2004–2014) and future projections (2015–2050).',
   'landing.tech.p4': 'Future projections consider the climate scenarios SSP2-4.5 (moderate mitigation, radiative forcing of ~4.5 W/m²) and SSP5-8.5 (high emissions, ~8.5 W/m²). After dynamical downscaling, all experiments were standardized to a ~9 km resolution grid.',
-  'landing.tech.p5': 'The variables available on the frontend — wind speed (ws, m/s) and wind power density (wpd, W/m²) — are served in COG (Cloud Optimized GeoTIFF) format for visualization on the interactive map and GeoParquet for efficient spatial queries. The system allows users to query pixel statistics (mean, minimum, maximum, standard deviation, Weibull parameters, wind roses, and vertical profile at 5 altitudes), compare up to 3 locations in the analytical dashboard, and export data.'
+  'landing.tech.p5': 'The variables available in the WebGIS and Dashboard are wind speed (m/s) and wind power density (W/m²), which are served in COG (Cloud Optimized GeoTIFF) format for visualization on the interactive map and GeoParquet for efficient spatial queries. The system allows users to query pixel statistics (mean, minimum, maximum, standard deviation, Weibull parameters, wind roses, and vertical profile at 5 altitudes), compare up to 3 locations in the analytical dashboard, and export data.'
 }

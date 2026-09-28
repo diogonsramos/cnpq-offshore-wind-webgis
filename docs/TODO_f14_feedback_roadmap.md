@@ -27,11 +27,11 @@ Este documento mapeia o plano de ação estruturado com base nos feedbacks receb
 - [x] Destacar visualmente no mapa a ZEE ou os Estados efetivamente filtrados.
 
 ## 5. Landing Page e UX (Branch: `fix/f14-home-aesthetics`)
-- [ ] Padronizar tipografia e diminuir tamanho de fonte em seções descritivas ("Resumo Técnico", "Comparação", "Publicações").
-- [ ] Adicionar flags (bandeiras) ao seletor de idiomas e substituir ícone de 'Voltar ao topo'.
-- [ ] Substituir a imagem da ZEE com turbinas por uma animação/GIF na Seção 3.
-- [ ] Corrigir corte no logo do footer e remover espaço em branco entre CNPq/SENAI no cabeçalho.
-- [ ] Remover referência técnica a "variáveis no frontend" e adicionar contexto ao link "Xu et al. (2021)".
+- [x] Padronizar tipografia e diminuir tamanho de fonte em seções descritivas ("Resumo Técnico", "Comparação", "Publicações").
+- [x] Adicionar flags (bandeiras) ao seletor de idiomas e substituir ícone de 'Voltar ao topo'.
+- [x] Substituir a imagem da ZEE com turbinas por uma animação/GIF na Seção 3. (Cancelado)
+- [x] Corrigir corte no logo do footer e remover espaço em branco entre CNPq/SENAI no cabeçalho.
+- [x] Remover referência técnica a "variáveis no frontend" e adicionar contexto ao link "Xu et al. (2021)".
 
 ## 6. Infraestrutura (Branch: `chore/f14-vercel-migration`)
 - [ ] (Opcional) Avaliar a viabilidade de migração do GitHub Pages para a Vercel.
