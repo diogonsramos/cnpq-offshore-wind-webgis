@@ -16,7 +16,7 @@ Este documento mapeia o plano de ação estruturado com base nos feedbacks receb
 ## 3. Visualização de Dados e Gráficos (Branch: `feat/f14-charts-enhancement`)
 - [x] Ajustar os limites do eixo Y (`ylim`) dos boxplots no Dashboard (evitar compressão dos dados > 15m/s).
 - [x] Substituir a rosa dos ventos por uma versão visualmente mais moderna e polida.
-- [ ] Incluir altura de referência (ex: 100m) nos boxplots de WPD e melhorar contexto visual nos gráficos de batimetria.
+- [x] Incluir altura de referência (ex: 100m) nos boxplots de WPD e melhorar contexto visual nos gráficos de batimetria.
 - [x] Adicionar metadados (modelo, cenário, altura e variável) nos marcadores inseridos no mapa de análise regional.
 
 ## 4. Interface Geral do WebGIS (Branch: `feat/f14-webgis-ui`)
