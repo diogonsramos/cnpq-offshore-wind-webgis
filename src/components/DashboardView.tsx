@@ -10,7 +10,7 @@ import {
   SEASON_ORDER, SEASON_LABELS, SECTOR_LABELS,
   HEIGHT_TICKVALS, HEIGHT_TICKTEXT, CHART_COLORS as COLORS, PLOT_CONFIG,
   CHART_FONT, HOVER_LABEL_STYLE, windSpeedColor, WS_LEGEND_GRADIENT,
-  BATHY_ZONE_OPTIONS, DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS, mergeEdits
+  BATHY_ZONE_OPTIONS, DISTANCE_MAX_NM, DISTANCE_ZONE_OPTIONS, mergeEdits, BATHY_COLORS
 } from '../lib/dashboardChartConstants'
 import { WINDROSE_PLOT_CONFIG, WIND_BINS, getWeibullBinFreqs } from '../lib/windroseConfig'
 import MiniMap from './MiniMap'
@@ -491,7 +491,7 @@ function DashboardViewInner({
                       boxpoints: false as const,
                     }))}
                     layout={{
-                      title: { text: t('geoparquet_explorer.charts.boxplot_state_title') },
+                      title: { text: `${t('geoparquet_explorer.charts.boxplot_state_title')} — ${dashboardHeight}m` },
                       xaxis: { tickangle: 0 },
                       yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, zeroline: false, hoverformat: '.2f' },
                       height: plotHeight('boxplot-state'),
@@ -514,11 +514,11 @@ function DashboardViewInner({
                   <Plot
                     data={byBathyOrdered.map((g, i) => ({
                       y: g.values, type: 'box' as const, name: bathyOptionLabel(g.zone),
-                      marker: { color: COLORS[i % COLORS.length] },
+                      marker: { color: BATHY_COLORS[g.zone] || COLORS[i % COLORS.length] },
                       boxpoints: false as const,
                     }))}
                     layout={{
-                      title: { text: t('geoparquet_explorer.charts.boxplot_bathy_title') },
+                      title: { text: `${t('geoparquet_explorer.charts.boxplot_bathy_title')} — ${dashboardHeight}m` },
                       xaxis: { tickangle: 0 },
                       yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, zeroline: false, hoverformat: '.2f' },
                       height: plotHeight('boxplot-bathy'),

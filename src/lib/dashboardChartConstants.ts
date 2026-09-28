@@ -39,6 +39,12 @@ export const BATHY_ZONE_OPTIONS: { val: string; label: string }[] = [
   { val: '-50 a -100 m', label: '50 – 100 m' },
 ]
 
+export const BATHY_COLORS: Record<string, string> = {
+  '0 a -20 m': '#6baed6',    // light blue
+  '-20 a -50 m': '#3182bd',  // medium blue
+  '-50 a -100 m': '#08519c', // dark blue
+}
+
 export const DISTANCE_MAX_NM = 400
 
 // Official maritime distance-from-coast boundaries (mar territorial, zona
