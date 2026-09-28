@@ -16,9 +16,9 @@ function LocaleToggleInner({ className }: LocaleToggleProps) {
   }
 
   const flags: Record<Locale, string> = {
-    'pt-BR': '🇧🇷',
-    'en': '🇺🇸',
-    'es': '🇪🇸'
+    'pt-BR': 'br',
+    'en': 'us',
+    'es': 'es'
   }
 
   return (
@@ -32,7 +32,11 @@ function LocaleToggleInner({ className }: LocaleToggleProps) {
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}
         >
           <span>{labels[l]}</span>
-          <span style={{ fontSize: '0.8em', marginTop: '2px' }}>{flags[l]}</span>
+          <img 
+            src={`https://flagcdn.com/16x12/${flags[l]}.png`} 
+            alt={`${labels[l]} flag`}
+            style={{ marginTop: '3px', width: '16px', height: '12px', borderRadius: '2px' }}
+          />
         </button>
       ))}
     </div>
