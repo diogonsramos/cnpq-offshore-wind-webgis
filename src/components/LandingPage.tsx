@@ -391,7 +391,7 @@ export default function LandingPage({ onNavigate }: Props) {
             </div>
             <p className="lp-citation">
               <strong>Referência:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
-              <strong>Dados:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
+              <strong>Dados CMIP6 gerados por Xu et al. (2021) e usados neste projeto:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
             </p>
           </div>
         </div>
