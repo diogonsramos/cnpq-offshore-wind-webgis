@@ -258,7 +258,7 @@ export default function LandingPage({ onNavigate }: Props) {
             <p>{t('landing.tech.p3')}</p>
             <p>{t('landing.tech.p4')}</p>
             <figure className="lp-tech-figure">
-              <img src={`${import.meta.env.BASE_URL}images/fluxograma_${locale === 'pt-BR' ? 'br' : locale === 'en' ? 'en' : 'sp'}.svg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
+              <img src={`${import.meta.env.BASE_URL}images/fluxo_br.jpg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
             </figure>
             <p>{t('landing.tech.p5')}</p>
           </div>
@@ -469,6 +469,7 @@ export default function LandingPage({ onNavigate }: Props) {
       {/* Parceiros */}
       <section className="lp-tech">
         <div className="lp-tech-inner" style={{ textAlign: 'center' }}>
+          <h2 className="lp-section-title" style={{ textAlign: 'center', marginBottom: '20px' }}>{t('landing.partners.title')}</h2>
           <div style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'row', gap: '2rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
             <a href="https://senaicimatec.com.br/servico/supercomputacao-cloud-e-ciberseguranca/" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
               <img src={logoBase + 'logo-hpc.jpg'} alt="HPC SENAI CIMATEC" className="lp-partner-img" style={{ height: '65px' }} />

@@ -390,7 +390,7 @@ export const ptBR = {
   'landing.data.var_mrsol': 'Temperatura do solo',
 
   'landing.partners.eyebrow': 'Apoio e Infraestrutura',
-  'landing.partners.title': 'Instituições Parceiras',
+  'landing.partners.title': 'Apoio institucional',
   'landing.partners.cca_title': 'Centro de Ciências Atmosféricas — SENAI CIMATEC',
   'landing.partners.link_hpc': 'Supercomputação, cloud e cibersegurança',
   'landing.partners.link_cnpq_group': 'Grupo de Pesquisa CNPq',

@@ -407,7 +407,7 @@ export const es = {
   'landing.data.var_mrsol': 'Temperatura del suelo',
 
   'landing.partners.eyebrow': 'Apoyo e Infraestructura',
-  'landing.partners.title': 'Instituciones Asociadas',
+  'landing.partners.title': 'Apoyo Institucional',
   'landing.partners.cca_title': 'Centro de Ciencias Atmosféricas — SENAI CIMATEC',
   'landing.partners.link_hpc': 'Supercomputación, nube y ciberseguridad',
   'landing.partners.link_cnpq_group': 'Grupo de Investigación CNPq',

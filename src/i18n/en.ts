@@ -389,7 +389,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.data.var_mrsol': 'Soil temperature',
 
   'landing.partners.eyebrow': 'Support & Infrastructure',
-  'landing.partners.title': 'Partner Institutions',
+  'landing.partners.title': 'Institutional Support',
   'landing.partners.cca_title': 'Center for Atmospheric Sciences — SENAI CIMATEC',
   'landing.partners.link_hpc': 'Supercomputing, cloud & cybersecurity',
   'landing.partners.link_cnpq_group': 'CNPq Research Group',
