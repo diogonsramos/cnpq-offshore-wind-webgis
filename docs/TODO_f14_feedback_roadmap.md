@@ -7,11 +7,11 @@ Este documento mapeia o plano de ação estruturado com base nos feedbacks receb
 - [x] Garantir que, ao atualizar a página (F5), o usuário permaneça na rota atual em vez de retornar para a página inicial.
 
 ## 2. Reestruturação do Dashboard (Branch: `feat/f14-dashboard-redesign`)
-- [ ] Substituir o layout atual baseado em painéis horizontais por uma estrutura de coluna vertical contínua.
-- [ ] Mover os filtros de análise regional para um menu lateral esquerdo permanente.
-- [ ] Reposicionar os filtros à direita do minimapa para baixo do minimapa.
-- [ ] Adicionar funcionalidade para ocultar/minimizar o painel do minimapa e filtros (Modo Foco).
-- [ ] Ajustar rolagem dos gráficos, evitando cortes e suprimindo rolagens internas excessivas.
+- [x] Substituir o layout atual baseado em painéis horizontais por uma estrutura de coluna vertical contínua.
+- [x] Mover os filtros de análise regional para um menu lateral esquerdo permanente.
+- [x] Reposicionar os filtros à direita do minimapa para baixo do minimapa.
+- [x] Adicionar funcionalidade para ocultar/minimizar o painel do minimapa e filtros (Modo Foco).
+- [x] Ajustar rolagem dos gráficos, evitando cortes e suprimindo rolagens internas excessivas.
 
 ## 3. Visualização de Dados e Gráficos (Branch: `feat/f14-charts-enhancement`)
 - [x] Ajustar os limites do eixo Y (`ylim`) dos boxplots no Dashboard (evitar compressão dos dados > 15m/s).
