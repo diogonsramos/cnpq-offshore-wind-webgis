@@ -123,7 +123,6 @@ export const ptBR = {
   'basemap.terrain': 'Terrain',
   'basemap.night': 'Night',
   'basemap.topo': 'Topo',
-  'basemap.ocean': 'Batimetria',
 
   // SidePanel
   'sidepanel.header_title': 'Mapeamento Eólico Offshore',

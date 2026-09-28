@@ -14,7 +14,6 @@ const BASEMAPS: { id: BasemapId; labelKey: TranslationKey; icon: string }[] = [
   { id: 'terrain', labelKey: 'basemap.terrain', icon: '⛰' },
   { id: 'night', labelKey: 'basemap.night', icon: '🌃' },
   { id: 'topo', labelKey: 'basemap.topo', icon: '🗻' },
-  { id: 'ocean', labelKey: 'basemap.ocean', icon: '🌊' },
 ]
 
 function BasemapSwitcherInner({ basemap, onChange }: BasemapSwitcherProps) {

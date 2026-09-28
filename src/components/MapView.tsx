@@ -70,13 +70,9 @@ const BASEMAP_TILES: Record<BasemapId, { tiles: string[]; attribution: string }>
     ],
     attribution: '&copy; OpenTopoMap (CC-BY-SA)',
   },
-  ocean: {
-    tiles: ['https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}'],
-    attribution: '&copy; Esri, GEBCO, NOAA, National Geographic, DeLorme, HERE, Geonames.org, and other contributors',
-  },
 }
 
-const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-terrain', 'basemap-night', 'basemap-topo', 'basemap-ocean']
+const BASEMAP_SRC_IDS = ['basemap-street', 'basemap-satellite', 'basemap-terrain', 'basemap-night', 'basemap-topo']
 const PIN_SRC = 'pin-src'
 const PIN_LYR = 'pin-lyr'
 const PIN_OUTLINE_LYR = 'pin-outline-lyr'
