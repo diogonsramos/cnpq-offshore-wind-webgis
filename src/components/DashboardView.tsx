@@ -492,7 +492,7 @@ function DashboardViewInner({
                     }))}
                     layout={{
                       title: { text: `${t('geoparquet_explorer.charts.boxplot_state_title')} — ${dashboardHeight}m` },
-                      xaxis: { tickangle: 0 },
+                      xaxis: { tickangle: 0, dtick: 1 },
                       yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, zeroline: false, hoverformat: '.2f' },
                       height: plotHeight('boxplot-state'),
                       margin: { t: 40, b: 60, l: 55, r: 20 },
@@ -519,7 +519,7 @@ function DashboardViewInner({
                     }))}
                     layout={{
                       title: { text: `${t('geoparquet_explorer.charts.boxplot_bathy_title')} — ${dashboardHeight}m` },
-                      xaxis: { tickangle: 0 },
+                      xaxis: { tickangle: 0, dtick: 1 },
                       yaxis: { title: { text: `${varLabel(dashboardVar, t).label} (${varUnit})`, standoff: 10 }, zeroline: false, hoverformat: '.2f' },
                       height: plotHeight('boxplot-bathy'),
                       margin: { t: 40, b: 80, l: 55, r: 20 },
