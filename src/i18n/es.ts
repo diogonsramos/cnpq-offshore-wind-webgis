@@ -382,6 +382,7 @@ export const es = {
   'landing.footer.disclaimer_after': ', para fines de desarrollo. Los datos finales (optimizados en formato y desempeño) serán actualizados posteriormente.',
   'landing.footer.copyright': '© 2024–2026 CS2I — SENAI CIMATEC. Financiado por el CNPq — Proceso 407949/2022-4.',
   'landing.footer.updated': 'Última actualización:',
+  'landing.footer.contact': 'Contacto:',
   'landing.footer.back_to_top_aria': 'Volver al principio de la página',
 
   'landing.data.table_no': 'N.º',

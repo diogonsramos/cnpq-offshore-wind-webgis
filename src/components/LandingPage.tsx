@@ -588,6 +588,8 @@ export default function LandingPage({ onNavigate }: Props) {
           <div className="lp-footer-copyright">
             {t('landing.footer.copyright')}
             <br />
+            {t('landing.footer.contact')} <a href="mailto:diogo.ramos@fieb.org.br" style={{ color: 'inherit', textDecoration: 'underline' }}>diogo.ramos@fieb.org.br</a>
+            <br />
             <span className="lp-footer-updated">
               {t('landing.footer.updated')} {new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date())}
             </span>

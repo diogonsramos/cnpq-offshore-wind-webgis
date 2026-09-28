@@ -364,6 +364,7 @@ export const en: Record<TranslationKey, string> = {
   'landing.footer.disclaimer_after': ', for development purposes. Final data (optimized in format and performance) will be updated later.',
   'landing.footer.copyright': '© 2024–2026 CS2I — SENAI CIMATEC. Funded by CNPq — Grant 407949/2022-4.',
   'landing.footer.updated': 'Last updated:',
+  'landing.footer.contact': 'Contact:',
   'landing.footer.back_to_top_aria': 'Back to top of page',
 
   'landing.data.table_no': 'No.',

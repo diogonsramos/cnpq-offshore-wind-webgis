@@ -365,6 +365,7 @@ export const ptBR = {
   'landing.footer.disclaimer_after': ', para fins de desenvolvimento. Os dados finais (otimizados em formato e performance) serão atualizados posteriormente.',
   'landing.footer.copyright': '© 2024–2026 CS2I — SENAI CIMATEC. Financiado pelo CNPq — Processo 407949/2022-4. Desenvolvido por Dr. Diogo Ramos.',
   'landing.footer.updated': 'Última atualização:',
+  'landing.footer.contact': 'Contato:',
   'landing.footer.back_to_top_aria': 'Voltar ao topo da página',
 
   'landing.data.table_no': 'Nº',
