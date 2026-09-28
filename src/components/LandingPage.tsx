@@ -253,6 +253,7 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="lp-tech-grid">
           <div className="lp-tech-text">
             <p>{t('landing.tech.p1')}</p>
+            <p>{t('landing.tech.p1_5')}</p>
             <p>{t('landing.tech.p2')}</p>
             <p>{t('landing.tech.p3')}</p>
             <p>{t('landing.tech.p4')}</p>
