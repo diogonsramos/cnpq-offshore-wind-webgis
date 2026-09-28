@@ -30,7 +30,7 @@ const TEAM: {
     { name: 'Ana Paula Paes dos Santos', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'ana_paula_paes_dos_santos.png', lattes: 'https://lattes.cnpq.br/0287853035799329' },
     { name: 'William Duarte Jacondino', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'william_duarte_jacondino.png', lattes: 'https://lattes.cnpq.br/1111671373753798' },
     { name: 'Hallan Souza de Jesus', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'hallan_souza_de_jesus.png', lattes: 'https://lattes.cnpq.br/1996145337862107' },
-    { name: 'Yasmin Kaore Lago Kitagawa', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'default_image.png', lattes: 'https://lattes.cnpq.br/5503607216137253' },
+    { name: 'Yasmin Kaore Lago Kitagawa', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'yasmin_kaore.jpg', lattes: 'https://lattes.cnpq.br/5503607216137253' },
     { name: 'Rosiberto Salustiano da Silva Júnior', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'rosiberto_salustiano_da_silva_junior.png', lattes: 'https://lattes.cnpq.br/1798232201205174' },
     { name: 'Allan Cavalcante Araujo', roleKey: 'landing.team.role_researcher_m', badge: null, photo: 'allan_cavalcante_araujo.png', lattes: 'https://lattes.cnpq.br/5127547423362922' },
     { name: 'Sofia Alexandrino Lage', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'sofia_alexandrino_lage.png', lattes: 'https://lattes.cnpq.br/8666873652216091' },
