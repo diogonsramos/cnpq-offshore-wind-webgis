@@ -14,10 +14,10 @@ Este documento mapeia o plano de ação estruturado com base nos feedbacks receb
 - [ ] Ajustar rolagem dos gráficos, evitando cortes e suprimindo rolagens internas excessivas.
 
 ## 3. Visualização de Dados e Gráficos (Branch: `feat/f14-charts-enhancement`)
-- [ ] Ajustar os limites do eixo Y (`ylim`) dos boxplots no Dashboard (evitar compressão dos dados > 15m/s).
-- [ ] Substituir a rosa dos ventos por uma versão visualmente mais moderna e polida.
+- [x] Ajustar os limites do eixo Y (`ylim`) dos boxplots no Dashboard (evitar compressão dos dados > 15m/s).
+- [x] Substituir a rosa dos ventos por uma versão visualmente mais moderna e polida.
 - [ ] Incluir altura de referência (ex: 100m) nos boxplots de WPD e melhorar contexto visual nos gráficos de batimetria.
-- [ ] Adicionar metadados (modelo, cenário, altura e variável) nos marcadores inseridos no mapa de análise regional.
+- [x] Adicionar metadados (modelo, cenário, altura e variável) nos marcadores inseridos no mapa de análise regional.
 
 ## 4. Interface Geral do WebGIS (Branch: `feat/f14-webgis-ui`)
 - [ ] Remover os títulos redundantes ("Mapeamento Eólico Offshore", "Visualizador de COGs") e remover nome do modelo dos cenários (ex: "WRF ERA5" -> "ERA5").
