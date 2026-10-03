@@ -11,6 +11,9 @@ importers:
       apache-arrow:
         specifier: ^21.2.0
         version: 21.2.0
+      driver.js:
+        specifier: ^1.9.0
+        version: 1.9.0
       geotiff:
         specifier: ^2.1.3
         version: 2.1.3
@@ -1108,6 +1111,9 @@ packages:
 
   draw-svg-path@1.0.0:
     resolution: {integrity: sha512-P8j3IHxcgRMcY6sDzr0QvJDLzBnJJqpTG33UZ2Pvp8rw0apCHhJCWqYprqrXjrgHnJ6tuhP1iTJSAodPDHxwkg==}
+
+  driver.js@1.9.0:
+    resolution: {integrity: sha512-+YWVdNVUrY1/2spszQshohWYY4soIjNBnMFS6lfmousT8igos2lmswhlqyuuNMhr+qbV0EjJ+L6i2FECPr6Ygg==}
 
   dtype@2.0.0:
     resolution: {integrity: sha512-s2YVcLKdFGS0hpFqJaTwscsyt0E8nNFdmo73Ocd81xNPj4URI4rj6D60A+vFMIw7BXWlb4yRkEwfBqcZzPGiZg==}
@@ -3491,6 +3497,8 @@ snapshots:
     dependencies:
       abs-svg-path: 0.1.1
       normalize-svg-path: 0.1.0
+
+  driver.js@1.9.0: {}
 
   dtype@2.0.0: {}
 

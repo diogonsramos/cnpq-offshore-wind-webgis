@@ -13,6 +13,7 @@ import { queryDashboardLocation, loadParquet, type DashboardLocationData } from 
 import type { PixelDataSummary } from './lib/pixelQuery'
 import { appReducer, initialAppState } from './reducer'
 import { LocaleProvider } from './i18n/provider'
+import { TourWrapper } from './components/TourGuide'
 import './App.css'
 
 // Plotly (react-plotly.js + plotly.js) only lives inside this subtree — lazy-loading
@@ -131,6 +132,7 @@ export default function App() {
           onNavigate={t => dispatch({ type: 'SET_TAB', tab: t })}
           onOpenFAQ={() => dispatch({ type: 'SET_SHOW_FAQ', show: true })}
         />
+        <TourWrapper tab={tab} />
         {tab === 'home' ? (
           <LandingPage onNavigate={t => dispatch({ type: 'SET_TAB', tab: t })} />
         ) : (

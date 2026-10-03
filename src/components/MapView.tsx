@@ -119,6 +119,8 @@ function MapViewInner(props: MapViewProps) {
           'basemap-satellite': { type: 'raster', tiles: BASEMAP_TILES.satellite.tiles, tileSize: 256, attribution: BASEMAP_TILES.satellite.attribution },
           'basemap-terrain': { type: 'raster-dem', tiles: BASEMAP_TILES.terrain.tiles, tileSize: 256, encoding: 'terrarium', attribution: BASEMAP_TILES.terrain.attribution },
           'basemap-night': { type: 'raster', tiles: BASEMAP_TILES.night.tiles, tileSize: 256, maxzoom: 8, attribution: BASEMAP_TILES.night.attribution },
+          
+          'labels': { type: 'raster', tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; CARTO' },
           'basemap-topo': { type: 'raster', tiles: BASEMAP_TILES.topo.tiles, tileSize: 256, attribution: BASEMAP_TILES.topo.attribution },
         },
         layers: [
@@ -126,6 +128,7 @@ function MapViewInner(props: MapViewProps) {
           { id: 'basemap-satellite-lyr', type: 'raster', source: 'basemap-satellite', layout: { visibility: 'none' } },
           { id: 'basemap-terrain-lyr', type: 'hillshade', source: 'basemap-terrain', layout: { visibility: 'none' }, paint: { 'hillshade-exaggeration': 0.6 } },
           { id: 'basemap-night-lyr', type: 'raster', source: 'basemap-night', layout: { visibility: 'none' } },
+                    { id: 'labels-lyr', type: 'raster', source: 'labels', layout: { visibility: 'none' } },
           { id: 'basemap-topo-lyr', type: 'raster', source: 'basemap-topo', layout: { visibility: 'none' } },
         ],
       },
@@ -162,7 +165,12 @@ function MapViewInner(props: MapViewProps) {
     for (const id of BASEMAP_SRC_IDS) {
       const lyrId = `${id}-lyr`
       if (m.getLayer(lyrId)) {
-        m.setLayoutProperty(lyrId, 'visibility', id === `basemap-${basemap}` ? 'visible' : 'none')
+        if (id === 'labels-lyr') {
+          const needsLabels = ['satellite', 'terrain', 'night', 'topo'].includes(basemap)
+          m.setLayoutProperty(lyrId, 'visibility', needsLabels ? 'visible' : 'none')
+        } else {
+          m.setLayoutProperty(lyrId, 'visibility', id === `basemap-${basemap}` ? 'visible' : 'none')
+        }
       }
     }
   }, [basemap, ready])

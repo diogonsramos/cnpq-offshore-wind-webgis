@@ -10,6 +10,7 @@ import { useLocale } from '../i18n/provider'
 import type { TranslationKey } from '../i18n/types'
 import type { BasemapId } from '../types'
 import BasemapSwitcher from './BasemapSwitcher'
+import { useTourGuide } from './TourGuide'
 import './SidePanel.css'
 
 interface SidePanelProps {
@@ -81,6 +82,7 @@ export default function SidePanel({
   dispatch,
 }: SidePanelProps) {
   const { t } = useLocale()
+  const { startTour } = useTourGuide()
   const [isOpen, setIsOpen] = useState(true)
 
   return (
@@ -181,6 +183,19 @@ export default function SidePanel({
             onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569' }}
           >
             📷 {t('mapview.screenshot_title') || 'Screenshot'}
+          </button>
+          <button 
+            onClick={startTour}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '8px', border: '1px solid #4a90d9', borderRadius: '6px',
+              background: '#ebf4ff', color: '#1e3a8a', fontSize: '12px', fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.2s', width: '100%'
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = '#dbeafe' }}
+            onMouseOut={e => { e.currentTarget.style.background = '#ebf4ff' }}
+          >
+            🧭 {t('tour.start_button' as any) || 'Iniciar Tour Guiado'}
           </button>
         </div>
       </div>

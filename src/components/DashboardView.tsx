@@ -17,6 +17,7 @@ import MiniMap from './MiniMap'
 
 import DashboardSkeleton from './DashboardSkeleton'
 import { useLocale } from '../i18n/provider'
+import { useDashboardTour } from './TourGuide'
 import './DashboardView.css'
 
 const Plot = lazy(() => import('react-plotly.js'))
@@ -94,6 +95,7 @@ function DashboardViewInner({
   dispatch,
 }: DashboardViewProps) {
   const { t } = useLocale()
+  const { startDashboardTour } = useDashboardTour()
   const [dashboardVar, setDashboardVar] = useState<Variable>('ws')
   const [dashboardHeight, setDashboardHeight] = useState<Height>(100)
   const [latInput, setLatInput] = useState('')
@@ -301,15 +303,20 @@ function DashboardViewInner({
             {HEIGHTS.map(h => <option key={h} value={h}>{h}m</option>)}
           </select>
         </div>
-        <div className="dv-filter-group" style={{ marginLeft: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', marginLeft: 'auto', alignItems: 'center' }}>
           <button 
             className="dv-add-btn" 
-            style={{ padding: '8px 16px', background: '#3b82f6' }}
+            onClick={startDashboardTour}
+          >
+            {t('tour.start_button' as any) || 'Tour Guiado'}
+          </button>
+          <button 
+            className="dv-add-btn" 
             onClick={() => {
               window.print()
             }}
           >
-            Exportar Gráficos
+            {t('dashboard.export_charts' as any) || 'Exportar Gráficos'}
           </button>
         </div>
       </div>
