@@ -6,8 +6,6 @@ test.describe('Gerador de Screenshots para o Tour', () => {
 
   test('Deve capturar as telas da Landing Page, WebGIS e Dashboard', async ({ page }) => {
     // Definir viewport fixo para garantir que as coordenadas de clique sejam precisas
-    
-    // Definir viewport fixo para garantir que as coordenadas de clique sejam precisas
     await page.setViewportSize({ width: 1280, height: 720 })
     
     // Disable tour
