@@ -23,7 +23,7 @@ export default function App() {
   const [state, dispatch] = useReducer(appReducer, initialAppState)
   const {
     tab, model, dataset, variable, height, season,
-    showBathymetry, bathyLayer, pixelData, parquetLoaded, parquetLoading, parquetCount,
+    showBathymetry, bathyLayer, showIbama, pixelData, parquetLoaded, parquetLoading, parquetCount,
     basemap, cogOpacity, pinnedLocations, showFAQ, showProject, dashboardVisited,
   } = state
 
@@ -138,7 +138,7 @@ export default function App() {
             <div className="tab-panel" style={{ display: tab === 'map' ? 'flex' : 'none' }}>
               <SidePanel
                 model={model} dataset={dataset} variable={variable} height={height} season={season}
-                showBathymetry={showBathymetry} bathyLayer={bathyLayer}
+                showBathymetry={showBathymetry} bathyLayer={bathyLayer} showIbama={showIbama}
                 onOpenDashboard={switchToDashboard}
                 showFAQ={showFAQ} showProject={showProject}
                 opacity={cogOpacity}
@@ -149,7 +149,7 @@ export default function App() {
                 <MapView
                   model={model} dataset={dataset} variable={variable} height={height}
                   season={season}
-                  showBathymetry={showBathymetry} bathyLayer={bathyLayer}
+                  showBathymetry={showBathymetry} bathyLayer={bathyLayer} showIbama={showIbama}
                   basemap={basemap}
                   opacity={cogOpacity}
                   isPanelOpen={!!pixelData}

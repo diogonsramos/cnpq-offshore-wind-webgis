@@ -43,9 +43,9 @@ test.describe('Landing Page — seções de conteúdo', () => {
 
 
 
-  test('TeamSection — 17 pesquisadores listados', async ({ page }) => {
+  test('TeamSection — 22 pesquisadores listados', async ({ page }) => {
     const cards = page.locator('.lp-team-card')
-    await expect(cards).toHaveCount(17)
+    await expect(cards).toHaveCount(22)
   })
 
   test('PublicationsSection — 11 publicações listadas', async ({ page }) => {

@@ -18,6 +18,7 @@ interface MapViewProps {
   season: Season
   showBathymetry: boolean
   bathyLayer: BathyLayerId
+  showIbama: boolean
   opacity: number
   basemap: BasemapId
   onPixelClick: (data: PixelDataSummary | null, loading: boolean, loaded: boolean, count: number) => void
@@ -79,7 +80,7 @@ const PIN_OUTLINE_LYR = 'pin-outline-lyr'
 const PIN_COLORS = ['#4a90d9', '#e67e22', '#2ecc71']
 
 function MapViewInner(props: MapViewProps) {
-  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, opacity, basemap,
+  const { model, dataset, variable, height, season, showBathymetry, bathyLayer, showIbama, opacity, basemap,
   onPixelClick, pinnedLocations, isPanelOpen,
   onAddPin, onRemovePin, dispatch } = props
   const { t } = useLocale()
@@ -290,6 +291,53 @@ function MapViewInner(props: MapViewProps) {
     })
   }, [showBathymetry, bathyLayer, ready])
 
+  // IBAMA layer
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+    if (m.getLayer('ibama-fill')) m.removeLayer('ibama-fill')
+    if (m.getLayer('ibama-line')) m.removeLayer('ibama-line')
+    if (m.getSource('ibama-src')) m.removeSource('ibama-src')
+    if (!showIbama) return
+
+    fetch(import.meta.env.BASE_URL + 'data/ibama/ibama_areas.json').then(r => r.json()).then(gj => {
+      if (!map.current) return
+      map.current.addSource('ibama-src', { type: 'geojson', data: gj })
+      map.current.addLayer({ id: 'ibama-fill', type: 'fill', source: 'ibama-src', paint: { 'fill-color': '#e67e22', 'fill-opacity': 0.15 } })
+      map.current.addLayer({ id: 'ibama-line', type: 'line', source: 'ibama-src', paint: { 'line-color': '#d35400', 'line-width': 1.5 } })
+      
+      const popup = new maplibregl.Popup({
+        closeButton: true,
+        closeOnClick: false
+      })
+
+      map.current.on('click', 'ibama-fill', (e) => {
+        if (!e.features || e.features.length === 0) return
+        const p = e.features[0].properties
+        if (!p) return
+        
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="font-family: sans-serif; font-size: 13px; color: #333;">
+              <h4 style="margin: 0 0 8px; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 4px;">${p.Usina || 'Desconhecida'}</h4>
+              <p style="margin: 4px 0;"><strong>Titular:</strong> ${p.Titular}</p>
+              <p style="margin: 4px 0;"><strong>Potência:</strong> ${p['Potência']} MW</p>
+              <p style="margin: 4px 0;"><strong>Torres:</strong> ${p.Torres}</p>
+              <p style="margin: 4px 0;"><strong>Área:</strong> ${p['Área__km2']} km²</p>
+              <p style="margin: 4px 0;"><strong>Processo:</strong> ${p.Processo}</p>
+              <p style="margin: 8px 0 0;"><a href="https://www.gov.br/ibama/pt-br/assuntos/laf/consultas/arquivos/20260303_Eolicas_Offshore_Ibama_fevereiro_26.pdf" target="_blank" rel="noreferrer" style="color: #4a90d9; text-decoration: none; font-weight: bold;">📄 Ver PDF oficial</a></p>
+            </div>
+          `)
+          .addTo(map.current!)
+      })
+      map.current.on('mouseenter', 'ibama-fill', () => { map.current!.getCanvas().style.cursor = 'pointer' })
+      map.current.on('mouseleave', 'ibama-fill', () => { map.current!.getCanvas().style.cursor = '' })
+    }).catch(e => {
+      console.warn('MapView: IBAMA layer unavailable:', e)
+    })
+  }, [showIbama, ready])
+
   // Pinned location markers
   useEffect(() => {
     const m = map.current
@@ -414,7 +462,102 @@ function MapViewInner(props: MapViewProps) {
       ctx.fillRect(10, canvas.height - 34, textWidth + padX * 2, 24)
       ctx.fillStyle = '#fff'
       ctx.textBaseline = 'middle'
+      ctx.textAlign = 'left'
       ctx.fillText(label, 10 + padX, canvas.height - 22)
+
+      // Color scale
+      const isWS = variable === 'ws'
+      const maxVal = isWS ? 16 : 2000
+      const stopsArray = isWS ? WS : PD
+      const scaleHeight = 150
+      const scaleWidth = 15
+      const scaleX = canvas.width - 60
+      const scaleY = canvas.height - scaleHeight - 40
+      
+      const lg = ctx.createLinearGradient(0, scaleY + scaleHeight, 0, scaleY)
+      stopsArray.forEach(s => {
+        const pct = Math.min(1, s[0] / maxVal)
+        lg.addColorStop(pct, `rgba(${s[1][0]}, ${s[1][1]}, ${s[1][2]}, 1)`)
+      })
+      
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'
+      ctx.fillRect(scaleX - 45, scaleY - 25, scaleWidth + 60, scaleHeight + 50)
+      
+      ctx.fillStyle = lg
+      ctx.fillRect(scaleX, scaleY, scaleWidth, scaleHeight)
+      
+      ctx.fillStyle = '#fff'
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(maxVal.toString() + (isWS ? '+' : ''), scaleX - 8, scaleY)
+      ctx.fillText('0', scaleX - 8, scaleY + scaleHeight)
+      ctx.textAlign = 'center'
+      ctx.fillText(isWS ? 'm/s' : 'W/m²', scaleX + scaleWidth / 2, scaleY - 15)
+
+      // North Arrow
+      const cx = canvas.width - 32
+      const cy = 40
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'
+      ctx.beginPath()
+      ctx.arc(cx, cy, 24, 0, 2 * Math.PI)
+      ctx.fill()
+      
+      ctx.beginPath()
+      ctx.moveTo(cx, cy - 14)
+      ctx.lineTo(cx + 8, cy + 10)
+      ctx.lineTo(cx, cy + 4)
+      ctx.lineTo(cx - 8, cy + 10)
+      ctx.closePath()
+      ctx.fillStyle = '#eee'
+      ctx.fill()
+      ctx.strokeStyle = '#333'
+      ctx.lineWidth = 1
+      ctx.stroke()
+      ctx.fillStyle = '#fff'
+      ctx.font = 'bold 12px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('N', cx, cy + 18)
+
+      // Lat/Lon grid hints
+      const bounds = m.getBounds()
+      const minLng = bounds.getWest()
+      const maxLng = bounds.getEast()
+      const minLat = bounds.getSouth()
+      const maxLat = bounds.getNorth()
+
+      ctx.fillStyle = '#333'
+      ctx.strokeStyle = '#333'
+      ctx.lineWidth = 1
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+      
+      for (let lng = Math.ceil(minLng); lng <= Math.floor(maxLng); lng += 5) {
+        const px = m.project([lng, minLat]).x
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'
+        ctx.fillRect(px - 15, canvas.height - 20, 30, 20)
+        ctx.fillStyle = '#000'
+        ctx.fillText(`${lng}°`, px, canvas.height - 4)
+        ctx.beginPath()
+        ctx.moveTo(px, canvas.height)
+        ctx.lineTo(px, canvas.height - 5)
+        ctx.stroke()
+      }
+
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      for (let lat = Math.ceil(minLat); lat <= Math.floor(maxLat); lat += 5) {
+        const py = m.project([minLng, lat]).y
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'
+        ctx.fillRect(0, py - 10, 35, 20)
+        ctx.fillStyle = '#000'
+        ctx.fillText(`${lat}°`, 6, py)
+        ctx.beginPath()
+        ctx.moveTo(0, py)
+        ctx.lineTo(5, py)
+        ctx.stroke()
+      }
 
       const a = document.createElement('a')
       const dateStr = new Date().toISOString().slice(0, 10)

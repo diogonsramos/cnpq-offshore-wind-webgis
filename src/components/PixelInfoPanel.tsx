@@ -239,14 +239,6 @@ function PixelInfoPanelInner({ data, loading, loaded, recordCount, pinnedCount, 
               ) : null}
             </Section>
 
-            <div className="pixel-panel-actions">
-              <button className="pin-button" onClick={() => onAddPin(data.lat, data.lon)} disabled={pinnedCount >= 3}>
-                {pinnedCount >= 3 ? t('pixel.pin_max') : t('pixel.pin_button', { count: pinnedCount })}
-              </button>
-              <button className="dashboard-button" onClick={onOpenDashboard}>
-                {t('pixel.open_dashboard')}
-              </button>
-            </div>
           </div>
         )}
       </div>

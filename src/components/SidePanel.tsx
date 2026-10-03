@@ -20,6 +20,7 @@ interface SidePanelProps {
   season: Season
   showBathymetry: boolean
   bathyLayer: BathyLayerId
+  showIbama: boolean
   onOpenDashboard: () => void
   showFAQ: boolean
   showProject: boolean
@@ -73,7 +74,7 @@ const BATHY_LAYERS: { val: BathyLayerId; labelKey: TranslationKey }[] = [
 
 export default function SidePanel({
   model, dataset, variable, height, season,
-  showBathymetry, bathyLayer,
+  showBathymetry, bathyLayer, showIbama,
   onOpenDashboard,
   showFAQ, showProject,
   opacity, basemap,
@@ -143,6 +144,12 @@ export default function SidePanel({
               ))}
             </div>
           )}
+          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={showIbama} onChange={e => dispatch({ type: 'SET_SHOW_IBAMA', show: e.target.checked })} />
+              <span>{t('sidepanel.ibama_checkbox_label' as any)}</span>
+            </label>
+          </div>
         </AccordionSection>
 
         <AccordionSection title={t('sidepanel.cog.section_title')} defaultOpen={false}>

@@ -36,6 +36,20 @@ const TEAM: {
     { name: 'Sofia Alexandrino Lage', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'sofia_alexandrino_lage.png', lattes: 'https://lattes.cnpq.br/8666873652216091' },
   ]
 
+const EXTERNAL_TEAM: {
+  name: string
+  roleKey: TranslationKey
+  badge: null
+  photo: string
+  lattes: string
+}[] = [
+    { name: 'Felipe Mendonça Pimenta', roleKey: 'landing.team.role_ext_ufsc' as TranslationKey, badge: null, photo: 'felipe_pimenta.jpeg', lattes: 'http://lattes.cnpq.br/4853184583206201' },
+    { name: 'Simon See', roleKey: 'landing.team.role_ext_nvidia' as TranslationKey, badge: null, photo: 'Simon_See.webp', lattes: 'https://scholar.google.com/citations?user=ebIHTEoAAAAJ&hl=en' },
+    { name: 'Pedro Mário Cruz e Silva', roleKey: 'landing.team.role_ext_nvidia' as TranslationKey, badge: null, photo: 'default_image.png', lattes: 'https://scholar.google.com.br/citations?user=PGy8OwMAAAAJ&hl=pt-BR' },
+    { name: 'Alejandro Gutiérrez', roleKey: 'landing.team.role_ext_udelar' as TranslationKey, badge: null, photo: 'default_image.png', lattes: '#' },
+    { name: 'Alex Alisson Bandeira Santos', roleKey: 'landing.team.role_ext_cimatec' as TranslationKey, badge: null, photo: 'alex_alisson.png', lattes: 'http://lattes.cnpq.br/1594166432902815' },
+]
+
 // Citações bibliográficas — reproduzidas verbatim (não traduzidas) nos dois
 // idiomas, como qualquer lista de referências científicas.
 const PUBLICATIONS = [
@@ -258,7 +272,11 @@ export default function LandingPage({ onNavigate }: Props) {
             <p>{t('landing.tech.p3')}</p>
             <p>{t('landing.tech.p4')}</p>
             <figure className="lp-tech-figure">
-              <img src={`${import.meta.env.BASE_URL}images/fluxo_br.jpg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
+              <img 
+                src={`${import.meta.env.BASE_URL}images/fluxo_${locale === 'en' ? 'en.png' : locale === 'es' ? 'es.png' : 'br.jpg'}`} 
+                alt="Pipeline e Fluxograma do Sistema" 
+                className="lp-pipeline-image" 
+              />
             </figure>
             <p>{t('landing.tech.p5')}</p>
           </div>
@@ -390,8 +408,8 @@ export default function LandingPage({ onNavigate }: Props) {
               </table>
             </div>
             <p className="lp-citation">
-              <strong>Referência:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
-              <strong>Dados CMIP6 gerados por Xu et al. (2021) e usados neste projeto:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
+              <strong>{t('landing.data.citation_ref_label' as any)}:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
+              <strong>{t('landing.data.citation_data_label' as any)}:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
             </p>
           </div>
         </div>
@@ -463,6 +481,38 @@ export default function LandingPage({ onNavigate }: Props) {
               </a>
             ))}
           </div>
+
+          <h3 className="lp-section-subtitle" style={{ marginTop: '4rem', marginBottom: '2rem', textAlign: 'center', fontSize: '1.5rem', color: '#1e293b' }}>
+            {t('landing.team.external_researchers' as any)}
+          </h3>
+          <div className="lp-team-grid">
+            {EXTERNAL_TEAM.map(m => (
+              <a
+                className="lp-team-card"
+                key={m.name}
+                href={m.lattes !== '#' ? m.lattes : undefined}
+                target={m.lattes !== '#' ? '_blank' : undefined}
+                rel={m.lattes !== '#' ? 'noopener noreferrer' : undefined}
+                aria-label={t('landing.team.lattes_aria', { name: m.name })}
+                style={{ cursor: m.lattes === '#' ? 'default' : 'pointer' }}
+              >
+                <div className="lp-team-avatar-wrap">
+                  <img
+                    className="lp-team-avatar"
+                    src={teamBase + m.photo}
+                    alt={`Foto de ${m.name}`}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = defaultPhoto }}
+                    loading="lazy"
+                  />
+                </div>
+                <div className="lp-team-info">
+                  <div className="lp-team-name">{m.name}</div>
+                  <div className="lp-team-role">{t(m.roleKey)}</div>
+                  {m.lattes !== '#' && <span className="lp-team-lattes-hint" aria-hidden="true">{t('landing.team.curriculo_hint' as any)}</span>}
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -482,6 +532,22 @@ export default function LandingPage({ onNavigate }: Props) {
             <a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
               <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-partner-img" />
               <p>Laboratório de Ciências Atmosféricas e Computação Científica (CNPq)</p>
+            </a>
+            <a href="https://www.nvidia.com" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-nvidia.svg'} alt="NVIDIA" className="lp-partner-img" />
+              <p>NVIDIA AI Technology Center (NVAITC)</p>
+            </a>
+            <a href="https://ufsc.br" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-ufsc.svg'} alt="UFSC" className="lp-partner-img" />
+              <p>Universidade Federal de Santa Catarina (UFSC)</p>
+            </a>
+            <a href="https://udelar.edu.uy" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-udelar.png'} alt="UdelaR" className="lp-partner-img" />
+              <p>Universidad de la República (UdelaR)</p>
+            </a>
+            <a href={locale === 'en' ? "https://www.universidadesenaicimatec.edu.br/en/" : "https://www.universidadesenaicimatec.edu.br/"} target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-universidade-senai-cimatec.PNG'} alt="SENAI CIMATEC" className="lp-partner-img" />
+              <p>Universidade SENAI CIMATEC</p>
             </a>
           </div>
         </div>

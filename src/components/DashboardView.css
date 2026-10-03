@@ -514,6 +514,10 @@
     display: none !important;
   }
 
+  .dv-print-header {
+    display: block !important;
+  }
+
   /* Reset layout constraints to allow natural flowing pages */
   body, .dashboard-view, .unified-dashboard-container, .dv-main {
     display: block !important;

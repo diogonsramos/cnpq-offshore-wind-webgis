@@ -266,6 +266,15 @@ function DashboardViewInner({
     <div className="dashboard-view" style={{ overflowY: 'hidden' }}>
       
       {/* Top Filter Bar */}
+      <div className="dv-print-header" style={{ display: 'none' }}>
+        <h2 style={{ margin: '0 0 16px', borderBottom: '2px solid #ccc', paddingBottom: '8px' }}>CNPq Offshore Wind - Dashboard</h2>
+        <div style={{ display: 'flex', gap: '24px', marginBottom: '24px', fontSize: '14px' }}>
+          <div><strong>{t('dashboard.filters.model_label')}:</strong> {modelLabelStr}</div>
+          <div><strong>{t('dashboard.filters.experiment_label')}:</strong> {datasetLabelStr}</div>
+          <div><strong>{t('dashboard.filters.variable_label')}:</strong> {varLabel(dashboardVar, t).label}</div>
+          <div><strong>{t('dashboard.filters.height_label')}:</strong> {dashboardHeight}m</div>
+        </div>
+      </div>
       <div className="dv-filter-bar-wrapper">
         <div className="dv-filter-bar-unified">
           <div className="dv-filter-group">
