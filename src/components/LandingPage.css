@@ -58,10 +58,10 @@
 }
 
 .lp-hero-video-controls {
-  position: absolute;
-  bottom: 24px;
-  left: 24px;
+  position: relative;
+  margin-top: 1.5rem;
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 6px;
   z-index: 10;
@@ -70,6 +70,9 @@
   padding: 6px;
   border-radius: 8px;
   backdrop-filter: blur(4px);
+  max-width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .lp-video-btn {
@@ -964,12 +967,7 @@ abbr[title] {
     padding: 48px 24px 80px;
   }
 
-  .lp-hero-video-controls {
-    bottom: 12px;
-    right: 12px;
-    padding: 6px;
-    gap: 6px;
-  }
+
 
   .lp-tech,
   .lp-gallery,
@@ -1022,11 +1020,7 @@ abbr[title] {
     padding: 40px 16px 88px;
   }
 
-  .lp-hero-video-controls {
-    bottom: 10px;
-    right: 10px;
-    padding: 4px 6px;
-  }
+
 
   .lp-video-volume-slider {
     width: 60px;

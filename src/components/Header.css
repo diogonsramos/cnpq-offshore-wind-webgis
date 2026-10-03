@@ -113,3 +113,47 @@
     display: none; /* Em uma implementação real, seria um menu hambúrguer */
   }
 }
+
+/* Dropdown Styles */
+.gh-nav-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.gh-nav-dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #1a1a2e;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1001;
+  border-radius: 6px;
+  top: 100%;
+  left: 0;
+  padding: 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gh-nav-dropdown:hover .gh-nav-dropdown-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.gh-nav-dropdown-item {
+  background: transparent;
+  border: none;
+  color: #a0a0b0;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.gh-nav-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding-left: 20px;
+}
