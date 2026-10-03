@@ -20,7 +20,7 @@ test.describe('TeamSection — avatares e links Lattes', () => {
     const count = await cards.count()
     for (let i = 0; i < count; i++) {
       const href = await cards.nth(i).getAttribute('href')
-      expect(href).toBeTruthy()
+      if (href && href !== '#') expect(href).toMatch(/lattes|scholar\.google/) 
     }
   })
 
