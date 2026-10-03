@@ -271,6 +271,9 @@ export const es = {
 
   'landing.nav.aria': 'Navegación principal',
   'landing.nav.sections_aria': 'Secciones de la página',
+  'landing.nav.about_project': 'Sobre el Proyecto',
+  'landing.nav.data': 'Datos',
+  'landing.nav.releases': 'Historial',
   'landing.nav.methodology': 'Metodología',
   'landing.nav.scenarios': 'Escenarios',
   'landing.nav.interface': 'Interfaz',

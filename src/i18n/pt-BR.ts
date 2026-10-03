@@ -254,6 +254,9 @@ export const ptBR = {
   // LandingPage
   'landing.nav.aria': 'Navegação principal',
   'landing.nav.sections_aria': 'Seções da página',
+  'landing.nav.about_project': 'Sobre o Projeto',
+  'landing.nav.data': 'Dados',
+  'landing.nav.releases': 'Histórico',
   'landing.nav.methodology': 'Metodologia',
   'landing.nav.scenarios': 'Cenários',
   'landing.nav.interface': 'Interface',

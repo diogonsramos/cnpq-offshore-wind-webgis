@@ -253,6 +253,9 @@ export const en: Record<TranslationKey, string> = {
   // LandingPage
   'landing.nav.aria': 'Main navigation',
   'landing.nav.sections_aria': 'Page sections',
+  'landing.nav.about_project': 'About the Project',
+  'landing.nav.data': 'Data',
+  'landing.nav.releases': 'Releases',
   'landing.nav.methodology': 'Methodology',
   'landing.nav.scenarios': 'Scenarios',
   'landing.nav.interface': 'Interface',
