@@ -21,7 +21,7 @@ export default defineConfig({
     command: 'pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
-    timeout: 30000,
+    timeout: 120000,
   },
   outputDir: 'tests/results/artifacts',
 })

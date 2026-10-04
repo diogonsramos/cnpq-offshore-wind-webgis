@@ -35,7 +35,7 @@ jobs:
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: 'http://localhost:4173'
+          target: 'http://172.17.0.1:4173'
           fail_action: false
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
