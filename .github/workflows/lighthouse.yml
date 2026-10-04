@@ -26,4 +26,4 @@ jobs:
           buildPath: './dist'
           uploadArtifacts: true
           temporaryPublicStorage: false
-          configPath: './lighthouserc.js'
+          configPath: './lighthouserc.cjs'
