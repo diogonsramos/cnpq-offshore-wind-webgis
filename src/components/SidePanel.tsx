@@ -10,6 +10,7 @@ import { useLocale } from '../i18n/provider'
 import type { TranslationKey } from '../i18n/types'
 import type { BasemapId } from '../types'
 import BasemapSwitcher from './BasemapSwitcher'
+import { useTourGuide } from './TourGuide'
 import './SidePanel.css'
 
 interface SidePanelProps {
@@ -20,6 +21,7 @@ interface SidePanelProps {
   season: Season
   showBathymetry: boolean
   bathyLayer: BathyLayerId
+  showIbama: boolean
   onOpenDashboard: () => void
   showFAQ: boolean
   showProject: boolean
@@ -73,13 +75,14 @@ const BATHY_LAYERS: { val: BathyLayerId; labelKey: TranslationKey }[] = [
 
 export default function SidePanel({
   model, dataset, variable, height, season,
-  showBathymetry, bathyLayer,
+  showBathymetry, bathyLayer, showIbama,
   onOpenDashboard,
   showFAQ, showProject,
   opacity, basemap,
   dispatch,
 }: SidePanelProps) {
   const { t } = useLocale()
+  const { startTour } = useTourGuide()
   const [isOpen, setIsOpen] = useState(true)
 
   return (
@@ -143,6 +146,12 @@ export default function SidePanel({
               ))}
             </div>
           )}
+          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={showIbama} onChange={e => dispatch({ type: 'SET_SHOW_IBAMA', show: e.target.checked })} />
+              <span>{t('sidepanel.ibama_checkbox_label' as any)}</span>
+            </label>
+          </div>
         </AccordionSection>
 
         <AccordionSection title={t('sidepanel.cog.section_title')} defaultOpen={false}>
@@ -174,6 +183,19 @@ export default function SidePanel({
             onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569' }}
           >
             📷 {t('mapview.screenshot_title') || 'Screenshot'}
+          </button>
+          <button 
+            onClick={startTour}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '8px', border: '1px solid #4a90d9', borderRadius: '6px',
+              background: '#ebf4ff', color: '#1e3a8a', fontSize: '12px', fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.2s', width: '100%'
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = '#dbeafe' }}
+            onMouseOut={e => { e.currentTarget.style.background = '#ebf4ff' }}
+          >
+            🧭 {t('tour.start_button' as any) || 'Iniciar Tour Guiado'}
           </button>
         </div>
       </div>

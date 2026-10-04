@@ -40,12 +40,31 @@ function HeaderInner({ tab, onNavigate, onOpenFAQ }: HeaderProps) {
           >
             Home
           </button>
-          <button 
-            className="gh-nav-link" 
-            onClick={() => handleNav('home', 'metodologia')}
-          >
-            {t('landing.nav.methodology' as any)}
-          </button>
+          <div className="gh-nav-dropdown">
+            <button className={`gh-nav-link ${tab === 'home' ? 'active' : ''}`}>
+              {t('landing.nav.about_project' as any)} ▾
+            </button>
+            <div className="gh-nav-dropdown-content">
+              <button className="gh-nav-dropdown-item" onClick={() => handleNav('home', 'metodologia')}>
+                {t('landing.nav.methodology' as any)}
+              </button>
+              <button className="gh-nav-dropdown-item" onClick={() => handleNav('home', 'dados')}>
+                {t('landing.nav.data' as any)}
+              </button>
+              <button className="gh-nav-dropdown-item" onClick={() => handleNav('home', 'equipe')}>
+                {t('landing.nav.team' as any)}
+              </button>
+              <button className="gh-nav-dropdown-item" onClick={() => handleNav('home', 'publicacoes')}>
+                {t('landing.nav.publications' as any)}
+              </button>
+              <button className="gh-nav-dropdown-item" onClick={() => handleNav('home', 'releases')}>
+                {t('landing.nav.releases' as any)}
+              </button>
+              <button className="gh-nav-dropdown-item" onClick={() => handleNav('home', 'faq')}>
+                {t('landing.nav.faq' as any)}
+              </button>
+            </div>
+          </div>
           <button 
             className={`gh-nav-link ${tab === 'map' ? 'active' : ''}`} 
             onClick={() => handleNav('map')}

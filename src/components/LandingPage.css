@@ -58,10 +58,10 @@
 }
 
 .lp-hero-video-controls {
-  position: absolute;
-  bottom: 24px;
-  left: 24px;
+  position: relative;
+  margin-top: 1.5rem;
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 6px;
   z-index: 10;
@@ -70,6 +70,9 @@
   padding: 6px;
   border-radius: 8px;
   backdrop-filter: blur(4px);
+  max-width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .lp-video-btn {
@@ -96,7 +99,7 @@
 .lp-video-volume-slider {
   width: 60px;
   cursor: pointer;
-  accent-color: #4a90d9;
+  accent-color: #2b6cb0;
 }
 
 .lp-video-modal-overlay {
@@ -152,7 +155,7 @@
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #4a90d9;
+  color: #2b6cb0;
   margin-bottom: 20px;
 }
 
@@ -247,7 +250,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: #4a90d9;
+  color: #2b6cb0;
   margin-bottom: 8px;
   margin-left: 0 !important;
   padding-left: 0 !important;
@@ -525,7 +528,7 @@
 .lp-team-card:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   transform: translateY(-3px);
-  border-top-color: #4a90d9;
+  border-top-color: #2b6cb0;
 }
 
 .lp-team-card:focus-visible {
@@ -542,7 +545,7 @@
 }
 
 .lp-team-card--lead {
-  border-top-color: #4a90d9;
+  border-top-color: #2b6cb0;
 }
 
 .lp-team-avatar-wrap {
@@ -557,7 +560,7 @@
 }
 
 .lp-team-card:hover .lp-team-avatar-wrap {
-  border-color: #4a90d9;
+  border-color: #2b6cb0;
 }
 
 .lp-team-card--coord:hover .lp-team-avatar-wrap {
@@ -594,7 +597,7 @@
 
 .lp-team-lattes-hint {
   font-size: 10px;
-  color: #4a90d9;
+  color: #2b6cb0;
   font-weight: 600;
   margin-top: 6px;
   opacity: 0;
@@ -653,7 +656,7 @@
 }
 
 .lp-pub-card:hover {
-  border-color: #4a90d9;
+  border-color: #2b6cb0;
   box-shadow: 0 2px 10px rgba(74, 144, 217, 0.1);
 }
 
@@ -697,7 +700,7 @@
 .lp-faq-enter-link {
   background: none;
   border: none;
-  color: #4a90d9;
+  color: #2b6cb0;
   font-size: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -724,7 +727,7 @@
 }
 
 .lp-faq-item--open {
-  border-color: #4a90d9;
+  border-color: #2b6cb0;
   box-shadow: 0 2px 10px rgba(74, 144, 217, 0.1);
 }
 
@@ -760,7 +763,7 @@
   height: 24px;
   border-radius: 50%;
   background: #e0e8f4;
-  color: #4a90d9;
+  color: #2b6cb0;
   font-size: 18px;
   font-weight: 700;
   display: flex;
@@ -927,7 +930,7 @@ abbr[title] {
   border: 1px solid #c0c8d4;
   border-radius: 8px;
   background: #fff;
-  color: #4a90d9;
+  color: #2b6cb0;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -936,7 +939,7 @@ abbr[title] {
 
 .lp-team-toggle:hover {
   background: #f0f7ff;
-  border-color: #4a90d9;
+  border-color: #2b6cb0;
 }
 
 .lp-team-toggle:focus-visible {
@@ -964,12 +967,7 @@ abbr[title] {
     padding: 48px 24px 80px;
   }
 
-  .lp-hero-video-controls {
-    bottom: 12px;
-    right: 12px;
-    padding: 6px;
-    gap: 6px;
-  }
+
 
   .lp-tech,
   .lp-gallery,
@@ -1022,11 +1020,7 @@ abbr[title] {
     padding: 40px 16px 88px;
   }
 
-  .lp-hero-video-controls {
-    bottom: 10px;
-    right: 10px;
-    padding: 4px 6px;
-  }
+
 
   .lp-video-volume-slider {
     width: 60px;

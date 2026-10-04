@@ -11,6 +11,7 @@ export interface AppState {
   season: Season
   showBathymetry: boolean
   bathyLayer: BathyLayerId
+  showIbama: boolean
   pixelData: PixelDataSummary | null
   parquetLoaded: boolean
   parquetLoading: boolean
@@ -50,6 +51,7 @@ export const initialAppState: AppState = {
   season: (initParams?.get('season') as Season) || 'annual',
   showBathymetry: true,
   bathyLayer: 'bathy_0_100_nacional',
+  showIbama: false,
   pixelData: null,
   parquetLoaded: false,
   parquetLoading: false,
@@ -72,6 +74,7 @@ export type AppAction =
   | { type: 'SET_BASEMAP'; basemap: BasemapId }
   | { type: 'SET_BATHY_LAYER'; layer: BathyLayerId }
   | { type: 'SET_SHOW_BATHYMETRY'; show: boolean }
+  | { type: 'SET_SHOW_IBAMA'; show: boolean }
   | { type: 'SET_COG_OPACITY'; opacity: number }
   | { type: 'SET_PIXEL_DATA'; data: PixelDataSummary | null }
   | { type: 'SET_PARQUET_LOADING'; loading: boolean }
@@ -119,6 +122,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, bathyLayer: action.layer }
     case 'SET_SHOW_BATHYMETRY':
       return { ...state, showBathymetry: action.show }
+    case 'SET_SHOW_IBAMA':
+      return { ...state, showIbama: action.show }
     case 'SET_COG_OPACITY':
       return { ...state, cogOpacity: action.opacity }
     case 'SET_PIXEL_DATA':

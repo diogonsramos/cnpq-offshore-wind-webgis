@@ -17,6 +17,7 @@ import MiniMap from './MiniMap'
 
 import DashboardSkeleton from './DashboardSkeleton'
 import { useLocale } from '../i18n/provider'
+import { useDashboardTour } from './TourGuide'
 import './DashboardView.css'
 
 const Plot = lazy(() => import('react-plotly.js'))
@@ -94,6 +95,7 @@ function DashboardViewInner({
   dispatch,
 }: DashboardViewProps) {
   const { t } = useLocale()
+  const { startDashboardTour } = useDashboardTour()
   const [dashboardVar, setDashboardVar] = useState<Variable>('ws')
   const [dashboardHeight, setDashboardHeight] = useState<Height>(100)
   const [latInput, setLatInput] = useState('')
@@ -266,6 +268,15 @@ function DashboardViewInner({
     <div className="dashboard-view" style={{ overflowY: 'hidden' }}>
       
       {/* Top Filter Bar */}
+      <div className="dv-print-header" style={{ display: 'none' }}>
+        <h2 style={{ margin: '0 0 16px', borderBottom: '2px solid #ccc', paddingBottom: '8px' }}>CNPq Offshore Wind - Dashboard</h2>
+        <div style={{ display: 'flex', gap: '24px', marginBottom: '24px', fontSize: '14px' }}>
+          <div><strong>{t('dashboard.filters.model_label')}:</strong> {modelLabelStr}</div>
+          <div><strong>{t('dashboard.filters.experiment_label')}:</strong> {datasetLabelStr}</div>
+          <div><strong>{t('dashboard.filters.variable_label')}:</strong> {varLabel(dashboardVar, t).label}</div>
+          <div><strong>{t('dashboard.filters.height_label')}:</strong> {dashboardHeight}m</div>
+        </div>
+      </div>
       <div className="dv-filter-bar-wrapper">
         <div className="dv-filter-bar-unified">
           <div className="dv-filter-group">
@@ -292,15 +303,20 @@ function DashboardViewInner({
             {HEIGHTS.map(h => <option key={h} value={h}>{h}m</option>)}
           </select>
         </div>
-        <div className="dv-filter-group" style={{ marginLeft: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', marginLeft: 'auto', alignItems: 'center' }}>
           <button 
             className="dv-add-btn" 
-            style={{ padding: '8px 16px', background: '#3b82f6' }}
+            onClick={startDashboardTour}
+          >
+            {t('tour.start_button' as any) || 'Tour Guiado'}
+          </button>
+          <button 
+            className="dv-add-btn" 
             onClick={() => {
               window.print()
             }}
           >
-            Exportar Gráficos
+            {t('dashboard.export_charts' as any) || 'Exportar Gráficos'}
           </button>
         </div>
       </div>

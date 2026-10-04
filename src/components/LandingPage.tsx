@@ -36,6 +36,20 @@ const TEAM: {
     { name: 'Sofia Alexandrino Lage', roleKey: 'landing.team.role_researcher_f', badge: null, photo: 'sofia_alexandrino_lage.png', lattes: 'https://lattes.cnpq.br/8666873652216091' },
   ]
 
+const EXTERNAL_TEAM: {
+  name: string
+  roleKey: TranslationKey
+  badge: null
+  photo: string
+  lattes: string
+}[] = [
+    { name: 'Felipe Mendonça Pimenta', roleKey: 'landing.team.role_ext_ufsc' as TranslationKey, badge: null, photo: 'felipe_pimenta.jpeg', lattes: 'http://lattes.cnpq.br/4853184583206201' },
+    { name: 'Simon See', roleKey: 'landing.team.role_ext_nvidia' as TranslationKey, badge: null, photo: 'Simon_See.webp', lattes: 'https://scholar.google.com/citations?user=ebIHTEoAAAAJ&hl=en' },
+    { name: 'Pedro Mário Cruz e Silva', roleKey: 'landing.team.role_ext_nvidia' as TranslationKey, badge: null, photo: 'pedro_mario.jpeg', lattes: 'https://scholar.google.com.br/citations?user=PGy8OwMAAAAJ&hl=pt-BR' },
+    { name: 'Alejandro Gutiérrez', roleKey: 'landing.team.role_ext_udelar' as TranslationKey, badge: null, photo: 'alejandro_gutierrez.jpeg', lattes: '#' },
+    { name: 'Alex Alisson Bandeira Santos', roleKey: 'landing.team.role_ext_cimatec' as TranslationKey, badge: null, photo: 'alex_alisson.png', lattes: 'http://lattes.cnpq.br/1594166432902815' },
+]
+
 // Citações bibliográficas — reproduzidas verbatim (não traduzidas) nos dois
 // idiomas, como qualquer lista de referências científicas.
 const PUBLICATIONS = [
@@ -178,7 +192,18 @@ export default function LandingPage({ onNavigate }: Props) {
         />
 
         <div className="lp-hero-inner">
-          <div className="lp-hero-video-controls">
+          <div className="lp-hero-content">
+            <p className="lp-hero-eyebrow">{t('landing.hero.eyebrow')}</p>
+            <h1>{t('landing.hero.title')}</h1>
+            <div className="lp-hero-ctas">
+              <button className="lp-cta-primary" onClick={() => onNavigate('map')}>
+                {t('landing.hero.cta_primary')}
+              </button>
+              <button className="lp-cta-secondary" onClick={() => onNavigate('dashboard')}>
+                {t('landing.hero.cta_secondary')}
+              </button>
+            </div>
+            <div className="lp-hero-video-controls">
             <button 
               className="lp-video-btn" 
               onClick={() => {
@@ -230,18 +255,6 @@ export default function LandingPage({ onNavigate }: Props) {
               ⛶
             </button>
           </div>
-
-          <div className="lp-hero-content">
-            <p className="lp-hero-eyebrow">{t('landing.hero.eyebrow')}</p>
-            <h1>{t('landing.hero.title')}</h1>
-            <div className="lp-hero-ctas">
-              <button className="lp-cta-primary" onClick={() => onNavigate('map')}>
-                {t('landing.hero.cta_primary')}
-              </button>
-              <button className="lp-cta-secondary" onClick={() => onNavigate('dashboard')}>
-                {t('landing.hero.cta_secondary')}
-              </button>
-            </div>
           </div>
         </div>
       </section>
@@ -258,7 +271,11 @@ export default function LandingPage({ onNavigate }: Props) {
             <p>{t('landing.tech.p3')}</p>
             <p>{t('landing.tech.p4')}</p>
             <figure className="lp-tech-figure">
-              <img src={`${import.meta.env.BASE_URL}images/fluxo_br.jpg`} alt="Pipeline e Fluxograma do Sistema" className="lp-pipeline-image" />
+              <img 
+                src={`${import.meta.env.BASE_URL}images/fluxo_${locale === 'en' ? 'en.png' : locale === 'es' ? 'es.png' : 'br.jpg'}`} 
+                alt="Pipeline e Fluxograma do Sistema" 
+                className="lp-pipeline-image" 
+              />
             </figure>
             <p>{t('landing.tech.p5')}</p>
           </div>
@@ -300,6 +317,7 @@ export default function LandingPage({ onNavigate }: Props) {
                   <tr><td><strong>{t('landing.compare.wrf.ref_label')}</strong></td><td>{t('landing.compare.wrf.ref_val')}</td></tr>
                   <tr><td><strong>{t('landing.compare.wrf.res_label')}</strong></td><td>{t('landing.compare.wrf.res_val')}</td></tr>
                   <tr><td><strong>{t('landing.compare.wrf.adv_label')}</strong></td><td>{t('landing.compare.wrf.adv_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.official_link' as any)}</strong></td><td><a href="https://www.mmm.ucar.edu/models/wrf" target="_blank" rel="noopener noreferrer" style={{ color: '#4a90d9', textDecoration: 'none', fontWeight: 600 }}>{t('landing.compare.wrf_link' as any)}</a></td></tr>
                 </tbody>
               </table>
             </div>
@@ -317,6 +335,7 @@ export default function LandingPage({ onNavigate }: Props) {
                   <tr><td><strong>{t('landing.compare.wrf.ref_label')}</strong></td><td>{t('landing.compare.mpas.ref_val')}</td></tr>
                   <tr><td><strong>{t('landing.compare.wrf.res_label')}</strong></td><td>{t('landing.compare.mpas.res_val')}</td></tr>
                   <tr><td><strong>{t('landing.compare.wrf.adv_label')}</strong></td><td>{t('landing.compare.mpas.adv_val')}</td></tr>
+                  <tr><td><strong>{t('landing.compare.official_link' as any)}</strong></td><td><a href="https://www.mmm.ucar.edu/models/mpas" target="_blank" rel="noopener noreferrer" style={{ color: '#10b981', textDecoration: 'none', fontWeight: 600 }}>{t('landing.compare.mpas_link' as any)}</a></td></tr>
                 </tbody>
               </table>
             </div>
@@ -338,7 +357,7 @@ export default function LandingPage({ onNavigate }: Props) {
           <p className="lp-section-label">{t('landing.data.eyebrow')}</p>
           <h2 className="lp-section-title">{t('landing.data.title')}</h2>
           <div className="lp-tech-text">
-            <p>{t('landing.data.desc_era5')}</p>
+            <p>{t('landing.data.desc_era5')} <br/>{t('landing.data.era5_link' as any)} <a href="https://cds.climate.copernicus.eu/datasets" target="_blank" rel="noopener noreferrer" style={{ color: '#4a90d9', textDecoration: 'none', fontWeight: 600 }}>cds.climate.copernicus.eu</a>.</p>
             <p>{t('landing.data.desc_cmip6')} <a href="https://wcrp-cmip.org/cmip-model-and-experiment-documentation/" target="_blank" rel="noopener noreferrer" style={{ color: '#4a90d9', textDecoration: 'none', fontWeight: 600 }}>WCRP CMIP Documentation</a>.</p>
             <div style={{ margin: '2rem 0', overflowX: 'auto' }}>
               <table className="lp-tech-table" style={{ width: '100%', minWidth: '700px', margin: '0 auto', fontSize: '0.85rem' }}>
@@ -390,9 +409,16 @@ export default function LandingPage({ onNavigate }: Props) {
               </table>
             </div>
             <p className="lp-citation">
-              <strong>Referência:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
-              <strong>Dados CMIP6 gerados por Xu et al. (2021) e usados neste projeto:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
+              <strong>{t('landing.data.citation_ref_label' as any)}:</strong> Xu, Z., Han, Y., Tam, CY. et al. Bias-corrected CMIP6 global dataset for dynamical downscaling of the historical and future climate (1979–2100). <em>Sci Data</em> 8, 293 (2021). <a href="https://doi.org/10.1038/s41597-021-01079-3" target="_blank" rel="noreferrer">https://doi.org/10.1038/s41597-021-01079-3</a><br/>
+              <strong>{t('landing.data.citation_data_label' as any)}:</strong> <a href="https://www.scidb.cn/en/detail?dataSetId=791587189614968832" target="_blank" rel="noreferrer">https://www.scidb.cn/en/detail?dataSetId=791587189614968832</a>
             </p>
+            <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#0f172a' }}>{t('landing.data.ibama_title' as any)}</h4>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#475569', lineHeight: '1.5' }}>
+                {t('landing.data.ibama_desc' as any)} <br/>
+                <a href="https://www.gov.br/ibama/pt-br/assuntos/laf/consultas/mapas-de-projetos-em-licenciamento-complexos-eolicos-offshore" target="_blank" rel="noopener noreferrer" style={{ color: '#4a90d9', textDecoration: 'none', fontWeight: 600 }}>{t('landing.data.ibama_link' as any)}</a>.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -463,6 +489,38 @@ export default function LandingPage({ onNavigate }: Props) {
               </a>
             ))}
           </div>
+
+          <h3 className="lp-section-subtitle" style={{ marginTop: '4rem', marginBottom: '2rem', textAlign: 'center', fontSize: '1.5rem', color: '#1e293b' }}>
+            {t('landing.team.external_researchers' as any)}
+          </h3>
+          <div className="lp-team-grid">
+            {EXTERNAL_TEAM.map(m => (
+              <a
+                className="lp-team-card"
+                key={m.name}
+                href={m.lattes !== '#' ? m.lattes : undefined}
+                target={m.lattes !== '#' ? '_blank' : undefined}
+                rel={m.lattes !== '#' ? 'noopener noreferrer' : undefined}
+                aria-label={t('landing.team.lattes_aria', { name: m.name })}
+                style={{ cursor: m.lattes === '#' ? 'default' : 'pointer' }}
+              >
+                <div className="lp-team-avatar-wrap">
+                  <img
+                    className="lp-team-avatar"
+                    src={teamBase + m.photo}
+                    alt={`Foto de ${m.name}`}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = defaultPhoto }}
+                    loading="lazy"
+                  />
+                </div>
+                <div className="lp-team-info">
+                  <div className="lp-team-name">{m.name}</div>
+                  <div className="lp-team-role">{t(m.roleKey)}</div>
+                  {m.lattes !== '#' && <span className="lp-team-lattes-hint" aria-hidden="true">{t('landing.team.curriculo_hint' as any)}</span>}
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -482,6 +540,22 @@ export default function LandingPage({ onNavigate }: Props) {
             <a href="http://dgp.cnpq.br/dgp/espelhogrupo/1792812078303607" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
               <img src={logoBase + 'logo-cnpq.png'} alt="CNPq" className="lp-partner-img" />
               <p>Laboratório de Ciências Atmosféricas e Computação Científica (CNPq)</p>
+            </a>
+            <a href="https://www.nvidia.com" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-nvidia.svg'} alt="NVIDIA" className="lp-partner-img" />
+              <p>NVIDIA AI Technology Center (NVAITC)</p>
+            </a>
+            <a href="https://ufsc.br" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-ufsc.svg'} alt="UFSC" className="lp-partner-img" />
+              <p>Universidade Federal de Santa Catarina (UFSC)</p>
+            </a>
+            <a href="https://udelar.edu.uy" target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-udelar.png'} alt="UdelaR" className="lp-partner-img" />
+              <p>Universidad de la República (UdelaR)</p>
+            </a>
+            <a href={locale === 'en' ? "https://www.universidadesenaicimatec.edu.br/en/" : "https://www.universidadesenaicimatec.edu.br/"} target="_blank" rel="noopener noreferrer" className="lp-partner-card">
+              <img src={import.meta.env.BASE_URL + 'images/partners/logo-universidade-senai-cimatec.PNG'} alt="SENAI CIMATEC" className="lp-partner-img" />
+              <p>Universidade SENAI CIMATEC</p>
             </a>
           </div>
         </div>
@@ -503,25 +577,9 @@ export default function LandingPage({ onNavigate }: Props) {
       </section>
 
       {/* Releases */}
-      <section id="releases" className="lp-tech">
-        <div className="lp-tech-inner">
-          <p className="lp-section-label">{t('landing.releases.eyebrow')}</p>
-          <h2 className="lp-section-title">{t('landing.releases.title')}</h2>
-          <div className="lp-tech-text">
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#4a90d9', marginBottom: '0.5rem' }}>{t('landing.releases.v1_0.title')}</h3>
-              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                <li>{t('landing.releases.v1_0.li1')}</li>
-                <li>{t('landing.releases.v1_0.li2')}</li>
-                <li>{t('landing.releases.v1_0.li3')}</li>
-                <li>{t('landing.releases.v1_0.li4')}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      
       {/* FAQ */}
+      
       <section id="faq" className="lp-faq">
         <div className="lp-faq-inner">
           <p className="lp-section-label">{t('landing.faq.eyebrow')}</p>
@@ -549,6 +607,36 @@ export default function LandingPage({ onNavigate }: Props) {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+<section id="releases" className="lp-tech">
+        <div className="lp-tech-inner">
+          <p className="lp-section-label">{t('landing.releases.eyebrow')}</p>
+          <h2 className="lp-section-title">{t('landing.releases.title')}</h2>
+          <div className="lp-tech-text">
+                        <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.4rem', color: '#4a90d9', marginBottom: '0.5rem' }}>{t('landing.versions.v1_0_1' as any)}</h3>
+              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+                <li>{t('landing.versions.v1_0_1_p1' as any)}</li>
+                <li>{t('landing.versions.v1_0_1_p2' as any)}</li>
+                <li>{t('landing.versions.v1_0_1_p3' as any)}</li>
+                <li>{t('landing.versions.v1_0_1_p4' as any)}</li>
+                <li>{t('landing.versions.v1_0_1_p5' as any)}</li>
+                <li>{t('landing.versions.v1_0_1_p6' as any)}</li>
+                <li>{t('landing.versions.v1_0_1_p7' as any)}</li>
+              </ul>
+            </div>
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.4rem', color: '#4a90d9', marginBottom: '0.5rem' }}>{t('landing.releases.v1_0.title')}</h3>
+              <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+                <li>{t('landing.releases.v1_0.li1')}</li>
+                <li>{t('landing.releases.v1_0.li2')}</li>
+                <li>{t('landing.releases.v1_0.li3')}</li>
+                <li>{t('landing.releases.v1_0.li4')}</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
